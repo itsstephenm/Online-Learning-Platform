@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="../../static/css/style.css">
+  <style media="screen">
+    .jumbotron {
+      margin-top: 0px;
+      margin-bottom: 0px;
+    }
+
+    .jumbotron h1 {
+      text-align: center;
+    }
+
+  </style>
+
+</head>
+
+<body class="main_container">
+
+  {% include "quiz/navbar.html" %}
+  <br><br>
+  <div class="jumbotron" style="margin-bottom:0px;background-color: transparent !important;">
+    <h1 class="display-4" style="color: white;">Hello,<span style="color:#24b0ed;">Student</span></h1>
+    <p class="lead" style="color: white;">Welcome to Online Quiz</p>
+    <hr class="my-4">
+    <p style="color: white;">You can access various features after Login.</p>
+    <p class="lead">
+      <a class="btn btn-primary btn-lg" href="studentsignup" role="button" style="border-radius: 50rem;background-color: #24b0ed;">Create Your Account</a>
+      <a class="btn btn-primary btn-lg" href="studentlogin" role="button" style="border-radius: 50rem;background-color: #24b0ed;">Login</a>
+    </p>
+    <br><br><br><br><br><br>
+  </div>
+ 
+  {% include "quiz/footer.html" %}
+</body>
+
+</html>

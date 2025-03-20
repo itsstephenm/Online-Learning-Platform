@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <style media="screen">
+    .jumbotron {
+      margin-top: 0px;
+      margin-bottom: 0px;
+    }
+
+    .jumbotron h1 {
+      text-align: center;
+    }
+
+    .alert {
+      margin: 0px;
+    }
+    .main_container {
+    background-image: url("../../static/image/assets/images/back2.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+  </style>
+
+  <title></title>
+</head>
+
+<body class="main_container">
+
+  {% include "quiz/navbar.html" %}
+  <br><br><br><br>
+  <div class="jumbotron" style="margin-bottom: 0px;margin-top: 0px;background-color: transparent;">
+    <h3 class="display-4" style="color: white; text-align: center;">About Us !</h3>
+    <p class="lead" style="color: white;">We Provide Platform For Students To practice Questions  <br> Teacher can add course/exam to System and Questions to that course.</p>
+    <hr class="my-4">
+    <p style="color: white;">Explore our Website.</p>
+    <p class="lead">
+      <a class="btn btn-primary btn-lg" href="https://www.cut.ac.zw/" role="button" style="border-radius: 50rem; width: 8rem;background-color:#24b0ed;">CUT</a>
+    </p>
+  </div>
+
+  {% include "quiz/footer.html" %}
+</body>
+
+</html>

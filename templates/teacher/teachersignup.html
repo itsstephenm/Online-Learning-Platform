@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+{% load widget_tweaks %}
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <style>
+  :root {
+    --blue: #007bff;
+    --indigo: #6610f2;
+    --purple: #6f42c1;
+    --pink: #e83e8c;
+    --red: #dc3545;
+    --orange: #fd7e14;
+    --yellow: #ffc107;
+    --green: #28a745;
+    --teal: #20c997;
+    --cyan: #17a2b8;
+    --white: #fff;
+    --gray: #6c757d;
+    --gray-dark: #343a40;
+    --primary: #007bff;
+    --secondary: #6c757d;
+    --success: #28a745;
+    --info: #17a2b8;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --light: #f8f9fa;
+    --dark: #343a40;
+    --breakpoint-xs: 0;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+    --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+        form{
+           margin: 50px; 
+          
+        }
+        .box {
+    width: 80%;
+    margin: 2rem;
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+.box input[type="text"],
+.box input[type="password"]{
+    border: 0;
+    background: none;
+    display: block;
+    margin: 20px auto;
+    text-align: center;
+    border: 2px solid #3498db;
+    padding: 10px 10px;
+    outline: none;
+    border-radius: 24px;
+    transition: 0.25s;
+}/* File Input Wrapper */
+.custom-file-container {
+    width: 100%;
+    max-width: 300px; /* Adjust width as needed */
+    margin: 10px auto;
+    position: relative;
+}
+
+/* Hide default file input */
+.custom-file-container input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+/* Styled Input Field */
+.custom-file-label {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #3498db;
+    border-radius: 24px;
+    background: none;
+    text-align: left;
+    font-size: 16px;
+    color: var(--cyan);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* Placeholder Text */
+.custom-file-label::before {
+    content: "Choose File";
+    color: var(--cyan);
+    font-size: 16px;
+}
+
+/* Change Border Color on Focus */
+.custom-file-container input[type="file"]:focus + .custom-file-label {
+    border-color: #2980b9;
+}
+
+/* Uploaded File Name */
+.custom-file-label.has-file::before {
+    content: attr(data-file);
+    color: #333;
+}
+
+
+        .main_container {
+    background-image: url("../../static/image/assets/images/back2.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+    </style>
+  </head>
+  <body class="main_container">
+    {% include "quiz/navbar.html" %}
+ 
+
+
+<br><br><br><br><br><br>
+
+<center>
+  <form method="POST" class="box" autocomplete="off" enctype="multipart/form-data">
+    <h3 style="text-align: center;color: var(--blue);">TEACHER SIGNUP</h3>
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="username" >Username</label>
+        {% render_field userForm.username|attr:'required:true'  class="form-control" placeholder="username" %}
+      </div>
+      <div class="form-group col-md-6">
+        <label for="inputPassword4" >Password</label>
+        {% render_field userForm.password|attr:'required:true'  class="form-control" placeholder="password" %}
+      </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="first_name" >First Name</label>
+          {% render_field userForm.first_name|attr:'required:true'  class="form-control" placeholder="First Name" %}
+        </div>
+        <div class="form-group col-md-6">
+          <label for="last_name" >Last Name</label>
+          {% render_field userForm.last_name|attr:'required:true'  class="form-control" placeholder="Last Name" %}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="mobile" >Mobile</label>
+          {% render_field teacherForm.mobile|attr:'required:true'  class="form-control" placeholder="Mobile" %}
+        </div>
+        <div class="form-group col-md-6">
+          <label for="address" >Address</label>
+          {% render_field teacherForm.address|attr:'required:true'  class="form-control" placeholder="Address" %}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-md-12">
+            <label for="profile_pic">Profile Picture</label>
+            
+            <div class="custom-file">
+                {% render_field teacherForm.profile_pic|attr:'required:true' class="custom-file-input" id="profile_pic" %}
+                <label class="custom-file-label" for="profile_pic"></label>
+            </div>
+        </div>
+    </div>    
+
+
+    <button type="submit" class="btn btn-primary" >Sign Up</button>
+  </form>
+</center>
+<br><br>
+{% include "quiz/footer.html" %}
+<script>
+document.getElementById("profile_pic").addEventListener("change", function() {
+    let fileLabel = this.nextElementSibling;
+    let fileName = this.files.length > 0 ? this.files[0].name : "Choose File";
+    fileLabel.setAttribute("data-file", fileName);
+    fileLabel.classList.add("has-file");
+});
+</script>
+  </body>
+</html>

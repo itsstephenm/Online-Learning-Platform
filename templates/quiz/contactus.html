@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" dir="ltr">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+
+<style>
+.box {
+    width: 50%;
+    margin: 2rem;
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+.box p{
+  text-align: left;
+  font-size:medium;
+  color: black;
+}
+/* Style input fields */
+.box input[type="text"],
+.box input[type="email"],
+.box textarea {
+    border: 0;
+    background: none;
+    display: block;
+    margin: 10px auto;
+    text-align: left;
+    border: 2px solid #24b0ed;
+    padding: 10px 10px;
+    width: 600px;
+    outline: none;
+    color: var(--dark);
+    border-radius: 24px;
+    transition: 0.25s
+}
+
+/* Input focus effect */
+.box input[type="text"]:focus,
+.box input[type="email"]:focus,
+.box textarea:focus {
+  width: 600px;
+  border-color: var(--cyan)
+}
+
+/* Style the textarea separately */
+.box textarea {
+    height: 120px;
+    resize: none;
+}
+
+/* Style the submit button */
+.box input[type="submit"] {
+    background: #24b0ed;
+    color: white;
+    font-size: 18px;
+    padding: 12px 25px;
+    border-radius: 50rem;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.box input[type="submit"]:hover {
+    background:#24b0ed;
+}
+
+/* Make form responsive */
+@media (max-width: 768px) {
+    .box {
+        width: 90%;
+    }
+}
+.main_container {
+    background-image: url("../../static/image/assets/images/back2.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+</style>
+</head>
+
+<body class="main_container">
+
+  {% include "quiz/navbar.html" %}
+  <br><br>
+<br><br>
+<h3  class="display-4"  style="text-align: center; color: white;">Send Us Your Valuable Feedback !</h3>
+<center>
+  <form method="POST" class="box" autocomplete="off">
+    <!-- Very Important csrf Token -->
+    {% csrf_token %}
+    <div class="form-group">
+      <p>
+      <h3>{{ form.as_p }}</h3>
+      </p>
+      <br>
+      <center> <input type="submit" value="Send Message" class='btn btn-primary btn-lg' style="border-radius: 50rem;"></center>
+    </div>
+  </form>
+
+</center>
+  {% include "quiz/footer.html" %}
+</body>
+
+</html>
