@@ -17,7 +17,6 @@ urlpatterns = [
     path('afterlogin', views.afterlogin_view,name='afterlogin'),
 
 
-
     path('adminclick', views.adminclick_view),
     path('adminlogin', LoginView.as_view(template_name='quiz/adminlogin.html'),name='adminlogin'),
     path('admin-dashboard', views.admin_dashboard_view,name='admin-dashboard'),

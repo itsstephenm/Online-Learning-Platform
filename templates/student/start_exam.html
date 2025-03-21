@@ -58,28 +58,54 @@
     </form>
   </div>
 
-<script> 
-    function saveAns(){  
-
+  <script> 
+    document.addEventListener("DOMContentLoaded", function () {
+        let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
+        if (csrfToken) {
+            console.log("CSRF Token Found: ", csrfToken.value);
+        } else {
+            console.log("CSRF Token Missing!");
+        }
+    });
+    
+    document.querySelector("form").addEventListener("submit", function (event) {
+        event.preventDefault(); // Stop the default form submission
+    
+        let formData = new FormData(this);
+        let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+    
+        fetch("{% url 'calculate-marks' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,  // ✅ Include CSRF token in the request headers
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => console.log("Response:", data))
+        .catch(error => console.error("Error:", error));
+    });
+    
+    function saveAns() {  
         var ele = document.getElementsByTagName('input'); 
-        for(i = 0; i < ele.length; i++) { 
-            if(ele[i].type="radio") { 
-                if(ele[i].checked){        
-                  setCookie(ele[i].name,ele[i].value,3)
-                }
-            } 
-        } 
-          
+        for (var i = 0; i < ele.length; i++) { 
+            if (ele[i].type === "radio" && ele[i].checked) {        
+                setCookie(ele[i].name, ele[i].value, 3);
+            }
+        }
+        return true;  // ✅ Ensure the form is submitted
     }
     
-    function setCookie(cname, cvalue, exdays) {
-  var d = new Date();
-  d.setTime(d.getTime() + (exdays*24*60*60*1000));
-  var expires = "expires="+ d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-}
-
-</script> 
+        
+        function setCookie(cname, cvalue, exdays) {
+      var d = new Date();
+      d.setTime(d.getTime() + (exdays*24*60*60*1000));
+      var expires = "expires="+ d.toUTCString();
+      document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+    
+    </script> 
 
 <br><br><br><br><br><br>
 {% endblock content %}

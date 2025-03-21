@@ -79,7 +79,7 @@
       font-weight: 600;
       color: #fff;
       transition: 0.5s;
-
+      border:none;
     }
 
     .logout_btn:hover {
@@ -198,7 +198,11 @@
       <h3 style="color: var(--white);">CUT Online Quiz</h3>
     </div>
     <div class="right_area">
-      <a href="/logout" class="logout_btn">Logout</a>
+       <!-- <a href="/logout" class="logout_btn">Logout</a> -->
+       <form action="{% url 'logout' %}" method="POST">
+        {% csrf_token %}
+        <button class="logout_btn" type="submit">Logout</button>
+    </form>
     </div>
   </header>
   <!--header area end-->
