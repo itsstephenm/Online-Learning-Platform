@@ -1,0 +1,210 @@
+{% extends 'student/studentbase.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Chat Interface -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-light">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">AI Quiz Assistant</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="chat-messages" style="height: 400px; overflow-y: auto;">
+                        {% for chat in chat_history %}
+                        <div class="message mb-3">
+                            <div class="message-content p-3 rounded bg-light shadow-sm">
+                                <strong class="text-primary">You:</strong> {{ chat.question }}
+                            </div>
+                            <div class="message-content p-3 rounded bg-light shadow-sm mt-2">
+                                <strong class="text-info">AI:</strong> {{ chat.answer|safe }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Input Form -->
+                    <form id="chat-form" class="mt-3">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <select id="course-select" class="form-control mb-2">
+                                <option value="">Select a course (optional)</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>
+                                    {{ course.course_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="question-input" class="form-control" placeholder="Ask a question about your studies...">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Usage Statistics -->
+            <div class="card shadow-sm border-light">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">AI Usage Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Queries
+                            <span class="badge badge-primary badge-pill">{{ insights.total_queries }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Average Response Time
+                            <span class="badge badge-info badge-pill">{{ insights.average_response_time|floatformat:1 }}s</span>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Last Used:</strong> {{ student.last_ai_interaction|default:"Never" }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Tips -->
+            <div class="card mt-3 shadow-sm border-light">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Tips for Better Results</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li>• Be specific in your questions</li>
+                        <li>• Select a course for context-specific answers</li>
+                        <li>• Ask for explanations of concepts</li>
+                        <li>• Request practice problems</li>
+                        <li>• Ask for study strategies</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const questionInput = document.getElementById('question-input');
+    const courseSelect = document.getElementById('course-select');
+    const chatMessages = document.getElementById('chat-messages');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const question = questionInput.value.trim();
+        if (!question) return;
+        
+        // Disable submit button and show loading state
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        
+        // Add user message to chat
+        appendMessage('You', question);
+        questionInput.value = '';
+        
+        try {
+            const response = await fetch('{% url "get_ai_response" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    question: question,
+                    course_id: courseSelect.value
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.error) {
+                appendMessage('AI', 'Sorry, I encountered an error. Please try again.');
+            } else {
+                appendMessage('AI', data.response);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            appendMessage('AI', 'Sorry, I encountered an error. Please try again.');
+        } finally {
+            // Re-enable submit button
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        }
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+    
+    function appendMessage(sender, message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message mb-3';
+        
+        const content = document.createElement('div');
+        content.className = `message-content p-3 rounded ${sender === 'AI' ? 'bg-light' : ''}`;
+        content.innerHTML = `<strong>${sender}:</strong> ${message}`;
+        
+        messageDiv.appendChild(content);
+        chatMessages.appendChild(messageDiv);
+    }
+});
+</script>
+
+<style>
+.chat-messages {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+.message-content {
+    max-width: 80%;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.message-content:last-child {
+    margin-bottom: 0;
+}
+
+.badge {
+    font-size: 0.85em;
+    padding: 0.6em 1em;
+    border-radius: 1.25rem;
+}
+
+.card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.input-group-append button {
+    font-size: 1rem;
+    padding: 10px 15px;
+}
+</style>
+{% endblock content %}
