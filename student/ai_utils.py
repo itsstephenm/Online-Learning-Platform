@@ -7,19 +7,20 @@ from .models import AIChatHistory, AIUsageAnalytics
 import logging
 import random
 from openai import OpenAI, OpenAIError
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
 # Get DeepInfra API configuration from settings
-DEEPINFRA_API_KEY = getattr(settings, 'DEEPSEEK_API_KEY', None)
-MODEL_NAME = getattr(settings, 'DEEPSEEK_MODEL_NAME', None)
+OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')
+OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 
 # Initialize OpenAI client with DeepInfra configuration
 client = OpenAI(
-    api_key=DEEPINFRA_API_KEY,
-    base_url="https://api.deepinfra.com/v1/openai",
+    api_key=OPENROUTER_API_KEY,
+    base_url="https://openrouter.ai/api/v1/chat/completions",
     default_headers={
-        "Authorization": f"Bearer {DEEPINFRA_API_KEY}"
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}"
     }
 )
 
@@ -96,8 +97,8 @@ def get_mock_response(question, course=None):
 
 def get_ai_response(question, student, course=None):
     # If no API key is configured, use mock responses
-    if not DEEPINFRA_API_KEY:
-        logger.info("No DeepInfra API key configured, using mock responses")
+    if not OPENROUTER_API_KEY:
+        logger.info("No Deepseek API key configured, using mock responses")
         response = get_mock_response(question, course)
     else:
         system_message = """You are a helpful AI tutor assisting students with their quiz preparation. 
@@ -111,62 +112,58 @@ def get_ai_response(question, student, course=None):
         
         try:
             start_time = timezone.now()
-            logger.info(f"Sending request to DeepInfra API for student {student.get_name}")
+            logger.info(f"Sending request to OPENROUTER API for student {student.get_name}")
             
-            chat_completion = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[
+            url = "https://openrouter.ai/api/v1/chat/completions"
+            headers = {
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'http://localhost:3000'
+            }
+            payload = {
+                "model": OPENROUTER_MODEL_NAME,
+                "messages": [
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": question}
                 ],
-                temperature=0.7,
-                max_tokens=2000,  # Increased for longer responses
-                top_p=0.95,
-                presence_penalty=0.1,
-                frequency_penalty=0.1,
-                stop=None  # Ensure no premature stopping
-            )
+                "temperature": 0.7,
+                "max_tokens": 2000,
+                "top_p": 0.95,
+                "presence_penalty": 0.1,
+                "frequency_penalty": 0.1
+            }
+            
+            response = requests.post(url, headers=headers, json=payload)
+            response_data = response.json()
+            
+            if response.status_code == 200:
+                response_text = response_data['choices'][0]['message']['content']
+            else:
+                logger.error(f"API error: {response_data}")
+                response_text = get_mock_response(question, course)
             
             end_time = timezone.now()
-            response = chat_completion.choices[0].message.content
             
-            # Ensure response is complete
-            if response.endswith('...') or response.endswith('---'):
-                logger.warning("Response appears to be incomplete, requesting completion")
-                # Request completion of the response
-                completion = client.chat.completions.create(
-                    model=MODEL_NAME,
-                    messages=[
-                        {"role": "system", "content": "Complete the previous response without repeating what was already said."},
-                        {"role": "user", "content": f"Complete this response: {response}"}
-                    ],
-                    temperature=0.7,
-                    max_tokens=1000,
-                    top_p=0.95
-                )
-                response = completion.choices[0].message.content
+            # Log usage statistics if available
+            if 'usage' in response_data:
+                usage = response_data['usage']
+                logger.info(f"Token usage - Prompt: {usage.get('prompt_tokens', 0)}, "
+                            f"Completion: {usage.get('completion_tokens', 0)}, "
+                            f"Total: {usage.get('total_tokens', 0)}")
             
-            # Log usage statistics
-            logger.info(f"Token usage - Prompt: {chat_completion.usage.prompt_tokens}, "
-                       f"Completion: {chat_completion.usage.completion_tokens}, "
-                       f"Total: {chat_completion.usage.total_tokens}")
-                
-        except OpenAIError as e:
-            logger.error(f"OpenAI API error: {str(e)}")
-            response = get_mock_response(question, course)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Network error while calling DeepInfra API: {str(e)}")
-            response = get_mock_response(question, course)
+            logger.error(f"Network error while calling OpenRouter API: {str(e)}")
+            response_text = get_mock_response(question, course)
         except Exception as e:
             logger.error(f"Unexpected error in get_ai_response: {str(e)}")
-            response = get_mock_response(question, course)
+            response_text = get_mock_response(question, course)
     
     # Save chat history and update analytics regardless of response source
     try:
         chat_history = AIChatHistory.objects.create(
             student=student,
             question=question,
-            answer=response,
+            answer=response_text,
             course=course
         )
         
@@ -193,7 +190,7 @@ def get_ai_response(question, student, course=None):
     except Exception as e:
         logger.error(f"Error saving chat history or analytics: {str(e)}")
     
-    return response
+    return response_text
 
 def extract_topics(question):
     # Enhanced topic extraction
@@ -250,4 +247,4 @@ def get_top_topics(student):
         return sorted(topic_frequency.items(), key=lambda x: x[1], reverse=True)[:5]
     except Exception as e:
         logger.error(f"Error getting top topics for student {student.get_name}: {str(e)}")
-        return [] 
+        return []

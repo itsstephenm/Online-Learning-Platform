@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import requests
+from openai import OpenAI
 
 # Load environment variables from .env file
 load_dotenv()
@@ -35,9 +37,24 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = ['final-year-project-1hjs.onrender.com','*']
 
 # DeepSeek AI Configuration
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
-DEEPSEEK_MODEL_ID = os.getenv('DEEPSEEK_MODEL_ID')
-DEEPSEEK_MODEL_NAME = os.getenv('DEEPSEEK_MODEL_NAME')
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+OPENROUTER_MODEL_ID = os.getenv('OPENROUTER_MODEL_ID')
+OPENROUTER_MODEL_NAME = os.getenv('OPENROUTER_MODEL_NAME')
+
+# Example function to send a request
+def get_chat_completion(question):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:3000"
+    }
+    payload = {
+        "model": OPENROUTER_MODEL_NAME,
+        "messages": [{"role": "user", "content": question}]
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    return response.json()
 
 # Application definition
 
@@ -167,4 +184,5 @@ EMAIL_RECEIVING_USER = os.getenv('EMAIL_RECEIVING_USER', 'to@gmail.com')
 EXPLORER_CONNECTIONS = {'Default': 'default'}
 EXPLORER_DEFAULT_CONNECTION = 'default'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 
