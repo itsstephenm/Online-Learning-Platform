@@ -36,10 +36,10 @@
                     </div>
                     
                     <!-- Input Form -->
-                    <form id="chat-form" class="p-3 border-top">
+                    <form id="chat-form" class="p-3 border-top bg-white">
                         {% csrf_token %}
                         <div class="form-group mb-2">
-                            <select id="course-select" class="form-control">
+                            <select id="course-select" class="form-select">
                                 <option value="">Select a course (optional)</option>
                                 {% for course in courses %}
                                 <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>
@@ -49,12 +49,10 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <input type="text" id="question-input" class="form-control" placeholder="Ask a question about your studies...">
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
+                            <input type="text" id="question-input" class="form-control border-end-0" placeholder="Ask a question about your studies...">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -72,11 +70,11 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Total Queries
-                            <span class="badge badge-primary badge-pill">{{ insights.total_queries }}</span>
+                            <span class="badge bg-primary rounded-pill">{{ insights.total_queries }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Average Response Time
-                            <span class="badge badge-info badge-pill">{{ insights.average_response_time|floatformat:1 }}s</span>
+                            <span class="badge bg-info rounded-pill">{{ insights.average_response_time|floatformat:1 }}s</span>
                         </li>
                         <li class="list-group-item">
                             <strong>Last Used:</strong> {{ student.last_ai_interaction|default:"Never" }}
@@ -92,11 +90,11 @@
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled">
-                        <li class="mb-2">• Be specific in your questions</li>
-                        <li class="mb-2">• Select a course for context-specific answers</li>
-                        <li class="mb-2">• Ask for explanations of concepts</li>
-                        <li class="mb-2">• Request practice problems</li>
-                        <li>• Ask for study strategies</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Be specific in your questions</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Select a course for context-specific answers</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Ask for explanations of concepts</li>
+                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Request practice problems</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Ask for study strategies</li>
                     </ul>
                 </div>
             </div>
@@ -108,6 +106,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -118,8 +117,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const typingIndicator = document.getElementById('typing-indicator');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
+    // Configure marked.js
+    marked.setOptions({
+        breaks: true,
+        highlight: function(code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                return hljs.highlight(code, { language: lang }).value;
+            }
+            return hljs.highlightAuto(code).value;
+        }
+    });
+    
     // Initialize clipboard.js
-    new ClipboardJS('.copy-btn');
+    const clipboard = new ClipboardJS('.copy-btn', {
+        text: function(trigger) {
+            const codeBlock = document.querySelector(trigger.getAttribute('data-clipboard-target'));
+            return codeBlock ? codeBlock.textContent : '';
+        }
+    });
+    
+    clipboard.on('success', function(e) {
+        const originalText = e.trigger.innerHTML;
+        e.trigger.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(function() {
+            e.trigger.innerHTML = originalText;
+        }, 2000);
+        e.clearSelection();
+    });
     
     // Scroll to bottom initially
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -164,24 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 appendMessage('ai', formatResponse(data.response));
                 // Apply syntax highlighting and add copy buttons
-                setTimeout(() => {
-                    document.querySelectorAll('pre code').forEach(block => {
-                        hljs.highlightElement(block);
-                        // Add copy button
-                        const container = block.closest('pre');
-                        if (container && !container.querySelector('.copy-btn')) {
-                            const button = document.createElement('button');
-                            button.className = 'copy-btn btn btn-sm btn-outline-secondary';
-                            button.setAttribute('data-clipboard-target', '#' + block.id);
-                            button.innerHTML = '<i class="far fa-copy"></i> Copy';
-                            container.style.position = 'relative';
-                            button.style.position = 'absolute';
-                            button.style.top = '5px';
-                            button.style.right = '5px';
-                            container.appendChild(button);
-                        }
-                    });
-                }, 50);
+                setTimeout(processCodeBlocks, 50);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -195,15 +202,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    function processCodeBlocks() {
+        document.querySelectorAll('pre code').forEach(block => {
+            if (!block.id) {
+                const id = 'codeblock-' + Math.random().toString(36).substr(2, 9);
+                block.id = id;
+                
+                // Add copy button if not already present
+                const container = block.closest('pre');
+                if (container && !container.querySelector('.copy-btn')) {
+                    const button = document.createElement('button');
+                    button.className = 'copy-btn btn btn-sm btn-outline-dark position-absolute';
+                    button.setAttribute('data-clipboard-target', '#' + id);
+                    button.innerHTML = '<i class="far fa-copy"></i>';
+                    button.style.top = '8px';
+                    button.style.right = '8px';
+                    button.style.opacity = '0.7';
+                    button.style.transition = 'opacity 0.2s';
+                    
+                    container.style.position = 'relative';
+                    container.style.paddingTop = '40px';
+                    container.appendChild(button);
+                    
+                    // Show button on hover
+                    container.addEventListener('mouseenter', () => {
+                        button.style.opacity = '1';
+                    });
+                    container.addEventListener('mouseleave', () => {
+                        button.style.opacity = '0.7';
+                    });
+                }
+            }
+            hljs.highlightElement(block);
+        });
+    }
+    
     function formatResponse(message) {
-        // Generate unique IDs for code blocks
-        let idCounter = 0;
-        return message
-            .replace(/```(\w+)?\n([\s\S]+?)\n```/g, (match, lang, code) => {
-                const id = 'codeblock-' + idCounter++;
-                return `<pre><code id="${id}" class="${lang || ''}">${code.trim()}</code></pre>`;
-            })
-            .replace(/`([^`]+)`/g, '<code>$1</code>');
+        // First convert markdown to HTML
+        let formatted = marked.parse(message);
+        
+        // Ensure code blocks have proper formatting
+        formatted = formatted.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/g, function(match, code) {
+            // Remove any existing HTML tags inside code blocks
+            const cleanCode = code.replace(/<[^>]*>/g, '');
+            return `<pre><code>${cleanCode}</code></pre>`;
+        });
+        
+        return formatted;
     }
     
     function appendMessage(sender, message) {
@@ -221,86 +266,106 @@ document.addEventListener('DOMContentLoaded', function() {
         
         messageDiv.appendChild(content);
         chatMessages.appendChild(messageDiv);
+        
+        // Process any code blocks in new messages
+        if (sender === 'ai') {
+            setTimeout(processCodeBlocks, 50);
+        }
     }
     
     // Auto-focus input field
     questionInput.focus();
-    
-    // Show tooltip when code is copied
-    document.addEventListener('copy', function(e) {
-        const selection = window.getSelection();
-        if (selection.toString().length > 0 && selection.anchorNode.closest('code')) {
-            const originalText = e.clipboardData.getData('text/plain');
-            e.clipboardData.setData('text/plain', originalText.trim());
-            e.preventDefault();
-        }
-    });
 });
 </script>
 
 <style>
+:root {
+    --user-message-bg: #3b82f6;
+    --ai-message-bg: #f8f9fa;
+    --code-bg: #f6f8fa;
+    --border-radius: 12px;
+}
+
 .chat-messages {
     background-color: #f7f7f8;
     padding: 20px;
+    scroll-behavior: smooth;
 }
 
 .message-content {
     max-width: 85%;
     margin-bottom: 12px;
-    line-height: 1.5;
+    line-height: 1.6;
     font-size: 1rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 /* User messages */
 .justify-content-end .message-content {
-    background-color: #3b82f6;
+    background-color: var(--user-message-bg);
     color: white;
-    border-radius: 18px 18px 0 18px;
+    border-radius: var(--border-radius) var(--border-radius) 0 var(--border-radius);
 }
 
 /* AI messages */
 .justify-content-start .message-content {
-    background-color: #f0f0f0;
+    background-color: var(--ai-message-bg);
     color: #333;
-    border-radius: 18px 18px 18px 0;
+    border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 0;
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 /* Markdown content styling */
 .markdown-content {
     white-space: pre-wrap;
 }
+.markdown-content p {
+    margin-bottom: 1em;
+}
+.markdown-content strong {
+    font-weight: 600;
+}
+.markdown-content em {
+    font-style: italic;
+}
 .markdown-content pre {
-    background-color: #f6f8fa;
-    border-radius: 6px;
+    background-color: var(--code-bg);
+    border-radius: 8px;
     padding: 16px;
     position: relative;
-    margin: 10px 0;
+    margin: 1em 0;
+    border: 1px solid rgba(0,0,0,0.1);
 }
 .markdown-content code {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     font-size: 0.9em;
     background-color: rgba(27,31,35,0.05);
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 0.2em 0.4em;
 }
 .markdown-content pre code {
     background: none;
     padding: 0;
+    border-radius: 0;
 }
 .markdown-content ol, .markdown-content ul {
-    padding-left: 20px;
-    margin-bottom: 16px;
+    padding-left: 1.5em;
+    margin-bottom: 1em;
 }
 .markdown-content li {
-    margin-bottom: 8px;
+    margin-bottom: 0.5em;
+}
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
 }
 
 /* Input area */
 #chat-form {
     background: white;
-    padding: 15px;
-    border-top: 1px solid #e5e5e5;
+    padding: 16px;
+    border-top: 1px solid rgba(0,0,0,0.1);
 }
 
 /* Typing indicator */
@@ -323,17 +388,19 @@ document.addEventListener('DOMContentLoaded', function() {
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes typingAnimation {
     0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-5px); }
+    30% { transform: translateY(-3px); }
 }
 
 /* Cards */
 .card {
-    border-radius: 8px;
+    border-radius: var(--border-radius);
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: none;
 }
 .card-header {
     border-radius: 0 !important;
+    padding: 12px 16px;
 }
 
 /* Badges */
@@ -341,22 +408,42 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.85em;
     padding: 0.5em 0.8em;
     border-radius: 1.25rem;
+    font-weight: 500;
 }
 
 /* Form elements */
-.form-control, .input-group-text, .btn {
+.form-control, .form-select {
     border-radius: 8px !important;
+    padding: 10px 15px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
 }
 
 /* Copy button */
 .copy-btn {
     transition: all 0.2s;
+    border: none;
+    background: rgba(255,255,255,0.8);
+    padding: 4px 8px;
 }
 .copy-btn:hover {
-    background-color: #e9ecef;
+    background: white;
+    opacity: 1 !important;
 }
 .copy-btn:active {
     transform: scale(0.95);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chat-messages {
+        height: 300px !important;
+    }
+    .message-content {
+        max-width: 90%;
+    }
 }
 </style>
 {% endblock content %}
