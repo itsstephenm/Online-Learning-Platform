@@ -4,30 +4,41 @@
     <div class="row">
         <!-- Chat Interface -->
         <div class="col-md-8">
-            <div class="card shadow-sm border-light">
-                <div class="card-header bg-primary text-white">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">AI Quiz Assistant</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <!-- Chat Messages -->
-                    <div id="chat-messages" class="chat-messages" style="height: 400px; overflow-y: auto;">
+                    <div id="chat-messages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 20px;">
                         {% for chat in chat_history %}
-                        <div class="message mb-3">
-                            <div class="message-content p-3 rounded bg-light shadow-sm">
-                                <strong class="text-primary">You:</strong> {{ chat.question }}
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="message-content p-3 rounded bg-primary text-white">
+                                {{ chat.question }}
                             </div>
-                            <div class="message-content p-3 rounded bg-light shadow-sm mt-2">
-                                <strong class="text-info">AI:</strong> {{ chat.answer|safe }}
+                        </div>
+                        <div class="d-flex justify-content-start mb-3">
+                            <div class="message-content p-3 rounded bg-light">
+                                <strong class="text-muted">AI:</strong> {{ chat.answer|safe }}
                             </div>
                         </div>
                         {% endfor %}
+                        <div id="typing-indicator" class="d-flex justify-content-start mb-3" style="display:none;">
+                            <div class="message-content p-3 rounded bg-light">
+                                <div class="typing-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Input Form -->
-                    <form id="chat-form" class="mt-3">
+                    <form id="chat-form" class="p-3 border-top">
                         {% csrf_token %}
-                        <div class="form-group">
-                            <select id="course-select" class="form-control mb-2">
+                        <div class="form-group mb-2">
+                            <select id="course-select" class="form-control">
                                 <option value="">Select a course (optional)</option>
                                 {% for course in courses %}
                                 <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>
@@ -40,7 +51,7 @@
                             <input type="text" id="question-input" class="form-control" placeholder="Ask a question about your studies...">
                             <div class="input-group-append">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane"></i> Send
+                                    <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
                         </div>
@@ -52,8 +63,8 @@
         <!-- Sidebar -->
         <div class="col-md-4">
             <!-- Usage Statistics -->
-            <div class="card shadow-sm border-light">
-                <div class="card-header bg-info text-white">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">AI Usage Statistics</h5>
                 </div>
                 <div class="card-body">
@@ -74,16 +85,16 @@
             </div>
             
             <!-- Tips -->
-            <div class="card mt-3 shadow-sm border-light">
-                <div class="card-header bg-success text-white">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">Tips for Better Results</h5>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled">
-                        <li>• Be specific in your questions</li>
-                        <li>• Select a course for context-specific answers</li>
-                        <li>• Ask for explanations of concepts</li>
-                        <li>• Request practice problems</li>
+                        <li class="mb-2">• Be specific in your questions</li>
+                        <li class="mb-2">• Select a course for context-specific answers</li>
+                        <li class="mb-2">• Ask for explanations of concepts</li>
+                        <li class="mb-2">• Request practice problems</li>
                         <li>• Ask for study strategies</li>
                     </ul>
                 </div>
@@ -92,13 +103,21 @@
     </div>
 </div>
 
+<!-- Add these to your head section -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const chatForm = document.getElementById('chat-form');
     const questionInput = document.getElementById('question-input');
     const courseSelect = document.getElementById('course-select');
     const chatMessages = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Scroll to bottom initially
+    chatMessages.scrollTop = chatMessages.scrollHeight;
     
     chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -109,11 +128,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Disable submit button and show loading state
         const submitButton = this.querySelector('button[type="submit"]');
         submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
         // Add user message to chat
-        appendMessage('You', question);
+        appendMessage('user', question);
         questionInput.value = '';
+        
+        // Show typing indicator
+        typingIndicator.style.display = 'flex';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
         
         try {
             const response = await fetch('{% url "get_ai_response" %}', {
@@ -128,83 +151,132 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             
             const data = await response.json();
             if (data.error) {
-                appendMessage('AI', 'Sorry, I encountered an error. Please try again.');
+                appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
             } else {
-                appendMessage('AI', data.response);
+                appendMessage('ai', data.response);
+                // Apply syntax highlighting
+                setTimeout(() => {
+                    document.querySelectorAll('pre code').forEach(block => {
+                        hljs.highlightElement(block);
+                    });
+                }, 50);
             }
         } catch (error) {
             console.error('Error:', error);
-            appendMessage('AI', 'Sorry, I encountered an error. Please try again.');
+            appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
         } finally {
-            // Re-enable submit button
+            // Hide typing indicator and re-enable submit button
+            typingIndicator.style.display = 'none';
             submitButton.disabled = false;
-            submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+            submitButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
     
     function appendMessage(sender, message) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'message mb-3';
+        messageDiv.className = `d-flex justify-content-${sender === 'user' ? 'end' : 'start'} mb-3`;
         
         const content = document.createElement('div');
-        content.className = `message-content p-3 rounded ${sender === 'AI' ? 'bg-light' : ''}`;
-        content.innerHTML = `<strong>${sender}:</strong> ${message}`;
+        content.className = `message-content p-3 rounded ${sender === 'user' ? 'bg-primary text-white' : 'bg-light'}`;
+        
+        if (sender === 'ai') {
+            content.innerHTML = `<strong class="${sender === 'user' ? 'text-white' : 'text-muted'}">AI:</strong> ${message}`;
+        } else {
+            content.textContent = message;
+        }
         
         messageDiv.appendChild(content);
         chatMessages.appendChild(messageDiv);
     }
+    
+    // Auto-focus input field
+    questionInput.focus();
 });
 </script>
 
 <style>
 .chat-messages {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    background-color: #f9f9f9;
-}
-
-.message-content {
-    max-width: 80%;
-    margin-bottom: 10px;
-    font-size: 1rem;
-}
-
-.message-content:last-child {
-    margin-bottom: 0;
-}
-
-.badge {
-    font-size: 0.85em;
-    padding: 0.6em 1em;
-    border-radius: 1.25rem;
-}
-
-.card {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.card-header {
-    border-radius: 8px 8px 0 0 !important;
-}
-
-.card-body {
+    background-color: #f7f7f8;
     padding: 20px;
 }
 
-.input-group-append button {
+.message-content {
+    max-width: 85%;
+    margin-bottom: 12px;
+    line-height: 1.5;
     font-size: 1rem;
-    padding: 10px 15px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* User messages */
+.justify-content-end .message-content {
+    background-color: #3b82f6;
+    color: white;
+    border-radius: 18px 18px 0 18px;
+}
+
+/* AI messages */
+.justify-content-start .message-content {
+    background-color: #f0f0f0;
+    color: #333;
+    border-radius: 18px 18px 18px 0;
+}
+
+/* Input area */
+#chat-form {
+    background: white;
+    padding: 15px;
+    border-top: 1px solid #e5e5e5;
+}
+
+/* Typing indicator */
+.typing-dots {
+    display: inline-flex;
+    align-items: center;
+    height: 17px;
+}
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    margin: 0 2px;
+    background-color: #6c757d;
+    border-radius: 50%;
+    display: inline-block;
+    animation: typingAnimation 1.4s infinite ease-in-out;
+}
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingAnimation {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+}
+
+/* Cards */
+.card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.card-header {
+    border-radius: 0 !important;
+}
+
+/* Badges */
+.badge {
+    font-size: 0.85em;
+    padding: 0.5em 0.8em;
+    border-radius: 1.25rem;
+}
+
+/* Form elements */
+.form-control, .input-group-text, .btn {
+    border-radius: 8px !important;
 }
 </style>
 {% endblock content %}
