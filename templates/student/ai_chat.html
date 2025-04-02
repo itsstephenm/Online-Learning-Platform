@@ -1,172 +1,152 @@
 {% extends 'student/studentbase.html' %}
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <!-- Chat Interface -->
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">AI Quiz Assistant</h5>
+<div class="app-container">
+  <div class="main-card">
+    <div class="card-header">
+      <h5>AI Quiz Assistant</h5>
+    </div>
+    <div class="card-body two-column-layout">
+      <!-- Left Column - Chat Section -->
+      <section class="chat-section">
+        <div class="chat-window">
+          <div id="chat-messages" class="chat-messages" aria-live="polite">
+            {% for chat in chat_history %}
+            <!-- User Message -->
+            <div class="chat-message user-message">
+              <div class="message-bubble">
+                <div class="message-meta">
+                  <i class="fas fa-user-circle"></i>
+                  <small class="message-time">{{ chat.timestamp|date:"h:i A" }}</small>
                 </div>
-                <div class="card-body p-0">
-                    <!-- Chat Messages -->
-                    <div id="chat-messages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 20px;">
-                        {% for chat in chat_history %}
-                        <div class="d-flex justify-content-end mb-3">
-                            <div class="message-content p-3 rounded bg-primary text-white">
-                                {{ chat.question }}
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-start mb-3">
-                            <div class="message-content p-3 rounded bg-light markdown-content">
-                                <strong class="text-muted">AI:</strong> 
-                                {{ chat.answer|safe }}
-                            </div>
-                        </div>
-                        {% endfor %}
-                        <div id="typing-indicator" class="d-flex justify-content-start mb-3" style="display:none;">
-                            <div class="message-content p-3 rounded bg-light">
-                                <div class="typing-dots">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Input Form -->
-                    <form id="chat-form" class="p-3 border-top bg-white">
-                        {% csrf_token %}
-                        <div class="form-group mb-2">
-                            <select id="course-select" class="form-select">
-                                <option value="">Select a course (optional)</option>
-                                {% for course in courses %}
-                                <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>
-                                    {{ course.course_name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="question-input" class="form-control border-end-0" placeholder="Ask a question about your studies...">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </form>
+                <div class="message-text">
+                  {{ chat.question }}
                 </div>
+              </div>
             </div>
+            <!-- AI Response -->
+            <div class="chat-message ai-message">
+              <div class="message-bubble">
+                <div class="message-meta">
+                  <i class="fas fa-robot text-primary"></i>
+                  <small class="message-time text-muted">{{ chat.timestamp|date:"h:i A" }}</small>
+                </div>
+                <div class="message-text markdown-content">
+                  {{ chat.answer|safe }}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <form id="chat-form" class="chat-form" method="post">
+            {% csrf_token %}
+            <div class="form-controls">
+              <select id="course-select" class="course-select">
+                <option value="">Select a course (optional)</option>
+                {% for course in courses %}
+                <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>
+                  {{ course.course_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="input-area">
+                <input type="text" id="question-input" placeholder="Ask a question about your studies..." autocomplete="off">
+                <button type="submit" class="send-btn" aria-label="Send">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+      
+      <!-- Right Column - Stats & Tips -->
+      <section class="info-section">
+        <!-- Usage Statistics -->
+        <div class="stats-section">
+          <h6>AI Usage Statistics</h6>
+          <ul class="stats-list">
+            <li>
+              Total Queries
+              <span class="badge">{{ insights.total_queries }}</span>
+            </li>
+            <li>
+              Average Response Time
+              <span class="badge">{{ insights.average_response_time|floatformat:1 }}s</span>
+            </li>
+            <li>
+              <strong>Last Used:</strong> {{ student.last_ai_interaction|default:"Never" }}
+            </li>
+          </ul>
         </div>
         
-        <!-- Sidebar -->
-        <div class="col-md-4">
-            <!-- Usage Statistics -->
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">AI Usage Statistics</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Total Queries
-                            <span class="badge bg-primary rounded-pill">{{ insights.total_queries }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Average Response Time
-                            <span class="badge bg-info rounded-pill">{{ insights.average_response_time|floatformat:1 }}s</span>
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Last Used:</strong> {{ student.last_ai_interaction|default:"Never" }}
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Tips -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Tips for Better Results</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Be specific in your questions</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Select a course for context-specific answers</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Ask for explanations of concepts</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Request practice problems</li>
-                        <li><i class="fas fa-check-circle text-success me-2"></i>Ask for study strategies</li>
-                    </ul>
-                </div>
-            </div>
+        <!-- Tips -->
+        <div class="tips-section">
+          <h6>Tips for Better Results</h6>
+          <ul class="tips-list">
+            <li><i class="fas fa-lightbulb text-warning"></i> Be specific in your questions</li>
+            <li><i class="fas fa-lightbulb text-warning"></i> Select a course for context-specific answers</li>
+            <li><i class="fas fa-lightbulb text-warning"></i> Ask for explanations of concepts</li>
+            <li><i class="fas fa-lightbulb text-warning"></i> Request practice problems</li>
+            <li><i class="fas fa-lightbulb text-warning"></i> Ask for study strategies</li>
+          </ul>
         </div>
+      </section>
     </div>
+  </div>
 </div>
 
-<!-- Add these to your head section -->
+<!-- External Resources -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize code highlighting for existing messages
+    document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+        const container = block.closest('pre');
+        if (container && !container.querySelector('.copy-btn')) {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            const id = 'codeblock-' + Math.random().toString(36).substr(2, 9);
+            block.id = id;
+            button.setAttribute('data-clipboard-target', '#' + id);
+            button.innerHTML = '<i class="far fa-copy"></i> Copy';
+            container.style.position = 'relative';
+            button.style.position = 'absolute';
+            button.style.top = '5px';
+            button.style.right = '5px';
+            container.appendChild(button);
+        }
+    });
+    
+    new ClipboardJS('.copy-btn');
+
+    // Rest of your existing JavaScript remains the same
     const chatForm = document.getElementById('chat-form');
     const questionInput = document.getElementById('question-input');
     const courseSelect = document.getElementById('course-select');
     const chatMessages = document.getElementById('chat-messages');
-    const typingIndicator = document.getElementById('typing-indicator');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-    // Configure marked.js
-    marked.setOptions({
-        breaks: true,
-        highlight: function(code, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                return hljs.highlight(code, { language: lang }).value;
-            }
-            return hljs.highlightAuto(code).value;
-        }
-    });
-    
-    // Initialize clipboard.js
-    const clipboard = new ClipboardJS('.copy-btn', {
-        text: function(trigger) {
-            const codeBlock = document.querySelector(trigger.getAttribute('data-clipboard-target'));
-            return codeBlock ? codeBlock.textContent : '';
-        }
-    });
-    
-    clipboard.on('success', function(e) {
-        const originalText = e.trigger.innerHTML;
-        e.trigger.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        setTimeout(function() {
-            e.trigger.innerHTML = originalText;
-        }, 2000);
-        e.clearSelection();
-    });
-    
-    // Scroll to bottom initially
+
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         const question = questionInput.value.trim();
         if (!question) return;
-        
-        // Disable submit button and show loading state
-        const submitButton = this.querySelector('button[type="submit"]');
+
+        const submitButton = this.querySelector('.send-btn');
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        // Add user message to chat
         appendMessage('user', question);
         questionInput.value = '';
-        
-        // Show typing indicator
-        typingIndicator.style.display = 'flex';
+        const typingIndicator = createTypingIndicator();
+        chatMessages.appendChild(typingIndicator);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
+
         try {
             const response = await fetch('{% url "get_ai_response" %}', {
                 method: 'POST',
@@ -179,271 +159,398 @@ document.addEventListener('DOMContentLoaded', function() {
                     course_id: courseSelect.value
                 })
             });
-            
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
             const data = await response.json();
             if (data.error) {
                 appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
             } else {
+                chatMessages.removeChild(typingIndicator);
                 appendMessage('ai', formatResponse(data.response));
-                // Apply syntax highlighting and add copy buttons
-                setTimeout(processCodeBlocks, 50);
+                setTimeout(() => {
+                    document.querySelectorAll('pre code').forEach(block => {
+                        hljs.highlightElement(block);
+                        const container = block.closest('pre');
+                        if (container && !container.querySelector('.copy-btn')) {
+                            const button = document.createElement('button');
+                            button.className = 'copy-btn';
+                            button.setAttribute('data-clipboard-target', '#' + block.id);
+                            button.innerHTML = '<i class="far fa-copy"></i> Copy';
+                            container.style.position = 'relative';
+                            button.style.position = 'absolute';
+                            button.style.top = '5px';
+                            button.style.right = '5px';
+                            container.appendChild(button);
+                        }
+                    });
+                }, 50);
             }
         } catch (error) {
             console.error('Error:', error);
             appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
         } finally {
-            // Hide typing indicator and re-enable submit button
-            typingIndicator.style.display = 'none';
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     });
-    
-    function processCodeBlocks() {
-        document.querySelectorAll('pre code').forEach(block => {
-            if (!block.id) {
-                const id = 'codeblock-' + Math.random().toString(36).substr(2, 9);
-                block.id = id;
-                
-                // Add copy button if not already present
-                const container = block.closest('pre');
-                if (container && !container.querySelector('.copy-btn')) {
-                    const button = document.createElement('button');
-                    button.className = 'copy-btn btn btn-sm btn-outline-dark position-absolute';
-                    button.setAttribute('data-clipboard-target', '#' + id);
-                    button.innerHTML = '<i class="far fa-copy"></i>';
-                    button.style.top = '8px';
-                    button.style.right = '8px';
-                    button.style.opacity = '0.7';
-                    button.style.transition = 'opacity 0.2s';
-                    
-                    container.style.position = 'relative';
-                    container.style.paddingTop = '40px';
-                    container.appendChild(button);
-                    
-                    // Show button on hover
-                    container.addEventListener('mouseenter', () => {
-                        button.style.opacity = '1';
-                    });
-                    container.addEventListener('mouseleave', () => {
-                        button.style.opacity = '0.7';
-                    });
-                }
-            }
-            hljs.highlightElement(block);
-        });
-    }
-    
+
     function formatResponse(message) {
-        // First convert markdown to HTML
-        let formatted = marked.parse(message);
-        
-        // Ensure code blocks have proper formatting
-        formatted = formatted.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/g, function(match, code) {
-            // Remove any existing HTML tags inside code blocks
-            const cleanCode = code.replace(/<[^>]*>/g, '');
-            return `<pre><code>${cleanCode}</code></pre>`;
-        });
-        
-        return formatted;
+        let idCounter = 0;
+        return message
+            .replace(/```(\w+)?\n([\s\S]+?)\n```/g, (match, lang, code) => {
+                const id = 'codeblock-' + idCounter++;
+                return `<pre><code id="${id}" class="${lang || ''}">${code.trim()}</code></pre>`;
+            })
+            .replace(/`([^`]+)`/g, '<code>$1</code>');
     }
-    
+
     function appendMessage(sender, message) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `d-flex justify-content-${sender === 'user' ? 'end' : 'start'} mb-3`;
-        
-        const content = document.createElement('div');
-        content.className = `message-content p-3 rounded ${sender === 'user' ? 'bg-primary text-white' : 'bg-light markdown-content'}`;
-        
-        if (sender === 'ai') {
-            content.innerHTML = `<strong class="${sender === 'user' ? 'text-white' : 'text-muted'}">AI:</strong> ${message}`;
-        } else {
-            content.textContent = message;
-        }
-        
-        messageDiv.appendChild(content);
+        messageDiv.className = `chat-message ${sender === 'user' ? 'user-message' : 'ai-message'}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        meta.innerHTML = sender === 'ai'
+            ? `<i class="fas fa-robot text-primary"></i><small class="message-time text-muted">${moment().format('h:mm A')}</small>`
+            : `<i class="fas fa-user-circle"></i><small class="message-time">${moment().format('h:mm A')}</small>`;
+        const text = document.createElement('div');
+        text.className = 'message-text markdown-content';
+        text.innerHTML = message;
+        bubble.appendChild(meta);
+        bubble.appendChild(text);
+        messageDiv.appendChild(bubble);
         chatMessages.appendChild(messageDiv);
-        
-        // Process any code blocks in new messages
-        if (sender === 'ai') {
-            setTimeout(processCodeBlocks, 50);
-        }
     }
-    
-    // Auto-focus input field
+
+    function createTypingIndicator() {
+        const container = document.createElement('div');
+        container.className = 'chat-message ai-message typing-indicator';
+        container.innerHTML = `
+            <div class="message-bubble">
+              <div class="message-meta">
+                <i class="fas fa-robot text-muted"></i>
+              </div>
+              <div class="message-text">
+                <div class="typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+        `;
+        return container;
+    }
+
     questionInput.focus();
+    document.addEventListener('copy', function(e) {
+        const selection = window.getSelection();
+        if (selection.toString().length > 0 && selection.anchorNode.closest('code')) {
+            const originalText = e.clipboardData.getData('text/plain');
+            e.clipboardData.setData('text/plain', originalText.trim());
+            e.preventDefault();
+        }
+    });
 });
 </script>
 
 <style>
+/* CSS Variables for theme customization */
 :root {
-    --user-message-bg: #3b82f6;
-    --ai-message-bg: #f8f9fa;
-    --code-bg: #f6f8fa;
-    --border-radius: 12px;
+  --primary-color: #006AFF;
+  --secondary-color: #00B2FF;
+  --light-bg: #f1f1f1;
+  --dark-bg: #2a2a2a;
+  --user-bg: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  --ai-bg: linear-gradient(135deg, #eaeaea, #fff);
+  --border-radius: 18px;
+  --transition-speed: 0.2s;
+}
+
+/* Main Card Layout */
+.app-container {
+  max-width: 1200px;
+  margin: 50px auto;
+  padding: 0 20px;
+  height: calc(100vh - 40px);
+}
+
+.main-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  background: var(--primary-color);
+  color: #fff;
+  padding: 15px 20px;
+  flex-shrink: 0;
+}
+
+.card-body {
+  padding: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.two-column-layout {
+  display: flex;
+  flex-direction: row;
+  height: calc(100% - 57px); /* Subtract header height */
+}
+
+/* Chat Section */
+.chat-section {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #eee;
+  height: 100%;
+}
+
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .chat-messages {
-    background-color: #f7f7f8;
-    padding: 20px;
-    scroll-behavior: smooth;
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--light-bg);
 }
 
-.message-content {
-    max-width: 85%;
-    margin-bottom: 12px;
-    line-height: 1.6;
-    font-size: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+.chat-form {
+  border-top: 1px solid #ddd;
+  background: #fafafa;
+  padding: 15px;
+  flex-shrink: 0;
 }
 
-/* User messages */
-.justify-content-end .message-content {
-    background-color: var(--user-message-bg);
-    color: white;
-    border-radius: var(--border-radius) var(--border-radius) 0 var(--border-radius);
+.form-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-/* AI messages */
-.justify-content-start .message-content {
-    background-color: var(--ai-message-bg);
-    color: #333;
-    border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 0;
-    border: 1px solid rgba(0,0,0,0.05);
+.course-select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 16px;
 }
 
-/* Markdown content styling */
-.markdown-content {
-    white-space: pre-wrap;
+.input-area {
+  display: flex;
+  border: 1px solid var(--dark-bg);
+  border-radius: 5px;
+  background: var(--dark-bg);
+  overflow: hidden;
 }
-.markdown-content p {
-    margin-bottom: 1em;
+
+.input-area input {
+  flex: 1;
+  padding: 10px 15px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #fff;
+  background: transparent;
 }
-.markdown-content strong {
-    font-weight: 600;
+
+.send-btn {
+  padding: 0 20px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color var(--transition-speed);
 }
-.markdown-content em {
-    font-style: italic;
+
+.send-btn:hover {
+  color: var(--secondary-color);
 }
+
+/* Info Section */
+.info-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: #fff;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.stats-section, .tips-section {
+  margin-bottom: 30px;
+}
+
+.stats-section h6, .tips-section h6 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.stats-list, .tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.stats-list li {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.tips-list li {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.badge {
+  background: var(--secondary-color);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+
+/* Chat Messages */
+.chat-message {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.user-message {
+  justify-content: flex-end;
+}
+
+.ai-message {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0, 106, 255, 0.25);
+  transition: transform var(--transition-speed);
+}
+
+.user-message .message-bubble {
+  background: var(--user-bg);
+  color: #fff;
+  border-radius: var(--border-radius) var(--border-radius) 4px var(--border-radius);
+}
+
+.ai-message .message-bubble {
+  background: var(--ai-bg);
+  color: #000;
+  border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 4px;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  font-size: 1rem;
+}
+
+/* Markdown Styling */
 .markdown-content pre {
-    background-color: var(--code-bg);
-    border-radius: 8px;
-    padding: 16px;
-    position: relative;
-    margin: 1em 0;
-    border: 1px solid rgba(0,0,0,0.1);
+  background-color: #f6f8fa;
+  padding: 16px;
+  border-radius: 6px;
+  position: relative;
+  overflow-x: auto;
+  margin: 10px 0;
 }
+
 .markdown-content code {
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 0.9em;
-    background-color: rgba(27,31,35,0.05);
-    border-radius: 4px;
-    padding: 0.2em 0.4em;
-}
-.markdown-content pre code {
-    background: none;
-    padding: 0;
-    border-radius: 0;
-}
-.markdown-content ol, .markdown-content ul {
-    padding-left: 1.5em;
-    margin-bottom: 1em;
-}
-.markdown-content li {
-    margin-bottom: 0.5em;
-}
-.markdown-content h1, .markdown-content h2, .markdown-content h3 {
-    margin-top: 1em;
-    margin-bottom: 0.5em;
-    font-weight: 600;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+  background-color: rgba(27,31,35,0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
 }
 
-/* Input area */
-#chat-form {
-    background: white;
-    padding: 16px;
-    border-top: 1px solid rgba(0,0,0,0.1);
-}
-
-/* Typing indicator */
-.typing-dots {
-    display: inline-flex;
-    align-items: center;
-    height: 17px;
+/* Typing Indicator */
+.typing-indicator .typing-dots {
+  display: inline-flex;
+  align-items: center;
 }
 .typing-dots span {
-    width: 8px;
-    height: 8px;
-    margin: 0 2px;
-    background-color: #6c757d;
-    border-radius: 50%;
-    display: inline-block;
-    animation: typingAnimation 1.4s infinite ease-in-out;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background-color: #6c757d;
+  border-radius: 50%;
+  animation: typingAnimation 1.4s infinite ease-in-out;
 }
 .typing-dots span:nth-child(1) { animation-delay: 0s; }
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes typingAnimation {
-    0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-3px); }
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
 }
 
-/* Cards */
-.card {
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: none;
-}
-.card-header {
-    border-radius: 0 !important;
-    padding: 12px 16px;
-}
-
-/* Badges */
-.badge {
-    font-size: 0.85em;
-    padding: 0.5em 0.8em;
-    border-radius: 1.25rem;
-    font-weight: 500;
-}
-
-/* Form elements */
-.form-control, .form-select {
-    border-radius: 8px !important;
-    padding: 10px 15px;
-    border: 1px solid rgba(0,0,0,0.1);
-}
-.form-control:focus, .form-select:focus {
-    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
-}
-
-/* Copy button */
+/* Copy Button */
 .copy-btn {
-    transition: all 0.2s;
-    border: none;
-    background: rgba(255,255,255,0.8);
-    padding: 4px 8px;
+  border: none;
+  background: rgba(255,255,255,0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background var(--transition-speed);
 }
 .copy-btn:hover {
-    background: white;
-    opacity: 1 !important;
-}
-.copy-btn:active {
-    transform: scale(0.95);
+  background: rgba(255,255,255,1);
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 768px) {
-    .chat-messages {
-        height: 300px !important;
-    }
-    .message-content {
-        max-width: 90%;
-    }
+  .two-column-layout {
+    flex-direction: column;
+  }
+  
+  .chat-section {
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    flex: 1;
+    min-height: 60vh;
+  }
+  
+  .info-section {
+    flex: none;
+    height: auto;
+  }
+  
+  .app-container {
+    height: auto;
+  }
 }
 </style>
 {% endblock content %}
