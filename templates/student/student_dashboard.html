@@ -2,16 +2,15 @@
 {% load widget_tweaks %}
 {% block content %}
 
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style type="text/css">
       a:link {
         text-decoration: none;
@@ -19,37 +18,43 @@
   
       .order-card {
         color: rgb(255, 255, 255);
+        transition: all 0.3s ease;
+      }
+      
+      .order-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
       }
   
       .bg-c-blue {
-        background: #04868f;
+        background: linear-gradient(135deg, #04868f 0%, #04b4c0 100%);
       }
   
       .bg-c-green {
-        background:#4C51BF;
+        background: linear-gradient(135deg, #4C51BF 0%, #667EEA 100%);
       }
   
       .bg-c-yellow {
-        background: #F56565;
+        background: linear-gradient(135deg, #F56565 0%, #FC8181 100%);
       }
   
       .bg-c-pink {
-        background: #663a30;
+        background: linear-gradient(135deg, #663a30 0%, #8a5a4d 100%);
       }
   
       .bg-c-purple {
-        background: #805AD5;
+        background: linear-gradient(135deg, #805AD5 0%, #9F7AEA 100%);
       }
   
-  
       .card {
-        
-        -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        border: 1px solid black;
+        border-radius: 12px;
+        -webkit-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
         margin-bottom: 30px;
         -webkit-transition: all 0.3s ease-in-out;
         transition: all 0.3s ease-in-out;
+        overflow: hidden;
       }
   
       .card .card-block {
@@ -67,48 +72,116 @@
       .f-right {
         float: right;
       }
-      header {
-      left: 0px;
-      right: 0px;
-    }
-    
-    .ai-insights {
+      
+      .ai-insights-container {
+        background: #fff;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+      }
+      
+      .ai-insights-container h5 {
+        color: #2D3748;
+        font-weight: 600;
+        margin-bottom: 20px;
+        font-size: 1.25rem;
+        border-bottom: 2px solid #edf2f7;
+        padding-bottom: 10px;
+      }
+      
+      .ai-stat-card {
         background: #fff;
         border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .ai-insights h5 {
-        color: #2D3748;
+        padding: 20px;
         margin-bottom: 15px;
-    }
-    
-    .ai-insights ul {
-        list-style: none;
-        padding: 0;
-    }
-    
-    .ai-insights li {
-        margin-bottom: 10px;
-        padding: 8px;
-        background: #F7FAFC;
-        border-radius: 4px;
-    }
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid #edf2f7;
+        transition: all 0.3s ease;
+      }
+      
+      .ai-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      }
+      
+      .ai-stat-card i {
+        color: #4C51BF;
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+      
+      .ai-stat-card h6 {
+        font-weight: 500;
+        color: #4a5568;
+        margin-bottom: 5px;
+      }
+      
+      .ai-stat-card p {
+        font-weight: 600;
+        color: #2D3748;
+        margin-bottom: 0;
+        font-size: 1.1rem;
+      }
+      
+      .topic-badge {
+        display: inline-block;
+        background: #ebf4ff;
+        color: #4C51BF;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-right: 8px;
+        margin-bottom: 8px;
+      }
+      
+      .recent-chats-table {
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      
+      .recent-chats-table thead {
+        background: #4C51BF;
+        color: white;
+      }
+      
+      .recent-chats-table th {
+        font-weight: 500;
+        padding: 12px 15px;
+      }
+      
+      .recent-chats-table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+      }
+      
+      .recent-chats-table tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      
+      .chat-preview {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-  </head>
+</head>
 <br><br>
 
-  <div class="container">
+<div class="container">
     <div class="row">
-      
-  
       <div class="col-md-4 col-xl-6">
         <div class="card bg-c-yellow order-card">
           <div class="card-block">
             <h6 class="m-b-20">Total Exams Available</h6>
-           <h2 class="text-right"><i class="fas fa-book f-left"></i><span>{{total_course}}</span></h2>
-            
+            <h2 class="text-right"><i class="fas fa-book f-left"></i><span>{{total_course}}</span></h2>
           </div>
         </div>
       </div>
@@ -118,7 +191,6 @@
           <div class="card-block">
             <h6 class="m-b-20">Total Questions</h6>
             <h2 class="text-right"><i class="fas fa-question-circle f-left"></i><span>{{total_question}}</span></h2>
-            
           </div>
         </div>
       </div>
@@ -138,37 +210,52 @@
       </div>
     </div>
 
+    <!-- AI Learning Insights Section -->
     <div class="row mt-4">
       <div class="col-md-12">
-        <div class="ai-insights">
-          <h5>AI Learning Insights</h5>
+        <div class="ai-insights-container">
+          <h5><i class="fas fa-chart-line mr-2"></i>AI Learning Insights</h5>
           <div class="row">
+            <!-- Learning Statistics -->
             <div class="col-md-6">
-              <h6>Your Learning Statistics</h6>
-              <ul>
-                <li><i class="fas fa-chart-line"></i> Total AI Queries: {{ ai_insights.total_queries }}</li>
-                <li><i class="fas fa-clock"></i> Average Response Time: {{ ai_insights.average_response_time|floatformat:2 }}s</li>
-              </ul>
+              <div class="ai-stat-card">
+                <h6><i class="fas fa-chart-pie"></i> Your Learning Statistics</h6>
+                <div class="mt-3">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Total AI Queries</span>
+                    <p class="mb-0">{{ ai_insights.total_queries }}</p>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>Average Response Time</span>
+                    <p class="mb-0">{{ ai_insights.average_response_time|floatformat:2 }}s</p>
+                  </div>
+                </div>
+              </div>
             </div>
+            
+            <!-- Top Topics -->
             <div class="col-md-6">
-              <h6>Top Topics You've Explored</h6>
-              <ul>
-                {% for topic, count in ai_insights.top_topics %}
-                <li><i class="fas fa-bookmark"></i> {{ topic|title }} ({{ count }} queries)</li>
-                {% endfor %}
-              </ul>
+              <div class="ai-stat-card">
+                <h6><i class="fas fa-bookmark"></i> Top Topics You've Explored</h6>
+                <div class="mt-3">
+                  {% for topic, count in ai_insights.top_topics %}
+                    <span class="topic-badge">{{ topic|title }} ({{ count }})</span>
+                  {% endfor %}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Recent Interactions -->
     {% if ai_insights.recent_chats %}
     <div class="row mt-4">
       <div class="col-md-12">
-        <div class="ai-insights">
-          <h5>Recent AI Interactions</h5>
-          <div class="table-responsive">
+        <div class="ai-insights-container">
+          <h5><i class="fas fa-history mr-2"></i>Recent AI Interactions</h5>
+          <div class="table-responsive recent-chats-table">
             <table class="table table-hover">
               <thead>
                 <tr>
@@ -180,7 +267,7 @@
               <tbody>
                 {% for chat in ai_insights.recent_chats %}
                 <tr>
-                  <td>{{ chat.question|truncatechars:50 }}</td>
+                  <td class="chat-preview">{{ chat.question|truncatechars:50 }}</td>
                   <td>{{ chat.course.course_name|default:"General" }}</td>
                   <td>{{ chat.timestamp|date:"M d, Y" }}</td>
                 </tr>
@@ -192,12 +279,10 @@
       </div>
     </div>
     {% endif %}
-  </div>
-
+</div>
 
 <br><br><br><br><br><br><br><br><br><br>
 
 <script src="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
-
 
 {% endblock content %}
