@@ -82,7 +82,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CSRF_COOKIE_SECURE=False
+# Ensure CSRF settings are properly configured
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False  # Set to True in production for better security
+CSRF_USE_SESSIONS = True  # Store CSRF token in the session instead of a cookie
 ROOT_URLCONF = 'final_year_project.urls'
 
 TEMPLATES = [
