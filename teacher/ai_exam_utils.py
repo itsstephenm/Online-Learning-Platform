@@ -1,6 +1,6 @@
-import requests
-from django.conf import settings
-from django.utils import timezone
+import requests # type: ignore
+from django.conf import settings # type: ignore
+from django.utils import timezone # type: ignore
 import logging
 import random
 from openai import OpenAI
