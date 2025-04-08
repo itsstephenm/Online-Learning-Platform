@@ -1,0 +1,197 @@
+{% extends 'teacher/teacherbase.html' %}
+{% load widget_tweaks %}
+{% block content %}
+
+<div class="container py-5">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="fas fa-robot mr-2"></i> AI-Powered Exam Generation
+      </h4>
+    </div>
+    <div class="card-body">
+      <div class="row mb-4">
+        <div class="col-md-8">
+          <p class="lead">
+            Generate multiple-choice questions automatically using AI technology. Upload course materials and customize the exam parameters to create exams tailored to your needs.
+          </p>
+        </div>
+        <div class="col-md-4 text-center">
+          <i class="fas fa-cogs fa-5x text-secondary"></i>
+        </div>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" id="examForm">
+        {% csrf_token %}
+        
+        {% if error %}
+        <div class="alert alert-danger">
+          {{ error }}
+        </div>
+        {% endif %}
+
+        <div class="form-group row">
+          <div class="col-md-6 mb-3">
+            <label for="{{ exam_form.course.id_for_label }}">
+              <i class="fas fa-book mr-1"></i> {{ exam_form.course.label }}
+            </label>
+            {{ exam_form.course|add_class:"form-control" }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="{{ exam_form.title.id_for_label }}">
+              <i class="fas fa-heading mr-1"></i> {{ exam_form.title.label }}
+            </label>
+            {{ exam_form.title|add_class:"form-control" }}
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label for="{{ exam_form.description.id_for_label }}">
+            <i class="fas fa-align-left mr-1"></i> {{ exam_form.description.label }}
+          </label>
+          {{ exam_form.description|add_class:"form-control" }}
+        </div>
+
+        <div class="form-group row">
+          <div class="col-md-4 mb-3">
+            <label for="{{ exam_form.difficulty.id_for_label }}">
+              <i class="fas fa-chart-line mr-1"></i> {{ exam_form.difficulty.label }}
+            </label>
+            {{ exam_form.difficulty|add_class:"form-control" }}
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="{{ exam_form.num_questions.id_for_label }}">
+              <i class="fas fa-list-ol mr-1"></i> {{ exam_form.num_questions.label }}
+            </label>
+            {{ exam_form.num_questions|add_class:"form-control" }}
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="{{ exam_form.time_limit.id_for_label }}">
+              <i class="fas fa-clock mr-1"></i> {{ exam_form.time_limit.label }}
+            </label>
+            {{ exam_form.time_limit|add_class:"form-control" }}
+          </div>
+        </div>
+
+        <div class="form-group mb-4">
+          <label for="{{ exam_form.reference_material.id_for_label }}">
+            <i class="fas fa-file-upload mr-1"></i> {{ exam_form.reference_material.label }}
+          </label>
+          {{ exam_form.reference_material|add_class:"form-control-file" }}
+          <small class="form-text text-muted">{{ exam_form.reference_material.help_text }}</small>
+        </div>
+
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle mr-2"></i> 
+          The AI will generate multiple-choice questions based on your selected parameters. You'll be able to review and edit the questions before finalizing the exam.
+        </div>
+
+        <div class="form-group text-center mt-4">
+          <button type="submit" class="btn btn-primary btn-lg" id="generateBtn">
+            <i class="fas fa-magic mr-2"></i> Generate Exam
+          </button>
+          <a href="{% url 'teacher-dashboard' %}" class="btn btn-secondary btn-lg ml-2">
+            <i class="fas fa-arrow-left mr-2"></i> Back
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-backdrop="static" data-keyboard="false" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center p-4">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <h4 class="text-primary">Generating Exam...</h4>
+        <p class="text-muted">Please wait while the AI generates your exam questions.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Error Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header bg-danger text-white">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      <strong class="me-auto">Error</strong>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+      <span id="errorMessage"></span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .toast {
+    min-width: 300px;
+  }
+  .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('examForm');
+    const generateBtn = document.getElementById('generateBtn');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+    
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Show loading modal
+      loadingModal.show();
+      
+      // Disable submit button
+      generateBtn.disabled = true;
+      
+      // Create FormData object
+      const formData = new FormData(form);
+      
+      // Submit form via fetch
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Redirect to the review page
+          window.location.href = data.redirect_url;
+        } else {
+          throw new Error(data.error || 'Failed to generate exam');
+        }
+      })
+      .catch(error => {
+        // Hide loading modal
+        loadingModal.hide();
+        
+        // Enable submit button
+        generateBtn.disabled = false;
+        
+        // Show error toast
+        document.getElementById('errorMessage').textContent = error.message || 'An error occurred while generating the exam. Please try again.';
+        errorToast.show();
+      });
+    });
+  });
+</script>
+
+{% endblock content %} 
