@@ -26,6 +26,7 @@ django-crispy-forms==1.14.0
 django-cryptography-django5==2.2
 django-sql-explorer==5.3
 django-widget-tweaks==1.4.8
+docx2txt==0.8
 executing==2.0.1
 fastjsonschema==2.19.0
 Flask==3.0.1
@@ -62,6 +63,7 @@ nbformat==5.9.2
 nest-asyncio==1.5.8
 notebook_shim==0.2.3
 numpy==2.2.3
+openai==1.13.3
 overrides==7.4.0
 packaging==23.2
 pandas==2.2.3
@@ -79,9 +81,11 @@ pure-eval==0.2.2
 pyasn1==0.6.0
 pycparser==2.21
 Pygments==2.17.2
+PyPDF2==3.0.1
 PySimpleGUI
 python-dateutil==2.8.2
 python-json-logger==2.0.7
+python-decouple==3.8
 pytz==2020.1
 PyYAML==6.0.1
 pyzmq==25.1.1
