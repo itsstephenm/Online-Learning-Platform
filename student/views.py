@@ -4,6 +4,7 @@ from django.db.models import Sum
 from django.contrib.auth.models import Group
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required,user_passes_test
+from django.views.decorators.csrf import csrf_protect
 from django.conf import settings
 from datetime import date, timedelta, timezone
 from quiz import models as QMODEL
@@ -89,6 +90,7 @@ def start_exam_view(request,pk):
 
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
+@csrf_protect
 def calculate_marks_view(request):
     if request.COOKIES.get('course_id') is not None:
         course_id = request.COOKIES.get('course_id')
