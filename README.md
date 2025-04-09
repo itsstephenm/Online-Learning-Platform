@@ -48,6 +48,7 @@ py manage.py createsuperuser
 - Open Terminal and Execute Following Commands :
 ```
 python3 -m pip install -r requirements.txt
+python -m pip install requests
 ```
 - Download This Project Zip Folder and Extract it
 - Move to project folder in Terminal. Then run following Commands :
