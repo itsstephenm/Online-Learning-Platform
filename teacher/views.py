@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect,reverse
+from django.shortcuts import render,redirect,reverse, get_object_or_404
 from . import forms,models
 from django.db.models import Sum, Avg, Count
 from django.contrib.auth.models import Group
@@ -563,7 +563,7 @@ def adaptive_quiz_settings_view(request):
         
         # Get student skill levels for this course
         student_levels = QMODEL.StudentSkillLevel.objects.filter(course=course)
-        avg_level = student_levels.aggregate(models.Avg('current_level'))['current_level__avg'] if student_levels.exists() else None
+        avg_level = student_levels.aggregate(Avg('current_level'))['current_level__avg'] if student_levels.exists() else None
         
         # Add to our collection
         course_settings.append({
