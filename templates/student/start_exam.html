@@ -13,43 +13,107 @@
     {% csrf_token %}
     <h1 style="text-align: center;">{{course.course_name}}</h1>
     {% for q in questions%}
-    <h3 class="text-info">{{ forloop.counter }}. {{q.question}}</h3><h4 style="text-align: right;">[Marks {{q.marks}}]</h4>
-    
-    <div class="form-check mx-4">
-      <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option1}}" value="Option1">
-      <label class="form-check-label" for="option1">
-        {{q.option1}}
-      </label>
-    </div>
+    <div class="question-container" id="question-{{q.id}}" data-question-id="{{q.id}}">
+      <h3 class="text-info">{{ forloop.counter }}. {{q.question}}</h3><h4 style="text-align: right;">[Marks {{q.marks}}]</h4>
+      
+      <div class="form-check mx-4">
+        <input class="form-check-input question-option" type="radio" 
+              name="{{ forloop.counter }}" 
+              id="option1-{{q.id}}" 
+              value="Option1"
+              data-question-id="{{q.id}}"
+              onclick="trackSelection(this)">
+        <label class="form-check-label" for="option1-{{q.id}}">
+          {{q.option1}}
+        </label>
+      </div>
 
-    <div class="form-check mx-4">
-      <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option2}}" value="Option2">
-      <label class="form-check-label" for="option2">
-        {{q.option2}}
-      </label>
-    </div>
+      <div class="form-check mx-4">
+        <input class="form-check-input question-option" type="radio" 
+              name="{{ forloop.counter }}" 
+              id="option2-{{q.id}}" 
+              value="Option2"
+              data-question-id="{{q.id}}"
+              onclick="trackSelection(this)">
+        <label class="form-check-label" for="option2-{{q.id}}">
+          {{q.option2}}
+        </label>
+      </div>
 
-    <div class="form-check mx-4">
-      <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option3}}" value="Option3">
-      <label class="form-check-label" for="option3">
-        {{q.option3}}
-      </label>
-    </div>
+      <div class="form-check mx-4">
+        <input class="form-check-input question-option" type="radio" 
+              name="{{ forloop.counter }}" 
+              id="option3-{{q.id}}" 
+              value="Option3"
+              data-question-id="{{q.id}}"
+              onclick="trackSelection(this)">
+        <label class="form-check-label" for="option3-{{q.id}}">
+          {{q.option3}}
+        </label>
+      </div>
 
-    <div class="form-check mx-4">
-      <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option4}}" value="Option4">
-      <label class="form-check-label" for="option4">
-        {{q.option4}}
-      </label>
+      <div class="form-check mx-4">
+        <input class="form-check-input question-option" type="radio" 
+              name="{{ forloop.counter }}" 
+              id="option4-{{q.id}}" 
+              value="Option4"
+              data-question-id="{{q.id}}"
+              onclick="trackSelection(this)">
+        <label class="form-check-label" for="option4-{{q.id}}">
+          {{q.option4}}
+        </label>
+      </div>
     </div>
-
     {% endfor %}
     <input class="btn btn-info btn-lg" type="submit" value="Submit">  
   </form>
 </div>
 
 <script> 
+  // Initialize variables to track timing
+  let startTime = Date.now();
+  let questionTimings = {};
+  let questionSelections = {};
+  let currentFocusedQuestion = null;
+  let lastInteractionTime = Date.now();
+  
+  // Initialize timing for all questions
   document.addEventListener("DOMContentLoaded", function () {
+    // Setup timers for each question
+    let questions = document.querySelectorAll('.question-container');
+    questions.forEach(function(question) {
+      let questionId = question.dataset.questionId;
+      questionTimings[questionId] = {
+        time: 0,
+        firstInteraction: null,
+        lastInteraction: null
+      };
+      questionSelections[questionId] = null;
+    });
+    
+    // Set the first question as focused
+    if (questions.length > 0) {
+      currentFocusedQuestion = questions[0].dataset.questionId;
+    }
+    
+    // Start tracking with periodic updates
+    setInterval(updateTimings, 1000); // Update every second
+    
+    // Track when user scrolls to different questions
+    window.addEventListener('scroll', function() {
+      updateCurrentQuestion();
+      lastInteractionTime = Date.now();
+    });
+    
+    // Track user activity
+    document.addEventListener('mousemove', function() {
+      lastInteractionTime = Date.now();
+    });
+    
+    document.addEventListener('keypress', function() {
+      lastInteractionTime = Date.now();
+    });
+    
     let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
     if (csrfToken) {
       console.log("CSRF Token Found: ", csrfToken.value);
@@ -58,7 +122,71 @@
     }
   });
   
+  // Track which question the user is currently focused on
+  function updateCurrentQuestion() {
+    let questions = document.querySelectorAll('.question-container');
+    let windowMiddle = window.scrollY + (window.innerHeight / 2);
+    
+    // Find the question closest to the middle of the viewport
+    let closestQuestion = null;
+    let closestDistance = Infinity;
+    
+    questions.forEach(function(question) {
+      let rect = question.getBoundingClientRect();
+      let questionMiddle = rect.top + (rect.height / 2);
+      let distance = Math.abs(questionMiddle);
+      
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestQuestion = question;
+      }
+    });
+    
+    if (closestQuestion) {
+      currentFocusedQuestion = closestQuestion.dataset.questionId;
+    }
+  }
+  
+  // Update the timing data
+  function updateTimings() {
+    // Only update if user is active (within last 30 seconds)
+    if (Date.now() - lastInteractionTime < 30000 && currentFocusedQuestion) {
+      let timing = questionTimings[currentFocusedQuestion];
+      timing.time += 1; // Increment by 1 second
+      
+      if (!timing.firstInteraction) {
+        timing.firstInteraction = Date.now();
+      }
+      timing.lastInteraction = Date.now();
+    }
+  }
+  
+  // Track when an option is selected
+  function trackSelection(element) {
+    let questionId = element.dataset.questionId;
+    questionSelections[questionId] = element.value;
+    
+    // Update timing data
+    lastInteractionTime = Date.now();
+    let timing = questionTimings[questionId];
+    timing.lastInteraction = Date.now();
+    
+    // Save the selection and timing
+    setCookie("q_" + questionId + "_selection", element.value, 1);
+    setCookie("q_" + questionId + "_time", timing.time, 1);
+  }
+  
   function saveAns() {  
+    // Save the final timing data for all questions
+    for (let questionId in questionTimings) {
+      setCookie("q_" + questionId + "_final_time", questionTimings[questionId].time, 1);
+    }
+    
+    // Save the total exam time
+    let totalTime = Math.floor((Date.now() - startTime) / 1000);
+    setCookie("exam_total_time", totalTime, 1);
+    
+    // Save answers as before
     var ele = document.getElementsByTagName('input'); 
     for (var i = 0; i < ele.length; i++) { 
       if (ele[i].type === "radio" && ele[i].checked) {        

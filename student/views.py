@@ -97,19 +97,67 @@ def calculate_marks_view(request):
         course=QMODEL.Course.objects.get(id=course_id)
         
         total_marks=0
+        total_correct_answers = 0
+        total_incorrect_answers = 0
         questions=QMODEL.Question.objects.all().filter(course=course)
+        
+        # Get total exam time
+        total_time = int(request.COOKIES.get('exam_total_time', 0))
+        
+        # Store question attempts
+        question_attempts = []
+        
         for i in range(len(questions)):
-            
+            question = questions[i]
             selected_ans = request.COOKIES.get(str(i+1))
-            actual_answer = questions[i].answer
-            if selected_ans == actual_answer:
-                total_marks = total_marks + questions[i].marks
+            actual_answer = question.answer
+            is_correct = selected_ans == actual_answer
+            
+            # Get the time spent on this question
+            time_spent = int(request.COOKIES.get(f'q_{question.id}_final_time', 0))
+            
+            # Create QuestionAttempt object
+            if selected_ans:  # Only track if the student selected an answer
+                student = models.Student.objects.get(user_id=request.user.id)
+                attempt = QMODEL.QuestionAttempt(
+                    student=student,
+                    question=question,
+                    answer_selected=selected_ans,
+                    is_correct=is_correct,
+                    time_taken=time_spent
+                )
+                question_attempts.append(attempt)
+                
+                if is_correct:
+                    total_correct_answers += 1
+                    total_marks = total_marks + question.marks
+                else:
+                    total_incorrect_answers += 1
+            
+        # Save the result
         student = models.Student.objects.get(user_id=request.user.id)
         result = QMODEL.Result()
         result.marks=total_marks
         result.exam=course
         result.student=student
         result.save()
+        
+        # Save all question attempts
+        for attempt in question_attempts:
+            attempt.save()
+        
+        # Save the analytics data
+        if total_time > 0:
+            avg_time_per_question = total_time / len(questions) if len(questions) > 0 else 0
+            
+            analytics = QMODEL.ResultAnalytics(
+                result=result,
+                total_time=total_time,
+                average_time_per_question=avg_time_per_question,
+                correct_answers=total_correct_answers,
+                incorrect_answers=total_incorrect_answers
+            )
+            analytics.save()
 
         return HttpResponseRedirect('view-result')
 
