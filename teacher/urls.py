@@ -21,4 +21,7 @@ path('remove-question/<int:pk>', views.remove_question_view,name='remove-questio
 # AI Exam Generation URLs
 path('teacher-ai-exam', views.teacher_ai_exam_view, name='teacher-ai-exam'),
 path('teacher-review-ai-exam', views.teacher_review_ai_exam_view, name='teacher-review-ai-exam'),
+
+# Analytics Dashboard
+path('analytics-dashboard', views.analytics_dashboard_view, name='analytics-dashboard'),
 ]

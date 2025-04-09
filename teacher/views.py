@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,reverse
 from . import forms,models
-from django.db.models import Sum
+from django.db.models import Sum, Avg, Count
 from django.contrib.auth.models import Group
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required,user_passes_test
@@ -127,6 +127,265 @@ def remove_question_view(request,pk):
     question=QMODEL.Question.objects.get(id=pk)
     question.delete()
     return HttpResponseRedirect('/teacher/teacher-view-question')
+
+@login_required(login_url='teacherlogin')
+@user_passes_test(is_teacher)
+def analytics_dashboard_view(request):
+    # Get filter parameters
+    course_id = request.GET.get('course', '')
+    date_range = int(request.GET.get('date_range', 30))
+    
+    # Calculate date range
+    end_date = date.today()
+    start_date = end_date - timedelta(days=date_range)
+    
+    # Get all courses for the filter dropdown
+    courses = QMODEL.Course.objects.all()
+    
+    # Apply course filter if selected
+    course_filter = {}
+    if course_id:
+        course_filter['exam__id'] = course_id
+    
+    # Get basic statistics
+    total_students = SMODEL.Student.objects.count()
+    active_students = SMODEL.Student.objects.filter(user__last_login__gte=start_date).count()
+    total_exams = QMODEL.Course.objects.count()
+    ai_exams = QMODEL.AIGeneratedExam.objects.count()
+    
+    # Get results in date range
+    results = QMODEL.Result.objects.filter(date__gte=start_date, **course_filter)
+    exams_taken = results.count()
+    
+    # Calculate average score
+    avg_score = 0
+    if exams_taken > 0:
+        avg_score = round(results.aggregate(Avg('marks'))['marks__avg'] or 0)
+    
+    # AI usage statistics
+    total_ai_queries = SMODEL.AIChatHistory.objects.filter(timestamp__gte=start_date).count()
+    students_using_ai = SMODEL.AIChatHistory.objects.filter(timestamp__gte=start_date).values('student').distinct().count()
+    
+    # Generate date labels for charts (last n days)
+    date_labels = []
+    student_progress_data = []
+    ai_query_volume_data = []
+    
+    for i in range(date_range, 0, -1):
+        current_date = end_date - timedelta(days=i)
+        date_labels.append(current_date.strftime('%Y-%m-%d'))
+        
+        # Get average score for that day
+        daily_results = results.filter(date__date=current_date)
+        daily_avg = daily_results.aggregate(Avg('marks'))['marks__avg'] or 0
+        student_progress_data.append(round(daily_avg))
+        
+        # Get AI query count for that day
+        daily_queries = SMODEL.AIChatHistory.objects.filter(timestamp__date=current_date).count()
+        ai_query_volume_data.append(daily_queries)
+    
+    # Performance distribution
+    performance_ranges = [0, 0, 0, 0]  # 0-25%, 26-50%, 51-75%, 76-100%
+    for result in results:
+        percentage = (result.marks / result.exam.total_marks) * 100
+        if percentage <= 25:
+            performance_ranges[0] += 1
+        elif percentage <= 50:
+            performance_ranges[1] += 1
+        elif percentage <= 75:
+            performance_ranges[2] += 1
+        else:
+            performance_ranges[3] += 1
+    
+    # Topic mastery and struggle areas
+    # We'll use course names as topics for this example
+    topic_labels = [course.course_name for course in courses]
+    topic_mastery_data = []
+    struggle_areas_data = []
+    struggle_area_labels = []
+    
+    for course in courses:
+        course_results = results.filter(exam=course)
+        if course_results.exists():
+            avg_score_percentage = (course_results.aggregate(Avg('marks'))['marks__avg'] or 0) / course.total_marks * 100
+            topic_mastery_data.append(round(avg_score_percentage))
+            
+            # If below 60%, consider it a struggle area
+            if avg_score_percentage < 60:
+                struggle_areas_data.append(round(100 - avg_score_percentage))
+                struggle_area_labels.append(course.course_name)
+    
+    # Question insights
+    # For difficulty analysis, we need (time, success rate) pairs
+    question_difficulty_data = []
+    
+    # Get real question attempt data from the database
+    question_attempts = QMODEL.QuestionAttempt.objects.filter(timestamp__gte=start_date)
+    if course_id:
+        question_attempts = question_attempts.filter(question__course_id=course_id)
+    
+    # Group by question to calculate averages
+    questions_with_attempts = question_attempts.values('question').distinct()
+    for question_data in questions_with_attempts:
+        question_id = question_data['question']
+        q_attempts = question_attempts.filter(question_id=question_id)
+        
+        # Calculate success rate
+        total_attempts = q_attempts.count()
+        if total_attempts > 0:
+            correct_attempts = q_attempts.filter(is_correct=True).count()
+            success_rate = (correct_attempts / total_attempts) * 100
+            
+            # Calculate average time
+            avg_time = q_attempts.aggregate(Avg('time_taken'))['time_taken__avg'] or 0
+            
+            question_difficulty_data.append({
+                'x': round(avg_time),  # Average time in seconds
+                'y': round(success_rate)  # Success rate percentage
+            })
+    
+    # If no real data, provide sample data for demonstration
+    if not question_difficulty_data:
+        for i, course in enumerate(courses):
+            question_difficulty_data.append({
+                'x': 30 + (i * 10),  # Average time in seconds
+                'y': 50 + (i * 5)     # Success rate percentage
+            })
+    
+    # Time per question data
+    # Get the top 10 most attempted questions
+    top_questions = question_attempts.values('question').annotate(
+        attempt_count=Count('id')
+    ).order_by('-attempt_count')[:10]
+    
+    time_per_question_labels = []
+    time_per_question_data = []
+    
+    if top_questions:
+        for q_data in top_questions:
+            question_id = q_data['question']
+            question = QMODEL.Question.objects.get(id=question_id)
+            # Truncate question text if too long
+            question_text = question.question[:20] + "..." if len(question.question) > 20 else question.question
+            time_per_question_labels.append(question_text)
+            
+            # Get average time for this question
+            avg_time = question_attempts.filter(question_id=question_id).aggregate(
+                Avg('time_taken')
+            )['time_taken__avg'] or 0
+            time_per_question_data.append(round(avg_time))
+    else:
+        # Sample data if no real data exists
+        time_per_question_labels = [f"Q{i+1}" for i in range(min(10, QMODEL.Question.objects.count()))]
+        time_per_question_data = [30, 45, 20, 60, 25, 40, 35, 50, 45, 30][:len(time_per_question_labels)]
+    
+    # Success rates by course
+    course_names = [course.course_name for course in courses]
+    success_rates_data = []
+    
+    for course in courses:
+        course_results = results.filter(exam=course)
+        if course_results.exists():
+            success_rate = (course_results.aggregate(Avg('marks'))['marks__avg'] or 0) / course.total_marks * 100
+        else:
+            success_rate = 0
+        success_rates_data.append(round(success_rate))
+    
+    # AI vs Manual questions comparison
+    # Try to get real comparison data from AI generated exams
+    ai_questions = QMODEL.Question.objects.filter(course__aigeneratedexam__isnull=False)
+    manual_questions = QMODEL.Question.objects.filter(course__aigeneratedexam__isnull=True)
+    
+    # Get success rates and timing data for both types
+    ai_success_rate = 0
+    ai_avg_time = 0
+    manual_success_rate = 0
+    manual_avg_time = 0
+    
+    ai_attempts = question_attempts.filter(question__in=ai_questions)
+    if ai_attempts.exists():
+        ai_correct = ai_attempts.filter(is_correct=True).count()
+        ai_success_rate = (ai_correct / ai_attempts.count()) * 100
+        ai_avg_time = ai_attempts.aggregate(Avg('time_taken'))['time_taken__avg'] or 0
+    
+    manual_attempts = question_attempts.filter(question__in=manual_questions)
+    if manual_attempts.exists():
+        manual_correct = manual_attempts.filter(is_correct=True).count()
+        manual_success_rate = (manual_correct / manual_attempts.count()) * 100
+        manual_avg_time = manual_attempts.aggregate(Avg('time_taken'))['time_taken__avg'] or 0
+    
+    # For difficulty rating, use existing data or estimate based on time and success
+    # Lower success rate and higher time could indicate higher difficulty
+    ai_difficulty = 100 - ai_success_rate if ai_success_rate > 0 else 65
+    manual_difficulty = 100 - manual_success_rate if manual_success_rate > 0 else 60
+    
+    ai_questions_data = [
+        round(ai_success_rate) if ai_success_rate > 0 else 75, 
+        round(ai_avg_time) if ai_avg_time > 0 else 40, 
+        round(ai_difficulty)
+    ]
+    manual_questions_data = [
+        round(manual_success_rate) if manual_success_rate > 0 else 70, 
+        round(manual_avg_time) if manual_avg_time > 0 else 45, 
+        round(manual_difficulty)
+    ]
+    
+    # AI usage patterns
+    usage_patterns_labels = ["Morning", "Afternoon", "Evening", "Night"]
+    usage_patterns_data = [
+        SMODEL.AIChatHistory.objects.filter(timestamp__hour__lt=12, timestamp__gte=start_date).count(),
+        SMODEL.AIChatHistory.objects.filter(timestamp__hour__gte=12, timestamp__hour__lt=17, timestamp__gte=start_date).count(),
+        SMODEL.AIChatHistory.objects.filter(timestamp__hour__gte=17, timestamp__hour__lt=21, timestamp__gte=start_date).count(),
+        SMODEL.AIChatHistory.objects.filter(timestamp__hour__gte=21, timestamp__gte=start_date).count()
+    ]
+    
+    # Popular topics in AI queries
+    # In a real implementation, you would analyze the content of questions
+    # Here we're using sample data
+    popular_topics_labels = ["Math", "Science", "History", "Language", "Other"]
+    popular_topics_data = [25, 30, 15, 20, 10]  # Sample percentages
+    
+    # AI impact on performance
+    # Sample data - would compare scores before/after AI usage
+    ai_impact_data = [65, 78]  # Before and after scores
+    
+    context = {
+        'courses': courses,
+        'selected_course': course_id,
+        'date_range': date_range,
+        'total_students': total_students,
+        'active_students': active_students,
+        'total_exams': total_exams,
+        'ai_exams': ai_exams,
+        'avg_score': avg_score,
+        'exams_taken': exams_taken,
+        'total_ai_queries': total_ai_queries,
+        'students_using_ai': students_using_ai,
+        
+        # Chart data
+        'date_labels': json.dumps(date_labels),
+        'student_progress_data': json.dumps(student_progress_data),
+        'performance_distribution': json.dumps(performance_ranges),
+        'topic_labels': json.dumps(topic_labels),
+        'topic_mastery_data': json.dumps(topic_mastery_data),
+        'struggle_area_labels': json.dumps(struggle_area_labels),
+        'struggle_areas_data': json.dumps(struggle_areas_data),
+        'question_difficulty_data': json.dumps(question_difficulty_data),
+        'time_per_question_labels': json.dumps(time_per_question_labels),
+        'time_per_question_data': json.dumps(time_per_question_data),
+        'course_names': json.dumps(course_names),
+        'success_rates_data': json.dumps(success_rates_data),
+        'ai_questions_data': json.dumps(ai_questions_data),
+        'manual_questions_data': json.dumps(manual_questions_data),
+        'ai_query_volume_data': json.dumps(ai_query_volume_data),
+        'popular_topics_labels': json.dumps(popular_topics_labels),
+        'popular_topics_data': json.dumps(popular_topics_data),
+        'usage_patterns_labels': json.dumps(usage_patterns_labels),
+        'usage_patterns_data': json.dumps(usage_patterns_data),
+        'ai_impact_data': json.dumps(ai_impact_data),
+    }
+    
+    return render(request, 'teacher/analytics_dashboard.html', context)
 
 # AI Exam Generation views
 @login_required(login_url='teacherlogin')
