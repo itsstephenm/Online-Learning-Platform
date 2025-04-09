@@ -1,6 +1,7 @@
 from django.db import models
-
+from django.db.models import JSONField
 from student.models import Student
+
 class Course(models.Model):
    course_name = models.CharField(max_length=50)
    question_number = models.PositiveIntegerField()
@@ -63,4 +64,89 @@ class ResultAnalytics(models.Model):
     
     def __str__(self):
         return f"Analytics for {self.result}"
+
+class QuestionExplanation(models.Model):
+    """AI-generated explanations for quiz questions"""
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='explanations')
+    explanation_text = models.TextField(help_text="Detailed explanation of the question and correct answer")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Explanation for {self.question}"
+
+class StudentFeedback(models.Model):
+    """Track feedback given to students after question attempts"""
+    question_attempt = models.OneToOneField(QuestionAttempt, on_delete=models.CASCADE, related_name='feedback')
+    feedback_text = models.TextField(help_text="AI-generated feedback based on the student's answer")
+    is_correct = models.BooleanField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Feedback for {self.question_attempt}"
+
+class AdaptiveQuizSettings(models.Model):
+    """Settings for adaptive quizzing behavior by course"""
+    course = models.OneToOneField(Course, on_delete=models.CASCADE, related_name='adaptive_settings')
+    is_adaptive = models.BooleanField(default=False, help_text="Whether this course uses adaptive quizzing")
+    min_difficulty = models.PositiveIntegerField(default=1, help_text="Minimum difficulty level (1-10)")
+    max_difficulty = models.PositiveIntegerField(default=10, help_text="Maximum difficulty level (1-10)")
+    difficulty_step = models.FloatField(default=0.5, help_text="How much to adjust difficulty after each answer")
+    
+    def __str__(self):
+        return f"Adaptive settings for {self.course}"
+
+class StudentSkillLevel(models.Model):
+    """Track student skill levels by course for adaptive quizzing"""
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='skill_levels')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    current_level = models.FloatField(default=5.0, help_text="Current difficulty level (1-10)")
+    confidence = models.FloatField(default=0.5, help_text="System confidence in the current level (0-1)")
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['student', 'course']
+    
+    def __str__(self):
+        return f"{self.student}'s level in {self.course}: {self.current_level}"
+
+class ContentRecommendation(models.Model):
+    """Content recommendations for students"""
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='recommendations')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    resource_type = models.CharField(max_length=50, choices=[
+        ('course', 'Course'),
+        ('topic', 'Topic'),
+        ('article', 'Article'),
+        ('video', 'Video'),
+        ('exercise', 'Exercise'),
+        ('book', 'Book'),
+        ('other', 'Other')
+    ])
+    url = models.URLField(null=True, blank=True, help_text="Optional URL to external resource")
+    relevance_score = models.FloatField(default=0.0, help_text="Relevance score (0-1)")
+    is_viewed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Recommendation for {self.student}: {self.title}"
+
+class ReferenceDocument(models.Model):
+    """Reference documents uploaded for AI exam generation"""
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='reference_documents')
+    title = models.CharField(max_length=255)
+    document_file = models.FileField(upload_to='reference_documents/')
+    extracted_text = models.TextField(blank=True, null=True)
+    file_type = models.CharField(max_length=10, choices=[
+        ('pdf', 'PDF'),
+        ('docx', 'Word Document'),
+        ('txt', 'Text File'),
+    ])
+    uploaded_by = models.ForeignKey('teacher.Teacher', on_delete=models.CASCADE)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.title} ({self.course})"
 

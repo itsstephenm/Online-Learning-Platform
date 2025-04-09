@@ -1,0 +1,103 @@
+{% extends 'teacher/teacherbase.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <h2 class="mb-4">Adaptive Quiz Settings</h2>
+
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="alert alert-info alert-dismissible fade show">
+        <strong>About Adaptive Quizzing</strong>
+        <p>Adaptive quizzing automatically adjusts question difficulty based on student performance.</p>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      {% for item in course_settings %}
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4>{{ item.course.course_name }}</h4>
+            <span class="badge {% if item.settings.is_adaptive %}badge-light{% else %}badge-danger{% endif %}">
+              {% if item.settings.is_adaptive %}Adaptive: Enabled{% else %}Adaptive: Disabled{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-4">
+              <div class="card text-center p-2 bg-light">
+                <h5>{{ item.course.question_number }}</h5>
+                <small>Total Questions</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card text-center p-2 bg-light">
+                <h5>{{ item.student_count }}</h5>
+                <small>Students Taking</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card text-center p-2 bg-light">
+                <h5>{{ item.avg_level|default:"N/A" }}</h5>
+                <small>Avg. Skill Level</small>
+              </div>
+            </div>
+          </div>
+
+          <form method="post" action="{% url 'adaptive_quiz_settings' %}">
+            {% csrf_token %}
+            <input type="hidden" name="course_id" value="{{ item.course.id }}">
+            
+            <div class="form-group">
+              <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="is_adaptive_{{ item.course.id }}" name="is_adaptive" {% if item.settings.is_adaptive %}checked{% endif %}>
+                <label class="custom-control-label" for="is_adaptive_{{ item.course.id }}">Enable Adaptive Quizzing</label>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="min_difficulty_{{ item.course.id }}">Minimum Difficulty (1-10)</label>
+                <input type="number" class="form-control" id="min_difficulty_{{ item.course.id }}" name="min_difficulty" value="{{ item.settings.min_difficulty }}" min="1" max="9" step="0.5">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="max_difficulty_{{ item.course.id }}">Maximum Difficulty (1-10)</label>
+                <input type="number" class="form-control" id="max_difficulty_{{ item.course.id }}" name="max_difficulty" value="{{ item.settings.max_difficulty }}" min="2" max="10" step="0.5">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="difficulty_step_{{ item.course.id }}">Difficulty Step</label>
+                <input type="number" class="form-control" id="difficulty_step_{{ item.course.id }}" name="difficulty_step" value="{{ item.settings.difficulty_step }}" min="0.1" max="2.0" step="0.1">
+                <small class="form-text text-muted">How much to adjust after each quiz</small>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-success">Save Settings</button>
+          </form>
+        </div>
+      </div>
+      {% empty %}
+      <div class="alert alert-warning">
+        No courses found. Please create some courses first.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %} 

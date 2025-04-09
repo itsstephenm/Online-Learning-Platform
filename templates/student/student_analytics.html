@@ -1,0 +1,200 @@
+{% extends 'student/studentbase.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+    .analytics-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        background-color: white;
+    }
+    .analytics-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+    }
+    .analytics-body {
+        padding: 20px;
+    }
+    .progress {
+        height: 25px;
+        margin-bottom: 15px;
+    }
+    .progress-bar {
+        font-size: 14px;
+        line-height: 25px;
+    }
+    .recommendation-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        font-size: 16px;
+    }
+    .metric-box {
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .metric-label {
+        font-size: 14px;
+        color: #6c757d;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Your Learning Analytics</h2>
+            
+            <!-- Course Selector -->
+            <div class="analytics-card">
+                <div class="analytics-header">
+                    <h4>Select a Course for Detailed Analytics</h4>
+                </div>
+                <div class="analytics-body">
+                    <form method="get" action="{% url 'student_analytics' %}">
+                        <div class="form-group">
+                            <select name="course" class="form-control" onchange="this.form.submit()">
+                                <option value="">Select a course...</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}" {% if selected_course.id == course.id %}selected{% endif %}>
+                                    {{ course.course_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Course Performance Summary -->
+            <div class="analytics-card">
+                <div class="analytics-header">
+                    <h4>Course Performance Summary</h4>
+                </div>
+                <div class="analytics-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Attempts</th>
+                                    <th>Avg. Score</th>
+                                    <th>Skill Level</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for performance in course_performance %}
+                                <tr>
+                                    <td>{{ performance.course.course_name }}</td>
+                                    <td>{{ performance.attempts }}</td>
+                                    <td>{{ performance.avg_score }}</td>
+                                    <td>{{ performance.skill_level }}</td>
+                                    <td>{{ performance.confidence }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No quiz attempts yet. Take some quizzes to see your performance!</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detailed Analytics for Selected Course -->
+            {% if detailed_analytics %}
+            <div class="analytics-card">
+                <div class="analytics-header">
+                    <h4>Detailed Analytics for {{ selected_course.course_name }}</h4>
+                </div>
+                <div class="analytics-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-value">{{ detailed_analytics.total_questions }}</div>
+                                <div class="metric-label">Total Questions Attempted</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-value">{{ detailed_analytics.accuracy }}%</div>
+                                <div class="metric-label">Accuracy Rate</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-value">{{ detailed_analytics.average_time }}s</div>
+                                <div class="metric-label">Avg. Time per Question</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-value">{{ detailed_analytics.skill_level }}</div>
+                                <div class="metric-label">Current Skill Level (1-10)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Skill Level Progress -->
+                    <div class="mt-4">
+                        <h5>Your Skill Level</h5>
+                        <div class="progress">
+                            {% if detailed_analytics.skill_level|stringformat:"s" != "Not available yet" %}
+                            {% with skill_level=detailed_analytics.skill_level|floatformat:1 %}
+                            <div class="progress-bar bg-info" role="progressbar" 
+                                style="width: {% widthratio skill_level 10 100 %}%;" 
+                                aria-valuenow="{{ skill_level }}" 
+                                aria-valuemin="1" 
+                                aria-valuemax="10">
+                                Skill Level: {{ skill_level }} / 10
+                            </div>
+                            {% endwith %}
+                            {% else %}
+                            <div class="progress-bar bg-secondary" role="progressbar" 
+                                style="width: 0%">
+                                No data available
+                            </div>
+                            {% endif %}
+                        </div>
+                        <p class="text-muted small">Your skill level increases as you correctly answer more difficult questions.</p>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="mt-4">
+                        <h5>Recommendations for Improvement</h5>
+                        {% for recommendation in detailed_analytics.recommendations %}
+                        <div class="recommendation-item">
+                            <i class="fas fa-lightbulb mr-2"></i> {{ recommendation }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% elif selected_course %}
+            <div class="analytics-card">
+                <div class="analytics-header">
+                    <h4>Detailed Analytics for {{ selected_course.course_name }}</h4>
+                </div>
+                <div class="analytics-body">
+                    <p class="text-center">No quiz attempts found for this course. Take a quiz to see detailed analytics!</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock content %} 

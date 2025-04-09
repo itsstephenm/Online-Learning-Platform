@@ -285,40 +285,189 @@ def generate_general_question(index, course_name, marks):
 
 def save_ai_generated_exam(course, title, difficulty, questions, description=None, time_limit=60):
     """
-    Save an AI-generated exam and its questions to the database
+    Save an AI-generated exam and its questions to the database.
     
     Args:
         course: Course object
         title: Exam title
         difficulty: Difficulty level
         questions: List of question dictionaries
-        description: Optional description
+        description: Optional exam description
         time_limit: Time limit in minutes
         
     Returns:
-        AIGeneratedExam object
+        The created AIGeneratedExam object
     """
-    # Create the exam
-    exam = AIGeneratedExam.objects.create(
-        course=course,
-        title=title,
-        description=description,
-        difficulty=difficulty,
-        time_limit=time_limit,
-        approved=False
-    )
-    
-    # Create the questions
-    for q in questions:
-        Question.objects.create(
+    try:
+        # Create AI generated exam record
+        ai_exam = AIGeneratedExam.objects.create(
             course=course,
-            marks=q['marks'],
-            question=q['question'],
-            option1=q['option1'],
-            option2=q['option2'],
-            option3=q['option3'],
-            option4=q['option4'],
-            answer=q['answer']
+            title=title,
+            description=description,
+            difficulty=difficulty,
+            time_limit=time_limit
         )
+        
+        # Add questions to the course
+        for q_data in questions:
+            Question.objects.create(
+                course=course,
+                marks=q_data.get('marks', 1),
+                question=q_data.get('question', ''),
+                option1=q_data.get('option1', ''),
+                option2=q_data.get('option2', ''),
+                option3=q_data.get('option3', ''),
+                option4=q_data.get('option4', ''),
+                answer=q_data.get('answer', 'Option1')
+            )
+            
+        return ai_exam
+    except Exception as e:
+        logger.error(f"Error saving AI generated exam: {str(e)}")
+        raise
+
+def process_reference_document(document):
+    """
+    Extract text from an uploaded reference document.
     
-    return exam 
+    Args:
+        document: ReferenceDocument object
+        
+    Returns:
+        Extracted text content
+    """
+    from quiz.models import ReferenceDocument
+    
+    if document.extracted_text:
+        logger.info(f"Using cached extracted text for document {document.id}")
+        return document.extracted_text
+    
+    try:
+        file_path = document.document_file.path
+        file_type = document.file_type
+        
+        if file_type == 'pdf':
+            import PyPDF2
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text()
+        elif file_type == 'docx':
+            import docx2txt
+            text = docx2txt.process(file_path)
+        elif file_type == 'txt':
+            with open(file_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+        else:
+            logger.error(f"Unsupported file type: {file_type}")
+            text = ""
+        
+        # Update the document with extracted text
+        document.extracted_text = text
+        document.save()
+        
+        return text
+    except Exception as e:
+        logger.error(f"Error extracting text from document: {str(e)}")
+        return ""
+
+def get_ai_exam_questions_from_references(course, difficulty, reference_documents, num_questions=10):
+    """
+    Generate exam questions using AI based on reference documents.
+    
+    Args:
+        course: Course object
+        difficulty: String indicating difficulty level (easy, medium, hard)
+        reference_documents: List of ReferenceDocument objects
+        num_questions: Number of questions to generate
+        
+    Returns:
+        List of generated question dictionaries
+    """
+    # If no API key is configured, use mock exam questions
+    if not OPENROUTER_API_KEY:
+        logger.info("No OpenRouter API key configured, using mock exam questions")
+        return get_mock_exam_questions(course, difficulty, num_questions)
+    
+    # Extract text from reference documents
+    reference_texts = []
+    for document in reference_documents:
+        text = process_reference_document(document)
+        if text:
+            # Truncate very long documents if needed
+            if len(text) > 10000:
+                text = text[:10000] + "...[content truncated]..."
+            reference_texts.append(text)
+    
+    # If no reference texts were successfully extracted, fall back to standard generation
+    if not reference_texts:
+        logger.warning("No reference texts extracted, falling back to standard question generation")
+        return get_ai_exam_questions(course, difficulty, num_questions)
+    
+    combined_text = "\n\n===DOCUMENT SEPARATOR===\n\n".join(reference_texts)
+    
+    system_message = f"""You are an expert educational assistant generating multiple-choice questions for exams.
+    Generate {num_questions} multiple-choice questions for a {difficulty} level exam on {course.course_name}.
+    
+    Base your questions ONLY on the reference material provided. Do not include concepts or information not covered in the reference material.
+    
+    For each question, provide:
+    1. The question text
+    2. Four answer options labeled as option1, option2, option3, and option4
+    3. The correct answer (indicated as Option1, Option2, Option3, or Option4)
+    4. The number of marks for the question (between 1-5 based on difficulty)
+    
+    Format your response as a JSON array of objects with the following structure:
+    [
+        {{
+            "question": "Question text here",
+            "option1": "First option",
+            "option2": "Second option",
+            "option3": "Third option",
+            "option4": "Fourth option",
+            "answer": "Option1",
+            "marks": 2
+        }},
+        // More questions...
+    ]
+    """
+    
+    try:
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:3000'
+        }
+        payload = {
+            "model": OPENROUTER_MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": f"Reference material:\n\n{combined_text}\n\nGenerate {num_questions} multiple-choice questions for a {difficulty} level exam on {course.course_name} based on this material."}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 4000,
+            "response_format": {"type": "json_object"}
+        }
+        
+        response = requests.post(url, headers=headers, json=payload)
+        response_data = response.json()
+        
+        if response.status_code == 200:
+            try:
+                content = response_data['choices'][0]['message']['content']
+                # Parse JSON response to get questions
+                import json
+                questions_data = json.loads(content)
+                return questions_data
+            except (KeyError, json.JSONDecodeError) as e:
+                logger.error(f"Error parsing API response: {str(e)}")
+                return get_mock_exam_questions(course, difficulty, num_questions)
+        else:
+            logger.error(f"API error: {response_data}")
+            return get_mock_exam_questions(course, difficulty, num_questions)
+            
+    except Exception as e:
+        logger.error(f"Error in get_ai_exam_questions_from_references: {str(e)}")
+        return get_mock_exam_questions(course, difficulty, num_questions) 

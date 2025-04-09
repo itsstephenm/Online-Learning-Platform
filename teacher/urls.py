@@ -24,4 +24,7 @@ path('teacher-review-ai-exam', views.teacher_review_ai_exam_view, name='teacher-
 
 # Analytics Dashboard
 path('analytics-dashboard', views.analytics_dashboard_view, name='analytics-dashboard'),
+
+# Adaptive Quiz Settings
+path('adaptive-quiz-settings', views.adaptive_quiz_settings_view, name='adaptive_quiz_settings'),
 ]

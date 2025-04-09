@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,reverse, get_object_or_404
 from . import forms,models
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.contrib.auth.models import Group
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required,user_passes_test
@@ -80,7 +80,24 @@ def take_exam_view(request,pk):
 @user_passes_test(is_student)
 def start_exam_view(request,pk):
     course=QMODEL.Course.objects.get(id=pk)
-    questions=QMODEL.Question.objects.all().filter(course=course)
+    student = models.Student.objects.get(user_id=request.user.id)
+    
+    # Check if adaptive quizzing is enabled for this course
+    try:
+        adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
+        is_adaptive = adaptive_settings.is_adaptive
+    except QMODEL.AdaptiveQuizSettings.DoesNotExist:
+        is_adaptive = False
+    
+    # Get questions based on adaptive settings or standard approach
+    if is_adaptive:
+        # Import our new adaptive quiz utility
+        from quiz.adaptive_quiz_utils import get_adaptive_questions
+        questions = get_adaptive_questions(student, course, course.question_number)
+    else:
+        # Fallback to existing behavior
+        questions = QMODEL.Question.objects.all().filter(course=course)
+    
     if request.method=='POST':
         pass
     response= render(request,'student/start_exam.html',{'course':course,'questions':questions})
@@ -94,18 +111,27 @@ def start_exam_view(request,pk):
 def calculate_marks_view(request):
     if request.COOKIES.get('course_id') is not None:
         course_id = request.COOKIES.get('course_id')
-        course=QMODEL.Course.objects.get(id=course_id)
+        course = QMODEL.Course.objects.get(id=course_id)
         
-        total_marks=0
+        total_marks = 0
         total_correct_answers = 0
         total_incorrect_answers = 0
-        questions=QMODEL.Question.objects.all().filter(course=course)
+        questions = QMODEL.Question.objects.all().filter(course=course)
         
         # Get total exam time
         total_time = int(request.COOKIES.get('exam_total_time', 0))
         
         # Store question attempts
         question_attempts = []
+        
+        student = models.Student.objects.get(user_id=request.user.id)
+        
+        # Check if course has adaptive settings
+        try:
+            adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
+            is_adaptive = adaptive_settings.is_adaptive
+        except QMODEL.AdaptiveQuizSettings.DoesNotExist:
+            is_adaptive = False
         
         for i in range(len(questions)):
             question = questions[i]
@@ -118,7 +144,6 @@ def calculate_marks_view(request):
             
             # Create QuestionAttempt object
             if selected_ans:  # Only track if the student selected an answer
-                student = models.Student.objects.get(user_id=request.user.id)
                 attempt = QMODEL.QuestionAttempt(
                     student=student,
                     question=question,
@@ -133,18 +158,45 @@ def calculate_marks_view(request):
                     total_marks = total_marks + question.marks
                 else:
                     total_incorrect_answers += 1
-            
+        
         # Save the result
-        student = models.Student.objects.get(user_id=request.user.id)
         result = QMODEL.Result()
-        result.marks=total_marks
-        result.exam=course
-        result.student=student
+        result.marks = total_marks
+        result.exam = course
+        result.student = student
         result.save()
         
-        # Save all question attempts
+        # Save all question attempts and generate AI feedback
+        saved_attempts = []
         for attempt in question_attempts:
             attempt.save()
+            saved_attempts.append(attempt)
+            
+            # Generate AI feedback for this attempt
+            # Note: This is done asynchronously to avoid slow page load
+            try:
+                from .ai_utils import get_ai_feedback
+                
+                # We'll generate feedback in the background to avoid delaying the page load
+                # In a production app, this would be done with Celery or similar
+                # For now, we'll do it in memory but not wait for the result
+                import threading
+                thread = threading.Thread(target=get_ai_feedback, args=(attempt,))
+                thread.daemon = True
+                thread.start()
+            except Exception as e:
+                logger.error(f"Error scheduling feedback generation: {str(e)}")
+        
+        # Update student skill level if adaptive quizzing is enabled
+        if is_adaptive and saved_attempts:
+            from quiz.adaptive_quiz_utils import update_skill_level
+            
+            try:
+                # Update skill level based on all attempts in this quiz
+                update_skill_level(student, course, saved_attempts)
+                logger.info(f"Updated skill level for student {student.id} in course {course.id}")
+            except Exception as e:
+                logger.error(f"Error updating skill level: {str(e)}")
         
         # Save the analytics data
         if total_time > 0:
@@ -158,6 +210,22 @@ def calculate_marks_view(request):
                 incorrect_answers=total_incorrect_answers
             )
             analytics.save()
+        
+        # Generate content recommendations based on performance
+        try:
+            from .ai_utils import generate_content_recommendations
+            
+            # We'll generate recommendations in the background
+            import threading
+            thread = threading.Thread(target=generate_content_recommendations, args=(student, course))
+            thread.daemon = True
+            thread.start()
+        except Exception as e:
+            logger.error(f"Error scheduling recommendation generation: {str(e)}")
+        
+        # Save attempts and result ID in session for viewing feedback later
+        request.session['last_result_id'] = result.id
+        request.session['last_attempt_ids'] = [attempt.id for attempt in saved_attempts]
 
         return HttpResponseRedirect('view-result')
 
@@ -166,13 +234,99 @@ def calculate_marks_view(request):
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
 def view_result_view(request):
-    courses=QMODEL.Course.objects.all()
-    return render(request,'student/view_result.html',{'courses':courses})
+    courses = QMODEL.Course.objects.all()
     
+    # Check if we have a recent quiz result to show
+    last_result_id = request.session.get('last_result_id')
+    last_attempt_ids = request.session.get('last_attempt_ids', [])
+    
+    recent_result = None
+    recent_attempts = []
+    
+    if last_result_id:
+        try:
+            recent_result = QMODEL.Result.objects.get(id=last_result_id)
+            # Clear from session after retrieving
+            del request.session['last_result_id']
+        except QMODEL.Result.DoesNotExist:
+            pass
+    
+    if last_attempt_ids:
+        recent_attempts = QMODEL.QuestionAttempt.objects.filter(id__in=last_attempt_ids)
+        # Clear from session after retrieving
+        if 'last_attempt_ids' in request.session:
+            del request.session['last_attempt_ids']
+    
+    # Get recommendations for the student
+    student = models.Student.objects.get(user_id=request.user.id)
+    recommendations = QMODEL.ContentRecommendation.objects.filter(
+        student=student,
+        is_viewed=False
+    ).order_by('-relevance_score', '-created_at')[:5]
+    
+    context = {
+        'courses': courses,
+        'recent_result': recent_result,
+        'recent_attempts': recent_attempts,
+        'recommendations': recommendations
+    }
+    
+    return render(request, 'student/view_result.html', context)
 
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
-def check_marks_view(request,pk):
+def question_feedback_view(request, attempt_id):
+    """View detailed feedback and explanation for a quiz question attempt"""
+    attempt = get_object_or_404(QMODEL.QuestionAttempt, id=attempt_id, student__user=request.user)
+    question = attempt.question
+    
+    # Get feedback for this attempt
+    try:
+        feedback = QMODEL.StudentFeedback.objects.get(question_attempt=attempt)
+    except QMODEL.StudentFeedback.DoesNotExist:
+        # If feedback doesn't exist yet, generate it
+        from .ai_utils import get_ai_feedback
+        feedback_text = get_ai_feedback(attempt)
+        feedback = QMODEL.StudentFeedback.objects.create(
+            question_attempt=attempt,
+            feedback_text=feedback_text,
+            is_correct=attempt.is_correct
+        )
+    
+    # Get explanation for this question
+    try:
+        explanation = QMODEL.QuestionExplanation.objects.get(question=question)
+    except QMODEL.QuestionExplanation.DoesNotExist:
+        # If explanation doesn't exist yet, generate it
+        from .ai_utils import get_ai_explanation
+        explanation_text = get_ai_explanation(question)
+        explanation = QMODEL.QuestionExplanation.objects.create(
+            question=question,
+            explanation_text=explanation_text
+        )
+    
+    # Get recommendations related to this topic
+    recommendations = []
+    topics = extract_topics(question.question)
+    if topics:
+        recommendations = QMODEL.ContentRecommendation.objects.filter(
+            student__user=request.user,
+            description__icontains=topics[0]  # Simple matching for demo
+        ).order_by('-relevance_score')[:3]
+    
+    context = {
+        'attempt': attempt,
+        'question': question,
+        'feedback': feedback,
+        'explanation': explanation,
+        'recommendations': recommendations
+    }
+    
+    return render(request, 'student/question_feedback.html', context)
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def check_marks_view(request, pk):
     course=QMODEL.Course.objects.get(id=pk)
     student = models.Student.objects.get(user_id=request.user.id)
     results= QMODEL.Result.objects.all().filter(exam=course).filter(student=student)
@@ -271,3 +425,61 @@ def get_ai_response_view(request):
             return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def student_analytics_view(request):
+    student = models.Student.objects.get(user_id=request.user.id)
+    course_id = request.GET.get('course')
+    
+    # Get all courses
+    courses = QMODEL.Course.objects.all()
+    
+    # If course is specified, get detailed analytics for that course
+    detailed_analytics = None
+    selected_course = None
+    
+    if course_id:
+        try:
+            selected_course = QMODEL.Course.objects.get(id=course_id)
+            # Use our analytics generator
+            from quiz.adaptive_quiz_utils import generate_quiz_analytics
+            detailed_analytics = generate_quiz_analytics(student, selected_course)
+        except QMODEL.Course.DoesNotExist:
+            pass
+    
+    # Get high-level analytics across all courses
+    course_performance = []
+    for course in courses:
+        # Get total results and average score
+        results = QMODEL.Result.objects.filter(student=student, exam=course)
+        
+        if results.exists():
+            avg_score = results.aggregate(avg_marks=Sum('marks') / Count('id'))['avg_marks'] or 0
+            attempts = results.count()
+            
+            # Get skill level if it exists
+            try:
+                skill_level = QMODEL.StudentSkillLevel.objects.get(student=student, course=course)
+                level = round(skill_level.current_level, 1)
+                confidence = round(skill_level.confidence * 100, 1)
+            except QMODEL.StudentSkillLevel.DoesNotExist:
+                level = "N/A"
+                confidence = "N/A"
+            
+            course_performance.append({
+                'course': course,
+                'attempts': attempts,
+                'avg_score': round(avg_score, 1),
+                'skill_level': level,
+                'confidence': confidence
+            })
+    
+    context = {
+        'courses': courses,
+        'course_performance': course_performance,
+        'selected_course': selected_course,
+        'detailed_analytics': detailed_analytics
+    }
+    
+    return render(request, 'student/student_analytics.html', context)

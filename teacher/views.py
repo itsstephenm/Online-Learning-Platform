@@ -14,6 +14,7 @@ import docx2txt
 import PyPDF2
 from io import BytesIO
 from .ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam
+from django.contrib import messages
 
 
 #for showing signup/login button for teacher
@@ -538,3 +539,73 @@ def teacher_review_ai_exam_view(request):
             return redirect('teacher-view-exam')
         
     return render(request, 'teacher/teacher_review_ai_exam.html', context)
+
+@login_required(login_url='teacherlogin')
+@user_passes_test(is_teacher)
+def adaptive_quiz_settings_view(request):
+    """View for managing adaptive quiz settings for each course"""
+    courses = QMODEL.Course.objects.all()
+    
+    # Create a dictionary to hold course settings
+    course_settings = []
+    
+    for course in courses:
+        # Get or create settings for this course
+        settings, created = QMODEL.AdaptiveQuizSettings.objects.get_or_create(
+            course=course,
+            defaults={
+                'is_adaptive': False,
+                'min_difficulty': 1,
+                'max_difficulty': 10,
+                'difficulty_step': 0.5
+            }
+        )
+        
+        # Get student skill levels for this course
+        student_levels = QMODEL.StudentSkillLevel.objects.filter(course=course)
+        avg_level = student_levels.aggregate(models.Avg('current_level'))['current_level__avg'] if student_levels.exists() else None
+        
+        # Add to our collection
+        course_settings.append({
+            'course': course,
+            'settings': settings,
+            'student_count': student_levels.count(),
+            'avg_level': round(avg_level, 2) if avg_level else None
+        })
+    
+    if request.method == 'POST':
+        course_id = request.POST.get('course_id')
+        is_adaptive = request.POST.get('is_adaptive') == 'on'
+        min_difficulty = float(request.POST.get('min_difficulty', 1))
+        max_difficulty = float(request.POST.get('max_difficulty', 10))
+        difficulty_step = float(request.POST.get('difficulty_step', 0.5))
+        
+        # Validate inputs
+        if min_difficulty >= max_difficulty:
+            messages.error(request, 'Minimum difficulty must be less than maximum difficulty')
+        elif difficulty_step <= 0:
+            messages.error(request, 'Difficulty step must be greater than 0')
+        else:
+            # Update settings
+            try:
+                course = QMODEL.Course.objects.get(id=course_id)
+                settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
+                settings.is_adaptive = is_adaptive
+                settings.min_difficulty = min_difficulty
+                settings.max_difficulty = max_difficulty
+                settings.difficulty_step = difficulty_step
+                settings.save()
+                
+                messages.success(request, f'Settings updated for {course.course_name}')
+                
+                # Redirect to refresh the page (and avoid resubmission)
+                return redirect('adaptive_quiz_settings')
+                
+            except Exception as e:
+                messages.error(request, f'Error updating settings: {str(e)}')
+    
+    context = {
+        'course_settings': course_settings
+    }
+    
+    return render(request, 'teacher/adaptive_quiz_settings.html', context)

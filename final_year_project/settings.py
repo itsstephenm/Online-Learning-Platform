@@ -188,4 +188,7 @@ EXPLORER_CONNECTIONS = {'Default': 'default'}
 EXPLORER_DEFAULT_CONNECTION = 'default'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Fix for Auto-created primary key warnings
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 

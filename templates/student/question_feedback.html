@@ -1,0 +1,213 @@
+{% extends 'student/studentbase.html' %}
+{% block content %}
+{% load static %}
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .question-card {
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+      font-weight: 600;
+    }
+    .feedback-card {
+      border-left: 5px solid {% if attempt.is_correct %}#28a745{% else %}#dc3545{% endif %};
+    }
+    .explanation-card {
+      border-left: 5px solid #17a2b8;
+    }
+    .recommendation-card {
+      border-left: 5px solid #fd7e14;
+      margin-bottom: 15px;
+    }
+    .option-correct {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .option-incorrect {
+      color: #dc3545;
+      text-decoration: line-through;
+    }
+    .option-selected {
+      font-weight: bold;
+    }
+    .markdown-content img {
+      max-width: 100%;
+    }
+    .markdown-content code {
+      background-color: #f8f9fa;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .markdown-content pre {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<div class="container py-4">
+  <div class="row">
+    <div class="col-12 mb-4">
+      <h1 class="display-6">Question Feedback</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'student-dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'view-result' %}">Results</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Feedback</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Question Card -->
+      <div class="card question-card mb-4">
+        <div class="card-header bg-primary text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Question</span>
+            <span class="badge bg-light text-dark">{{ question.marks }} marks</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">{{ question.question }}</h5>
+          <hr>
+          <div class="options-list">
+            <div class="form-check mb-2 {% if question.answer == 'Option1' %}option-correct{% elif attempt.answer_selected == 'Option1' and question.answer != 'Option1' %}option-incorrect{% endif %} {% if attempt.answer_selected == 'Option1' %}option-selected{% endif %}">
+              <input class="form-check-input" type="radio" disabled {% if attempt.answer_selected == 'Option1' %}checked{% endif %}>
+              <label class="form-check-label">
+                {{ question.option1 }}
+                {% if question.answer == 'Option1' %}<i class="fas fa-check-circle text-success ml-2"></i>{% endif %}
+              </label>
+            </div>
+            
+            <div class="form-check mb-2 {% if question.answer == 'Option2' %}option-correct{% elif attempt.answer_selected == 'Option2' and question.answer != 'Option2' %}option-incorrect{% endif %} {% if attempt.answer_selected == 'Option2' %}option-selected{% endif %}">
+              <input class="form-check-input" type="radio" disabled {% if attempt.answer_selected == 'Option2' %}checked{% endif %}>
+              <label class="form-check-label">
+                {{ question.option2 }}
+                {% if question.answer == 'Option2' %}<i class="fas fa-check-circle text-success ml-2"></i>{% endif %}
+              </label>
+            </div>
+            
+            <div class="form-check mb-2 {% if question.answer == 'Option3' %}option-correct{% elif attempt.answer_selected == 'Option3' and question.answer != 'Option3' %}option-incorrect{% endif %} {% if attempt.answer_selected == 'Option3' %}option-selected{% endif %}">
+              <input class="form-check-input" type="radio" disabled {% if attempt.answer_selected == 'Option3' %}checked{% endif %}>
+              <label class="form-check-label">
+                {{ question.option3 }}
+                {% if question.answer == 'Option3' %}<i class="fas fa-check-circle text-success ml-2"></i>{% endif %}
+              </label>
+            </div>
+            
+            <div class="form-check mb-2 {% if question.answer == 'Option4' %}option-correct{% elif attempt.answer_selected == 'Option4' and question.answer != 'Option4' %}option-incorrect{% endif %} {% if attempt.answer_selected == 'Option4' %}option-selected{% endif %}">
+              <input class="form-check-input" type="radio" disabled {% if attempt.answer_selected == 'Option4' %}checked{% endif %}>
+              <label class="form-check-label">
+                {{ question.option4 }}
+                {% if question.answer == 'Option4' %}<i class="fas fa-check-circle text-success ml-2"></i>{% endif %}
+              </label>
+            </div>
+          </div>
+          <div class="mt-3 text-muted">
+            <small>You answered in {{ attempt.time_taken }} seconds</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Card -->
+      <div class="card feedback-card mb-4">
+        <div class="card-header {% if attempt.is_correct %}bg-success{% else %}bg-danger{% endif %} text-white">
+          <div class="d-flex align-items-center">
+            <i class="fas {% if attempt.is_correct %}fa-check-circle{% else %}fa-times-circle{% endif %} me-2"></i>
+            <span>Your Answer is {% if attempt.is_correct %}Correct{% else %}Incorrect{% endif %}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="markdown-content" id="feedback-content">
+            {{ feedback.feedback_text|safe }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Explanation Card -->
+      <div class="card explanation-card">
+        <div class="card-header bg-info text-white">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-book-open me-2"></i>
+            <span>Detailed Explanation</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="markdown-content" id="explanation-content">
+            {{ explanation.explanation_text|safe }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- Recommendations -->
+      <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-lightbulb me-2"></i>
+            <span>Recommended Resources</span>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if recommendations %}
+            {% for rec in recommendations %}
+              <div class="recommendation-card p-3">
+                <h6 class="mb-2">{{ rec.title }}</h6>
+                <p class="mb-2 small">{{ rec.description }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge bg-secondary">{{ rec.resource_type }}</span>
+                  {% if rec.url %}
+                    <a href="{{ rec.url }}" target="_blank" class="btn btn-sm btn-outline-primary">View Resource</a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted">No specific recommendations available for this question.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Navigation buttons -->
+      <div class="d-grid gap-2">
+        <a href="{% url 'view-result' %}" class="btn btn-outline-primary">
+          <i class="fas fa-arrow-left me-2"></i> Back to Results
+        </a>
+        <a href="{% url 'student-dashboard' %}" class="btn btn-outline-secondary">
+          <i class="fas fa-home me-2"></i> Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Convert markdown to HTML
+    const feedbackContent = document.getElementById('feedback-content');
+    const explanationContent = document.getElementById('explanation-content');
+    
+    if (feedbackContent.innerHTML.trim()) {
+      feedbackContent.innerHTML = marked.parse(feedbackContent.innerHTML.trim());
+    }
+    
+    if (explanationContent.innerHTML.trim()) {
+      explanationContent.innerHTML = marked.parse(explanationContent.innerHTML.trim());
+    }
+  });
+</script>
+
+{% endblock content %} 
