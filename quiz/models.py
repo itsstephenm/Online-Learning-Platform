@@ -41,3 +41,26 @@ class AIGeneratedExam(models.Model):
     def __str__(self):
         return self.title
 
+class QuestionAttempt(models.Model):
+    """Track individual question attempts by students"""
+    student = models.ForeignKey('student.Student', on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    answer_selected = models.CharField(max_length=200)
+    is_correct = models.BooleanField()
+    time_taken = models.PositiveIntegerField(help_text="Time taken in seconds")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.student} - {self.question} - {'Correct' if self.is_correct else 'Incorrect'}"
+
+class ResultAnalytics(models.Model):
+    """Extended analytics data for quiz results"""
+    result = models.OneToOneField(Result, on_delete=models.CASCADE, related_name='analytics')
+    total_time = models.PositiveIntegerField(help_text="Total time taken in seconds")
+    average_time_per_question = models.FloatField()
+    correct_answers = models.PositiveIntegerField()
+    incorrect_answers = models.PositiveIntegerField()
+    
+    def __str__(self):
+        return f"Analytics for {self.result}"
+
