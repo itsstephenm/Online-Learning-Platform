@@ -48,7 +48,25 @@
       <h4>{{request.user.first_name}}</h4>
       <h6>Student</h6>
     </div>
-
+    
+    <!-- Better contrast for sidebar links with explicit styling -->
+    <style>
+      .sidebar a {
+        color: var(--text-color) !important;
+        opacity: 1 !important;
+      }
+      .sidebar a i {
+        opacity: 1 !important;
+      }
+      .sidebar a.active {
+        background: var(--primary-color);
+        color: white !important;
+      }
+      .sidebar a.active i {
+        color: white !important;
+      }
+    </style>
+    
     <a href="/student/student-dashboard" class="{% if request.path == '/student/student-dashboard' %}active{% endif %}">
       <i class="fas fa-tachometer-alt"></i>
       <span>Dashboard</span>

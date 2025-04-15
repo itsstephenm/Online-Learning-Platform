@@ -604,17 +604,15 @@ a:hover {
   }
 }
 
-/* Fixes for header and sidebar */
-
-/* Fixed header with consistent layout */
+/* Improved header design for more professional look */
 header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: var(--header-height);
-  background: var(--primary-color);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
   padding: 0 20px;
   display: flex;
   align-items: center;
@@ -656,7 +654,7 @@ header {
   position: fixed;
   top: var(--header-height);
   left: 0;
-  width: var(--sidebar-width);
+  width: var(--sidebar-width) !important;
   height: calc(100vh - var(--header-height));
   background: #fff;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
@@ -666,16 +664,16 @@ header {
   border-right: 1px solid var(--border-color);
 }
 
-/* Professional sidebar profile section */
+/* More professional sidebar profile section */
 .sidebar-profile {
   padding: 25px 0;
   text-align: center;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 10px;
-  background-color: var(--bg-secondary);
+  background: linear-gradient(145deg, var(--bg-secondary) 0%, var(--bg-color) 100%);
 }
 
-/* Fixed profile image */
+/* Fix profile image display across templates */
 .profile_image {
   width: 100px;
   height: 100px;
@@ -684,101 +682,50 @@ header {
   border: 3px solid var(--primary-color);
   padding: 3px;
   background: white;
-  display: block;
+  display: block !important;
   margin: 0 auto 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Improved sidebar navigation items */
-.sidebar a {
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  color: var(--text-color);
-  transition: all 0.3s ease;
-  margin: 2px 8px;
-  border-radius: 8px;
-  font-weight: 500;
+/* Override any template-specific profile image styles */
+img.profile_image {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-.sidebar a:hover {
-  background: var(--bg-secondary);
-  color: var(--primary-color);
-  transform: translateX(5px);
+/* Ensure consistent sidebar width across templates */
+.sidebar {
+  width: var(--sidebar-width) !important;
+  min-width: var(--sidebar-width) !important;
 }
 
-.sidebar a.active {
-  background: var(--primary-color);
-  color: white !important;
-  transform: none;
+/* Fix text contrast in dark themes */
+body.dark-theme .sidebar a,
+body.dark-theme .sidebar i,
+body.dark-theme .sidebar h4,
+body.dark-theme .sidebar h6 {
+  color: #f1f5f9 !important;
 }
 
-.sidebar i {
-  font-size: 1.2rem;
-  margin-right: 12px;
-  width: 24px;
-  text-align: center;
-  opacity: 0.85;
-}
-
-.sidebar a.active i {
-  color: white;
-  opacity: 1;
-}
-
-.sidebar a span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Student info styling */
-.sidebar h4 {
-  color: var(--text-color);
-  font-weight: 600;
-  font-size: 1.2rem;
-  margin: 10px 0 5px;
-}
-
-.sidebar h6 {
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: 0.9rem;
-  margin-bottom: 0;
-}
-
-/* Fixed mobile sidebar with proper styling */
+/* Fix for horizontal layout on mobile */
 @media (max-width: 768px) {
-  .sidebar {
-    left: calc(-1 * var(--sidebar-width));
-    background: white;
+  /* Force vertical layout for navigation */
+  .nav-horizontal,
+  .horizontal-menu,
+  .horizontal-nav {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
   }
-  
-  #check:checked ~ .sidebar {
-    left: 0;
-    width: var(--sidebar-width);
-  }
-  
-  #check:checked ~ .sidebar a span {
-    display: inline-block;
-  }
-  
-  #check:checked ~ .sidebar a {
-    justify-content: flex-start;
-    text-align: left;
-    padding-left: 20px;
-  }
-  
-  #check:checked ~ .sidebar a i {
-    margin-right: 12px;
-  }
-  
-  .content {
-    margin-left: 0;
-  }
-  
-  #check:checked ~ .content {
-    margin-left: 0;
+
+  /* Fix for header text */
+  .left_area h3 {
+    font-size: 1.2rem;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

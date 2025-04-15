@@ -1,0 +1,30 @@
+  <div class="sidebar">
+    <div class="sidebar-profile">
+      <img src="{% static 'image/admin.png' %}" class="profile_image" alt="Admin Profile">
+      <h4>{{request.user.username}}</h4>
+      <h6>Admin</h6>
+    </div>
+    
+    <!-- Better contrast for sidebar links with explicit styling -->
+    <style>
+      .sidebar a {
+        color: var(--text-color) !important;
+        opacity: 1 !important;
+      }
+      .sidebar a i {
+        opacity: 1 !important;
+      }
+      .sidebar a.active {
+        background: var(--primary-color);
+        color: white !important;
+      }
+      .sidebar a.active i {
+        color: white !important;
+      }
+    </style>
+    
+    <a href="/admin-dashboard" class="{% if request.path == '/admin-dashboard' %}active{% endif %}">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>Dashboard</span>
+    </a>
+  </div> 

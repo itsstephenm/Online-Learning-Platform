@@ -211,16 +211,38 @@
 
   <!--sidebar start-->
   <div class="sidebar">
-    <br><br>
-    <center>
-
-      <img src="{% static "image/teacher.png" %}" class="profile_image" alt="">
+    <div class="sidebar-profile">
+      {% if teacher.profile_pic %}
+        <img src="{{ teacher.profile_pic.url }}" class="profile_image" alt="Profile Picture">
+      {% else %}
+        <img src="{% static 'image/teacher.png' %}" class="profile_image" alt="Default Profile">
+      {% endif %}
       <h4>{{request.user.first_name}}</h4>
-      <h6 style="color: rgb(255, 255, 255);">( Teacher )</h6>
-
-    </center>
-
-    <a href="/teacher/teacher-dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+      <h6>Teacher</h6>
+    </div>
+    
+    <!-- Better contrast for sidebar links with explicit styling -->
+    <style>
+      .sidebar a {
+        color: var(--text-color) !important;
+        opacity: 1 !important;
+      }
+      .sidebar a i {
+        opacity: 1 !important;
+      }
+      .sidebar a.active {
+        background: var(--primary-color);
+        color: white !important;
+      }
+      .sidebar a.active i {
+        color: white !important;
+      }
+    </style>
+    
+    <a href="/teacher/teacher-dashboard" class="{% if request.path == '/teacher/teacher-dashboard' %}active{% endif %}">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>Dashboard</span>
+    </a>
     <a href="/teacher/teacher-exam"><i class="fas fa-book"></i><span>Exam</span></a>
     <a href="/teacher/teacher-question"><i class="fas fa-question-circle"></i><span>Questions</span></a>
     <a href="/teacher/analytics-dashboard"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
