@@ -3,7 +3,7 @@
 <div class="app-container">
   <div class="main-card">
     <div class="card-header">
-      <h5>AI Quiz Assistant</h5>
+      <h5><i class="fas fa-robot mr-2"></i> AI Quiz Assistant</h5>
       <div class="connection-status">
         <span id="connection-indicator" class="status-indicator offline"></span>
         <span id="connection-text">Checking connection...</span>
@@ -31,8 +31,8 @@
             <div class="chat-message ai-message">
               <div class="message-bubble">
                 <div class="message-meta">
-                  <i class="fas fa-robot text-primary"></i>
-                  <small class="message-time text-muted">{{ chat.timestamp|date:"h:i A" }}</small>
+                  <i class="fas fa-robot"></i>
+                  <small class="message-time">{{ chat.timestamp|date:"h:i A" }}</small>
                 </div>
                 <div class="message-text markdown-content" data-markdown="{{ chat.answer|escapejs }}">
                 </div>
@@ -65,32 +65,33 @@
       <!-- Right Column - Stats & Tips -->
       <section class="info-section">
         <!-- Usage Statistics -->
-        <div class="stats-section">
-          <h6>AI Usage Statistics</h6>
+        <div class="stats-card">
+          <h6><i class="fas fa-chart-bar mr-2"></i> AI Usage Statistics</h6>
           <ul class="stats-list">
             <li>
-              Total Queries
+              <span>Total Queries</span>
               <span class="badge">{{ insights.total_queries }}</span>
             </li>
             <li>
-              Average Response Time
+              <span>Average Response Time</span>
               <span class="badge">{{ insights.average_response_time|floatformat:1 }}s</span>
             </li>
             <li>
-              <strong>Last Used:</strong> {{ student.last_ai_interaction|default:"Never" }}
+              <span>Last Used</span>
+              <span>{{ student.last_ai_interaction|default:"Never" }}</span>
             </li>
           </ul>
         </div>
         
         <!-- Tips -->
-        <div class="tips-section">
-          <h6>Tips for Better Results</h6>
+        <div class="tips-card">
+          <h6><i class="fas fa-lightbulb mr-2"></i> Tips for Better Results</h6>
           <ul class="tips-list">
-            <li><i class="fas fa-lightbulb text-warning"></i> Be specific in your questions</li>
-            <li><i class="fas fa-lightbulb text-warning"></i> Select a course for context-specific answers</li>
-            <li><i class="fas fa-lightbulb text-warning"></i> Ask for explanations of concepts</li>
-            <li><i class="fas fa-lightbulb text-warning"></i> Request practice problems</li>
-            <li><i class="fas fa-lightbulb text-warning"></i> Ask for study strategies</li>
+            <li><i class="fas fa-check-circle"></i> Be specific in your questions</li>
+            <li><i class="fas fa-check-circle"></i> Select a course for context-specific answers</li>
+            <li><i class="fas fa-check-circle"></i> Ask for explanations of concepts</li>
+            <li><i class="fas fa-check-circle"></i> Request practice problems</li>
+            <li><i class="fas fa-check-circle"></i> Ask for study strategies</li>
           </ul>
         </div>
       </section>
@@ -98,7 +99,7 @@
   </div>
 </div>
 <!-- External Resources -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
@@ -300,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const meta = document.createElement('div');
         meta.className = 'message-meta';
         meta.innerHTML = sender === 'ai'
-            ? `<i class="fas fa-robot text-primary"></i><small class="message-time text-muted">${moment().format('h:mm A')}</small>`
+            ? `<i class="fas fa-robot"></i><small class="message-time">${moment().format('h:mm A')}</small>`
             : `<i class="fas fa-user-circle"></i><small class="message-time">${moment().format('h:mm A')}</small>`;
         const text = document.createElement('div');
         text.className = 'message-text' + (sender === 'ai' ? ' markdown-content' : '');
@@ -323,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.innerHTML = `
             <div class="message-bubble">
               <div class="message-meta">
-                <i class="fas fa-robot text-muted"></i>
+                <i class="fas fa-robot"></i>
               </div>
               <div class="message-text">
                 <div class="typing-dots">
@@ -491,33 +492,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
 .app-container {
-    height: 80vh;
+    max-width: 100%;
+    height: calc(100vh - 200px);
     display: flex;
     flex-direction: column;
-    margin-top: 15px;
+    margin: 0;
 }
 
 .main-card {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: #1a1a27;
+    border-radius: 10px;
     overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .card-header {
-    background: #0066ff;
-    padding: 1rem;
+    background: #1e1e2d;
+    padding: 1rem 1.25rem;
     color: white;
     flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .card-header h5 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+}
+
+.card-header h5 i {
+    margin-right: 8px;
+    color: #24b0ed;
 }
 
 /* Connection Status Styles */
@@ -536,13 +548,13 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .status-indicator.online {
-    background-color: #4caf50;
-    box-shadow: 0 0 8px #4caf50;
+    background-color: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
 }
 
 .status-indicator.offline {
-    background-color: #f44336;
-    box-shadow: 0 0 8px #f44336;
+    background-color: #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
 }
 
 .connection-text {
@@ -550,11 +562,11 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .connection-text.online {
-    color: #e0f2f1;
+    color: #28a745;
 }
 
 .connection-text.offline {
-    color: #ffebee;
+    color: #dc3545;
 }
 
 .card-body {
@@ -562,6 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
     overflow: hidden;
     display: flex;
 }
+
 /* Two Column Layout */
 .two-column-layout {
     display: flex;
@@ -576,29 +589,43 @@ document.addEventListener('DOMContentLoaded', function() {
     min-width: 0;
     padding: 0;
     height: 100%;
+    background-color: #151521;
 }
+
 .info-section {
     width: 280px;
-    border-left: 1px solid #e0e0e0;
-    background: #f8f9fa;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1a1a27;
     padding: 1.5rem;
     overflow-y: auto;
     height: 100%;
 }
 
-/* Stats Section */
-.stats-section {
-    margin-bottom: 2rem;
+/* Stats Card */
+.stats-card, .tips-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #24b0ed;
 }
 
-.stats-section h6 {
-    color: #0066ff;
-    font-size: 1.1rem;
+.stats-card h6, .tips-card h6 {
+    color: #fff;
+    font-size: 1rem;
     margin-bottom: 1rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
 }
 
-.stats-list {
+.stats-card h6 i, .tips-card h6 i {
+    color: #24b0ed;
+    margin-right: 8px;
+}
+
+.stats-list, .tips-list {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -610,40 +637,36 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     margin-bottom: 0.75rem;
     font-size: 0.9rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-list li:last-child {
+    border-bottom: none;
 }
 
 .badge {
-    background: #0066ff;
+    background: #24b0ed;
     color: white;
     padding: 0.25rem 0.5rem;
-    border-radius: 1rem;
+    border-radius: 0.5rem;
     font-size: 0.8rem;
+    font-weight: 500;
 }
 
-/* Tips Section */
-.tips-section h6 {
-    color: #0066ff;
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    font-weight: 600;
-}
-
-.tips-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
+/* Tips List */
 .tips-list li {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
     font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .tips-list i {
-    color: #ffc107;
+    color: #24b0ed;
+    font-size: 0.8rem;
 }
 
 /* Chat Window */
@@ -681,13 +704,15 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .user-message .message-bubble {
-    background-color: #0066ff;
+    background-color: #24b0ed;
     color: white;
+    border-bottom-right-radius: 0.25rem;
 }
 
 .ai-message .message-bubble {
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
+    background-color: #2a2a38;
+    color: #fff;
+    border-bottom-left-radius: 0.25rem;
 }
 
 .message-meta {
@@ -698,11 +723,23 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.85rem;
 }
 
+.user-message .message-meta i {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-message .message-meta i {
+    color: #24b0ed;
+}
+
+.message-time {
+    opacity: 0.8;
+}
+
 /* Form Controls */
 .chat-form {
     padding: 1rem;
-    border-top: 1px solid #e0e0e0;
-    background: white;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1a1a27;
     position: sticky;
     bottom: 0;
     z-index: 10;
@@ -715,10 +752,12 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .course-select {
-    padding: 0.5rem;
-    border: 1px solid #e0e0e0;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.5rem;
     font-size: 0.9rem;
+    background-color: #2a2a38;
+    color: #fff;
 }
 
 .input-area {
@@ -729,38 +768,47 @@ document.addEventListener('DOMContentLoaded', function() {
 #question-input {
     flex: 1;
     padding: 0.75rem 1rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.5rem;
     font-size: 0.9rem;
+    background-color: #2a2a38;
+    color: #fff;
+}
+
+#question-input:focus {
+    outline: none;
+    border-color: #24b0ed;
+    box-shadow: 0 0 0 1px #24b0ed;
 }
 
 #question-input:disabled {
-    background-color: #f5f5f5;
+    background-color: #1e1e2d;
     cursor: not-allowed;
 }
 
 .send-btn {
-    background: #0066ff;
+    background: #24b0ed;
     color: white;
     border: none;
     border-radius: 0.5rem;
     padding: 0.75rem 1.25rem;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
 }
 
 .send-btn:hover {
-    background: #0052cc;
+    background-color: #1a8cbb;
+    transform: translateY(-2px);
 }
 
 .send-btn:disabled {
-    background: #cccccc;
+    background: #343444;
     cursor: not-allowed;
 }
 
 /* Code Block Layout */
 .code-block {
-    background: #1e1e1e;
+    background: #1e1e2d;
     border-radius: 8px;
     margin: 16px 0;
     overflow: hidden;
@@ -773,7 +821,7 @@ document.addEventListener('DOMContentLoaded', function() {
 .code-content {
     margin: 0;
     padding: 16px;
-    background: #1e1e1e;
+    background: #1e1e2d;
     max-height: 300px;
     overflow-y: auto;
 }
@@ -795,54 +843,6 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #e6e6e6;
     width: 100%;
     display: inline-block;
-}
-
-/* Scrollbar Styling */
-.code-content::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.code-content::-webkit-scrollbar-track {
-    background: #2d2d2d;
-}
-
-.code-content::-webkit-scrollbar-thumb {
-    background: #404040;
-    border-radius: 4px;
-}
-
-.code-content::-webkit-scrollbar-thumb:hover {
-    background: #505050;
-}
-
-/* Code block container */
-.code-block-container {
-    width: 100%;
-    position: relative;
-}
-
-/* Edit textarea styling */
-.code-edit-textarea {
-    width: 100%;
-    min-height: 200px;
-    padding: 8px;
-    background-color: #1e1e1e;
-    color: #e6e6e6;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: 0.9em;
-    resize: vertical;
-    margin-bottom: 8px;
-}
-
-/* Edit actions styling */
-.code-edit-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    justify-content: flex-end;
 }
 
 /* Code Header */
@@ -895,44 +895,6 @@ document.addEventListener('DOMContentLoaded', function() {
     stroke: currentColor;
 }
 
-/* Syntax Highlighting Colors */
-.hljs-keyword { color: #ff79c6; }
-.hljs-string { color: #50fa7b; }
-.hljs-comment { color: #6272a4; }
-.hljs-function { color: #50fa7b; }
-.hljs-number { color: #bd93f9; }
-.hljs-operator { color: #ff79c6; }
-.hljs-punctuation { color: #f8f8f2; }
-
-/* Copy Success Animation */
-@keyframes copySuccess {
-    0% { opacity: 0; transform: translateY(4px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-.copy-success {
-    animation: copySuccess 0.2s ease forwards;
-}
-
-/* Tooltip */
-.copy-tooltip {
-    position: absolute;
-    top: -24px;
-    right: 8px;
-    background: #2d2d2d;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    opacity: 0;
-    transform: translateY(4px);
-    pointer-events: none;
-}
-
-.copy-tooltip.show {
-    animation: copySuccess 0.2s ease forwards;
-}
-
 /* Typing Indicator */
 .typing-indicator .typing-dots {
     display: inline-flex;
@@ -943,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 8px;
     height: 8px;
     margin: 0 2px;
-    background-color: #6c757d;
+    background-color: #24b0ed;
     border-radius: 50%;
     animation: typingAnimation 1.4s infinite ease-in-out;
 }
@@ -959,13 +921,51 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* Pulse animation for connection indicator */
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
 }
 
 .status-indicator.online {
     animation: pulse 2s infinite;
+}
+
+/* Make the chat area more readable */
+.message-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.message-text p {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.message-text p:last-child {
+    margin-bottom: 0;
+}
+
+.message-text ul, .message-text ol {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.message-text a {
+    color: #24b0ed;
+    text-decoration: none;
+}
+
+.message-text a:hover {
+    text-decoration: underline;
+}
+
+.message-text code:not(.hljs) {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
 }
 
 /* Responsive Design */
@@ -975,19 +975,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     .chat-section {
-        border-right: none;
-        border-bottom: 1px solid #eee;
         flex: 1;
         min-height: 60vh;
     }
     
     .info-section {
-        flex: none;
-        height: auto;
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .app-container {
         height: auto;
+        min-height: calc(100vh - 200px);
     }
     
     .card-header {

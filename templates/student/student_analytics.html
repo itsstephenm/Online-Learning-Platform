@@ -5,60 +5,156 @@
 <style>
     .analytics-card {
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         margin-bottom: 20px;
-        background-color: white;
+        background-color: #1a1a27;
+        border-left: 4px solid #24b0ed;
     }
     .analytics-header {
-        background-color: #007bff;
+        background-color: #1e1e2d;
         color: white;
-        padding: 15px;
+        padding: 15px 20px;
         border-radius: 10px 10px 0 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+    }
+    .analytics-header h4 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .analytics-header i {
+        color: #24b0ed;
+        margin-right: 10px;
+        font-size: 1.1rem;
     }
     .analytics-body {
         padding: 20px;
+        color: rgba(255, 255, 255, 0.9);
     }
     .progress {
         height: 25px;
         margin-bottom: 15px;
+        background-color: #2a2a38;
+        border-radius: 0.5rem;
+        overflow: hidden;
     }
     .progress-bar {
         font-size: 14px;
         line-height: 25px;
     }
+    .bg-info {
+        background-color: #24b0ed !important;
+    }
     .recommendation-item {
-        padding: 10px;
+        padding: 15px;
         margin-bottom: 10px;
-        background-color: #f8f9fa;
-        border-left: 4px solid #007bff;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-left: 4px solid #24b0ed;
         font-size: 16px;
+        border-radius: 4px;
     }
     .metric-box {
         text-align: center;
-        padding: 15px;
-        background-color: #f8f9fa;
+        padding: 20px;
+        background-color: #2a2a38;
         border-radius: 8px;
         margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .metric-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
     .metric-value {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: bold;
-        color: #007bff;
+        color: #24b0ed;
     }
     .metric-label {
         font-size: 14px;
-        color: #6c757d;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 5px;
+    }
+    
+    /* Table styling */
+    .table {
+        color: rgba(255, 255, 255, 0.9);
+        background-color: transparent;
+    }
+    .table thead th {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        padding: 12px 15px;
+    }
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+    .table tbody tr:hover {
+        background-color: rgba(36, 176, 237, 0.1);
+    }
+    .table td {
+        padding: 12px 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        vertical-align: middle;
+    }
+    
+    /* Form controls */
+    .form-control {
+        background-color: #2a2a38;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+    }
+    .form-control:focus {
+        background-color: #2a2a38;
+        color: white;
+        border-color: #24b0ed;
+        box-shadow: 0 0 0 0.2rem rgba(36, 176, 237, 0.25);
+    }
+    
+    /* Alert/notifications */
+    .text-center {
+        padding: 20px;
+        color: rgba(255, 255, 255, 0.7);
+    }
+    .text-muted {
+        color: rgba(255, 255, 255, 0.5) !important;
+    }
+    
+    /* Page header */
+    .page-header {
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 15px;
+    }
+    .page-header h2 {
+        margin: 0;
+        color: #fff;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    .page-header h2 i {
+        color: #24b0ed;
+        margin-right: 10px;
     }
 </style>
 
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
-            <h2 class="mb-4">Your Learning Analytics</h2>
+            <div class="page-header">
+                <h2><i class="fas fa-chart-line"></i> Your Learning Analytics</h2>
+            </div>
             
             <!-- Course Selector -->
             <div class="analytics-card">
                 <div class="analytics-header">
+                    <i class="fas fa-book"></i>
                     <h4>Select a Course for Detailed Analytics</h4>
                 </div>
                 <div class="analytics-body">
@@ -80,6 +176,7 @@
             <!-- Course Performance Summary -->
             <div class="analytics-card">
                 <div class="analytics-header">
+                    <i class="fas fa-graduation-cap"></i>
                     <h4>Course Performance Summary</h4>
                 </div>
                 <div class="analytics-body">
@@ -118,6 +215,7 @@
             {% if detailed_analytics %}
             <div class="analytics-card">
                 <div class="analytics-header">
+                    <i class="fas fa-chart-bar"></i>
                     <h4>Detailed Analytics for {{ selected_course.course_name }}</h4>
                 </div>
                 <div class="analytics-body">
@@ -177,7 +275,7 @@
                         <h5>Recommendations for Improvement</h5>
                         {% for recommendation in detailed_analytics.recommendations %}
                         <div class="recommendation-item">
-                            <i class="fas fa-lightbulb mr-2"></i> {{ recommendation }}
+                            <i class="fas fa-lightbulb mr-2" style="color: #24b0ed;"></i> {{ recommendation }}
                         </div>
                         {% endfor %}
                     </div>
@@ -186,6 +284,7 @@
             {% elif selected_course %}
             <div class="analytics-card">
                 <div class="analytics-header">
+                    <i class="fas fa-chart-bar"></i>
                     <h4>Detailed Analytics for {{ selected_course.course_name }}</h4>
                 </div>
                 <div class="analytics-body">
