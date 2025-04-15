@@ -2,287 +2,318 @@
 {% load widget_tweaks %}
 {% block content %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-    <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style type="text/css">
-      a:link {
-        text-decoration: none;
-      }
+<style>
+  a:link {
+    text-decoration: none;
+  }
   
-      .order-card {
-        color: rgb(255, 255, 255);
-        transition: all 0.3s ease;
-      }
-      
-      .order-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-      }
+  .page-header {
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+  }
   
-      .bg-c-blue {
-        background: linear-gradient(135deg, #04868f 0%, #04b4c0 100%);
-      }
+  .page-header h2 {
+    margin: 0;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
   
-      .bg-c-green {
-        background: linear-gradient(135deg, #4C51BF 0%, #667EEA 100%);
-      }
+  .page-header h2 i {
+    color: #24b0ed;
+    margin-right: 10px;
+  }
+
+  .order-card {
+    color: rgb(255, 255, 255);
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
   
-      .bg-c-yellow {
-        background: linear-gradient(135deg, #F56565 0%, #FC8181 100%);
-      }
+  .order-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .bg-c-blue {
+    background: linear-gradient(135deg, #0e5a65 0%, #24b0ed 100%);
+  }
+
+  .bg-c-green {
+    background: linear-gradient(135deg, #3a3d8c 0%, #5e73e9 100%);
+  }
+
+  .bg-c-yellow {
+    background: linear-gradient(135deg, #c04848 0%, #e06060 100%);
+  }
+
+  .bg-c-pink {
+    background: linear-gradient(135deg, #3c2a24 0%, #6b4a3f 100%);
+  }
+
+  .bg-c-purple {
+    background: linear-gradient(135deg, #5e4a98 0%, #8b6fe9 100%);
+  }
+
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border: none;
+    margin-bottom: 30px;
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+  }
+
+  .card .card-block {
+    padding: 25px;
+  }
+
+  .order-card i {
+    font-size: 30px;
+  }
+
+  .f-left {
+    float: left;
+  }
+
+  .f-right {
+    float: right;
+  }
   
-      .bg-c-pink {
-        background: linear-gradient(135deg, #663a30 0%, #8a5a4d 100%);
-      }
+  .ai-insights-container {
+    background-color: #1a1a27;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid #24b0ed;
+  }
   
-      .bg-c-purple {
-        background: linear-gradient(135deg, #805AD5 0%, #9F7AEA 100%);
-      }
+  .ai-insights-container h5 {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+  }
   
-      .card {
-        border-radius: 12px;
-        -webkit-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border: none;
-        margin-bottom: 30px;
-        -webkit-transition: all 0.3s ease-in-out;
-        transition: all 0.3s ease-in-out;
-        overflow: hidden;
-      }
+  .ai-insights-container h5 i {
+    color: #24b0ed;
+    margin-right: 10px;
+  }
   
-      .card .card-block {
-        padding: 25px;
-      }
+  .ai-stat-card {
+    background-color: #2a2a38;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.9);
+  }
   
-      .order-card i {
-        font-size: 26px;
-      }
+  .ai-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
   
-      .f-left {
-        float: left;
-      }
+  .ai-stat-card i {
+    color: #24b0ed;
+    margin-right: 10px;
+    font-size: 1.2rem;
+  }
   
-      .f-right {
-        float: right;
-      }
-      
-      .ai-insights-container {
-        background: #fff;
-        border-radius: 12px;
-        padding: 25px;
-        margin-bottom: 30px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e2e8f0;
-      }
-      
-      .ai-insights-container h5 {
-        color: #2D3748;
-        font-weight: 600;
-        margin-bottom: 20px;
-        font-size: 1.25rem;
-        border-bottom: 2px solid #edf2f7;
-        padding-bottom: 10px;
-      }
-      
-      .ai-stat-card {
-        background: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        border: 1px solid #edf2f7;
-        transition: all 0.3s ease;
-      }
-      
-      .ai-stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-      }
-      
-      .ai-stat-card i {
-        color: #4C51BF;
-        margin-right: 10px;
-        font-size: 1.2rem;
-      }
-      
-      .ai-stat-card h6 {
-        font-weight: 500;
-        color: #4a5568;
-        margin-bottom: 5px;
-      }
-      
-      .ai-stat-card p {
-        font-weight: 600;
-        color: #2D3748;
-        margin-bottom: 0;
-        font-size: 1.1rem;
-      }
-      
-      .topic-badge {
-        display: inline-block;
-        background: #ebf4ff;
-        color: #4C51BF;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        margin-right: 8px;
-        margin-bottom: 8px;
-      }
-      
-      .recent-chats-table {
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      
-      .recent-chats-table thead {
-        background: #4C51BF;
-        color: white;
-      }
-      
-      .recent-chats-table th {
-        font-weight: 500;
-        padding: 12px 15px;
-      }
-      
-      .recent-chats-table td {
-        padding: 12px 15px;
-        vertical-align: middle;
-      }
-      
-      .recent-chats-table tr:nth-child(even) {
-        background-color: #f8fafc;
-      }
-      
-      .chat-preview {
-        max-width: 200px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      body {
-        font-family: 'Inter', sans-serif;
-      }
-    </style>
-</head>
-<br><br>
+  .ai-stat-card h6 {
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .ai-stat-card p {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0;
+    font-size: 1.1rem;
+  }
+  
+  .topic-badge {
+    display: inline-block;
+    background: rgba(36, 176, 237, 0.2);
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(36, 176, 237, 0.3);
+  }
+  
+  .recent-chats-table {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .recent-chats-table thead {
+    background-color: #1e1e2d;
+  }
+  
+  .recent-chats-table th {
+    font-weight: 500;
+    padding: 12px 15px;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .recent-chats-table td {
+    padding: 12px 15px;
+    vertical-align: middle;
+    color: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .recent-chats-table tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .recent-chats-table tr:hover {
+    background-color: rgba(36, 176, 237, 0.1);
+  }
+  
+  .chat-preview {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .container {
+    padding-top: 30px;
+    padding-bottom: 30px;
+  }
+</style>
 
 <div class="container">
-    <div class="row">
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-yellow order-card">
-          <div class="card-block">
-            <h6 class="m-b-20">Total Exams Available</h6>
-            <h2 class="text-right"><i class="fas fa-book f-left"></i><span>{{total_course}}</span></h2>
-          </div>
-        </div>
-      </div>
+  <div class="page-header">
+    <h2><i class="fas fa-tachometer-alt"></i> Student Dashboard</h2>
+  </div>
   
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-pink order-card">
-          <div class="card-block">
-            <h6 class="m-b-20">Total Questions</h6>
-            <h2 class="text-right"><i class="fas fa-question-circle f-left"></i><span>{{total_question}}</span></h2>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-purple order-card">
-          <div class="card-block">
-            <h6 class="m-b-20">AI Assistant</h6>
-            <h2 class="text-right">
-              <i class="fas fa-robot f-left"></i>
-              <a href="{% url 'ai_chat' %}" class="text-white">
-                <span>Chat Now</span>
-              </a>
-            </h2>
-          </div>
+  <div class="row">
+    <div class="col-md-4 col-xl-4">
+      <div class="card bg-c-yellow order-card">
+        <div class="card-block">
+          <h6 class="m-b-20">Total Exams Available</h6>
+          <h2 class="text-right"><i class="fas fa-book f-left"></i><span>{{total_course}}</span></h2>
         </div>
       </div>
     </div>
 
-    <!-- AI Learning Insights Section -->
-    <div class="row mt-4">
-      <div class="col-md-12">
-        <div class="ai-insights-container">
-          <h5><i class="fas fa-chart-line mr-2"></i>AI Learning Insights</h5>
-          <div class="row">
-            <!-- Learning Statistics -->
-            <div class="col-md-6">
-              <div class="ai-stat-card">
-                <h6><i class="fas fa-chart-pie"></i> Your Learning Statistics</h6>
-                <div class="mt-3">
-                  <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span>Total AI Queries</span>
-                    <p class="mb-0">{{ ai_insights.total_queries }}</p>
-                  </div>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <span>Average Response Time</span>
-                    <p class="mb-0">{{ ai_insights.average_response_time|floatformat:2 }}s</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Top Topics -->
-            <div class="col-md-6">
-              <div class="ai-stat-card">
-                <h6><i class="fas fa-bookmark"></i> Top Topics You've Explored</h6>
-                <div class="mt-3">
-                  {% for topic in ai_insights.top_topics %}
-                    <span class="topic-badge">{{ topic|title }}</span>
-                  {% endfor %}
-                </div>
-              </div>
-            </div>
-          </div>
+    <div class="col-md-4 col-xl-4">
+      <div class="card bg-c-pink order-card">
+        <div class="card-block">
+          <h6 class="m-b-20">Total Questions</h6>
+          <h2 class="text-right"><i class="fas fa-question-circle f-left"></i><span>{{total_question}}</span></h2>
         </div>
       </div>
     </div>
 
-    <!-- Recent Interactions -->
-    {% if ai_insights.recent_chats %}
-    <div class="row mt-4">
-      <div class="col-md-12">
-        <div class="ai-insights-container">
-          <h5><i class="fas fa-history mr-2"></i>Recent AI Interactions</h5>
-          <div class="table-responsive recent-chats-table">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Question</th>
-                  <th>Course</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for chat in ai_insights.recent_chats %}
-                <tr>
-                  <td class="chat-preview">{{ chat.question|truncatechars:50 }}</td>
-                  <td>{{ chat.course.course_name|default:"General" }}</td>
-                  <td>{{ chat.timestamp|date:"M d, Y" }}</td>
-                </tr>
+    <div class="col-md-4 col-xl-4">
+      <div class="card bg-c-purple order-card">
+        <div class="card-block">
+          <h6 class="m-b-20">AI Assistant</h6>
+          <h2 class="text-right">
+            <i class="fas fa-robot f-left"></i>
+            <a href="{% url 'ai_chat' %}" class="text-white">
+              <span>Chat Now</span>
+            </a>
+          </h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Learning Insights Section -->
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="ai-insights-container">
+        <h5><i class="fas fa-chart-line"></i>AI Learning Insights</h5>
+        <div class="row">
+          <!-- Learning Statistics -->
+          <div class="col-md-6">
+            <div class="ai-stat-card">
+              <h6><i class="fas fa-chart-pie"></i> Your Learning Statistics</h6>
+              <div class="mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <span>Total AI Queries</span>
+                  <p class="mb-0">{{ ai_insights.total_queries }}</p>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span>Average Response Time</span>
+                  <p class="mb-0">{{ ai_insights.average_response_time|floatformat:2 }}s</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Top Topics -->
+          <div class="col-md-6">
+            <div class="ai-stat-card">
+              <h6><i class="fas fa-bookmark"></i> Top Topics You've Explored</h6>
+              <div class="mt-3">
+                {% for topic in ai_insights.top_topics %}
+                  <span class="topic-badge">{{ topic|title }}</span>
+                {% empty %}
+                  <span class="text-muted">No topics explored yet</span>
                 {% endfor %}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    {% endif %}
+  </div>
+
+  <!-- Recent Interactions -->
+  {% if ai_insights.recent_chats %}
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="ai-insights-container">
+        <h5><i class="fas fa-history"></i>Recent AI Interactions</h5>
+        <div class="table-responsive recent-chats-table">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Course</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for chat in ai_insights.recent_chats %}
+              <tr>
+                <td class="chat-preview">{{ chat.question|truncatechars:50 }}</td>
+                <td>{{ chat.course.course_name|default:"General" }}</td>
+                <td>{{ chat.timestamp|date:"M d, Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
-
-<br><br><br><br><br><br><br><br><br><br>
-
-<script src="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
 
 {% endblock content %}
