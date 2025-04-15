@@ -76,7 +76,18 @@ def take_exam_view(request,pk):
     for q in questions:
         total_marks=total_marks + q.marks
     
-    return render(request,'student/take_exam.html',{'course':course,'total_questions':total_questions,'total_marks':total_marks})
+    # Calculate time per question if this is a timed exam
+    time_per_question = 0
+    if course.is_timed and total_questions > 0:
+        total_seconds = course.total_time_minutes * 60
+        time_per_question = round(total_seconds / total_questions)
+    
+    return render(request,'student/take_exam.html',{
+        'course': course,
+        'total_questions': total_questions,
+        'total_marks': total_marks,
+        'time_per_question': time_per_question
+    })
 
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
