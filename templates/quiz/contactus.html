@@ -15,18 +15,12 @@
   
   <style>
     :root {
-      --golden-ratio: 1.618;
       --primary-color: #24b0ed;
       --bg-color: #151521;
       --card-bg: rgba(255, 255, 255, 0.05);
       --text-primary: #ffffff;
       --text-secondary: rgba(255, 255, 255, 0.8);
       --text-tertiary: rgba(255, 255, 255, 0.6);
-      --spacing-xs: 0.5rem;
-      --spacing-sm: 0.809rem; /* 0.5 * 1.618 */
-      --spacing-md: 1.309rem; /* 0.809 * 1.618 */
-      --spacing-lg: 2.118rem; /* 1.309 * 1.618 */
-      --spacing-xl: 3.427rem; /* 2.118 * 1.618 */
     }
     
     body {
@@ -42,67 +36,79 @@
     
     .main-content {
       flex: 1;
-      padding-top: 6rem;
+      padding-top: 3rem;
     }
     
     .contact-section {
-      min-height: 70vh;
+      min-height: 80vh;
       display: flex;
       align-items: center;
-      justify-content: center;
       position: relative;
-      padding: var(--spacing-xl) 0;
+      padding: 4rem 0;
     }
     
-    .golden-layout {
+    .contact-layout {
       display: grid;
       grid-template-columns: 1fr;
-      gap: var(--spacing-lg);
+      gap: 3rem;
       max-width: 1140px;
       margin: 0 auto;
     }
     
     @media (min-width: 992px) {
-      .golden-layout {
-        grid-template-columns: 1fr 0.618fr;
+      .contact-layout {
+        grid-template-columns: 1fr 0.7fr;
       }
     }
     
     .contact-title {
-      font-size: calc(1.618rem * 1.618);
+      font-size: 2.5rem;
       font-weight: 700;
       text-align: center;
-      margin-bottom: var(--spacing-lg);
+      margin-bottom: 3rem;
       color: var(--primary-color);
     }
     
-    .contact-card {
-      background-color: var(--card-bg);
-      border-radius: 16px;
-      padding: var(--spacing-lg);
-      width: 100%;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      height: 100%;
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-label-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    
+    .form-label-icon {
+      color: var(--primary-color);
+      font-size: 1.25rem;
+      margin-right: 0.75rem;
+      width: 20px;
+      text-align: center;
+    }
+    
+    .form-label {
+      color: var(--text-primary);
+      font-weight: 500;
+      font-size: 1rem;
+      margin-bottom: 0;
     }
     
     .form-control {
-      background-color: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: var(--spacing-sm) var(--spacing-md);
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
       height: auto;
       color: var(--text-primary);
       font-size: 1rem;
       transition: all 0.3s ease;
-      margin-bottom: var(--spacing-md);
     }
     
     .form-control:focus {
       box-shadow: none;
       border-color: var(--primary-color);
-      background-color: rgba(255, 255, 255, 0.15);
+      background-color: rgba(255, 255, 255, 0.1);
     }
     
     .form-control::placeholder {
@@ -110,24 +116,24 @@
     }
     
     textarea.form-control {
-      min-height: calc(2.618rem * 2.618);
+      min-height: 150px;
       resize: vertical;
     }
     
     .btn-submit {
       background-color: var(--primary-color);
       border: none;
-      padding: var(--spacing-sm) var(--spacing-lg);
+      padding: 0.75rem 2rem;
       font-size: 1rem;
       font-weight: 600;
       border-radius: 50px;
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(36, 176, 237, 0.3);
-      margin-top: var(--spacing-md);
       color: var(--text-primary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      min-width: 200px;
     }
     
     .btn-submit:hover {
@@ -137,133 +143,53 @@
     }
     
     .btn-icon {
-      margin-right: var(--spacing-xs);
+      margin-right: 0.5rem;
     }
     
-    .contact-info-title {
-      font-size: 1.618rem;
+    .info-title {
+      font-size: 1.75rem;
       font-weight: 600;
-      margin-bottom: var(--spacing-md);
-      color: var(--text-secondary);
-      text-align: center;
+      margin-bottom: 2rem;
+      color: var(--text-primary);
     }
     
-    .contact-items {
+    .info-items {
       display: flex;
       flex-direction: column;
-      gap: var(--spacing-md);
+      gap: 1.5rem;
     }
     
-    .contact-item {
+    .info-item {
       display: flex;
       align-items: center;
-      background-color: rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: var(--spacing-md);
+      padding: 1rem;
       transition: all 0.3s ease;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
     }
     
-    .contact-item:hover {
+    .info-item:hover {
       transform: translateY(-3px);
       background-color: rgba(36, 176, 237, 0.1);
     }
     
-    .contact-item-icon {
-      font-size: 1.618rem;
+    .info-icon {
+      font-size: 1.5rem;
       color: var(--primary-color);
-      margin-right: var(--spacing-md);
-      width: 2.618rem;
-      height: 2.618rem;
+      margin-right: 1rem;
+      width: 50px;
+      height: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: rgba(36, 176, 237, 0.1);
+      background-color: rgba(36, 176, 237, 0.15);
       border-radius: 50%;
       flex-shrink: 0;
     }
     
-    .contact-item-text {
+    .info-text {
       color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-    
-    @media (max-width: 991px) {
-      .contact-card {
-        padding: var(--spacing-md);
-      }
-      
-      .contact-title {
-        font-size: calc(1.618rem * 1.309);
-      }
-      
-      .btn-submit {
-        width: 100%;
-      }
-    }
-    
-    @media (max-width: 576px) {
-      .contact-title {
-        font-size: 1.618rem;
-      }
-      
-      .contact-item {
-        flex-direction: column;
-        text-align: center;
-      }
-      
-      .contact-item-icon {
-        margin-right: 0;
-        margin-bottom: var(--spacing-sm);
-      }
-    }
-    
-    /* New form styling */
-    .form-group {
-      margin-bottom: var(--spacing-md);
-    }
-    
-    .input-with-icon {
-      position: relative;
-    }
-    
-    .input-icon {
-      position: absolute;
-      left: var(--spacing-md);
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--primary-color);
-      font-size: 1.218rem;
-      pointer-events: none;
-    }
-    
-    .textarea-icon {
-      top: var(--spacing-md);
-      transform: none;
-    }
-    
-    .input-with-icon .form-control {
-      padding-left: calc(var(--spacing-md) * 2 + 1.218rem);
-    }
-    
-    label {
-      display: block;
-      margin-bottom: var(--spacing-xs);
-      color: var(--text-secondary);
-      font-weight: 500;
       font-size: 0.95rem;
-    }
-    
-    .form-field {
-      margin-bottom: var(--spacing-md);
-    }
-    
-    /* Animation for inputs */
-    .form-control {
-      transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-    }
-    
-    .form-control:focus {
-      transform: translateY(-2px);
     }
     
     /* Error states */
@@ -272,14 +198,22 @@
       font-size: 0.85rem;
       list-style: none;
       padding-left: 0;
-      margin-top: var(--spacing-xs);
+      margin-top: 0.5rem;
     }
     
-    /* Helper text */
-    .form-text {
-      color: var(--text-tertiary);
-      font-size: 0.85rem;
-      margin-top: var(--spacing-xs);
+    @media (max-width: 768px) {
+      .contact-title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+      }
+      
+      .btn-submit {
+        width: 100%;
+      }
+      
+      .info-title {
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -292,93 +226,93 @@
       <div class="container">
         <h1 class="contact-title">Send Us Your Feedback</h1>
         
-        <div class="golden-layout">
+        <div class="contact-layout">
           <div class="contact-form-container">
-            <div class="contact-card">
-              <form method="POST" autocomplete="off">
-                {% csrf_token %}
-                
-                <div class="form-group">
-                  {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                      {{ form.non_field_errors }}
-                    </div>
-                  {% endif %}
-                  
-                  <div class="form-field">
-                    <label for="{{ form.name.id_for_label }}">Name</label>
-                    <div class="input-with-icon">
-                      <i class="fas fa-user input-icon"></i>
-                      {{ form.name|add_class:"form-control"|attr:"placeholder:Enter your name" }}
-                    </div>
-                    {% if form.name.errors %}
-                      <ul class="errorlist">
-                        {% for error in form.name.errors %}
-                          <li>{{ error }}</li>
-                        {% endfor %}
-                      </ul>
-                    {% endif %}
-                  </div>
-                  
-                  <div class="form-field">
-                    <label for="{{ form.email.id_for_label }}">Email</label>
-                    <div class="input-with-icon">
-                      <i class="fas fa-envelope input-icon"></i>
-                      {{ form.email|add_class:"form-control"|attr:"placeholder:Enter your email address" }}
-                    </div>
-                    {% if form.email.errors %}
-                      <ul class="errorlist">
-                        {% for error in form.email.errors %}
-                          <li>{{ error }}</li>
-                        {% endfor %}
-                      </ul>
-                    {% endif %}
-                  </div>
-                  
-                  <div class="form-field">
-                    <label for="{{ form.message.id_for_label }}">Message</label>
-                    <div class="input-with-icon">
-                      <i class="fas fa-comment-alt input-icon textarea-icon"></i>
-                      {{ form.message|add_class:"form-control"|attr:"placeholder:Enter your message"|attr:"rows:5" }}
-                    </div>
-                    {% if form.message.errors %}
-                      <ul class="errorlist">
-                        {% for error in form.message.errors %}
-                          <li>{{ error }}</li>
-                        {% endfor %}
-                      </ul>
-                    {% endif %}
-                  </div>
-                  
-                  <div class="text-center">
-                    <button type="submit" class="btn-submit">
-                      <i class="fas fa-paper-plane btn-icon"></i> Send Message
-                    </button>
-                  </div>
+            <form method="POST" autocomplete="off">
+              {% csrf_token %}
+              
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {{ form.non_field_errors }}
                 </div>
-              </form>
-            </div>
+              {% endif %}
+              
+              <div class="form-group">
+                <div class="form-label-group">
+                  <i class="fas fa-user form-label-icon"></i>
+                  <label class="form-label">Name</label>
+                </div>
+                {{ form.name|add_class:"form-control"|attr:"placeholder:Enter your name" }}
+                {% if form.name.errors %}
+                  <ul class="errorlist">
+                    {% for error in form.name.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+              
+              <div class="form-group">
+                <div class="form-label-group">
+                  <i class="fas fa-envelope form-label-icon"></i>
+                  <label class="form-label">Email</label>
+                </div>
+                {{ form.email|add_class:"form-control"|attr:"placeholder:Enter your email address" }}
+                {% if form.email.errors %}
+                  <ul class="errorlist">
+                    {% for error in form.email.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+              
+              <div class="form-group">
+                <div class="form-label-group">
+                  <i class="fas fa-comment-alt form-label-icon"></i>
+                  <label class="form-label">Message</label>
+                </div>
+                {{ form.message|add_class:"form-control"|attr:"placeholder:Enter your message"|attr:"rows:5" }}
+                {% if form.message.errors %}
+                  <ul class="errorlist">
+                    {% for error in form.message.errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+              
+              <div class="text-center">
+                <button type="submit" class="btn-submit">
+                  <i class="fas fa-paper-plane btn-icon"></i> Send Message
+                </button>
+              </div>
+            </form>
           </div>
           
           <div class="contact-info-container">
-            <div class="contact-card">
-              <h2 class="contact-info-title">Ways to Reach Us</h2>
+            <h2 class="info-title">Ways to Reach Us</h2>
+            
+            <div class="info-items">
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <span class="info-text">Chinhoyi University of Technology, Chinhoyi, Zimbabwe</span>
+              </div>
               
-              <div class="contact-items">
-                <div class="contact-item">
-                  <i class="fas fa-map-marker-alt contact-item-icon"></i>
-                  <span class="contact-item-text">Chinhoyi University of Technology, Chinhoyi, Zimbabwe</span>
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-envelope"></i>
                 </div>
-                
-                <div class="contact-item">
-                  <i class="fas fa-envelope contact-item-icon"></i>
-                  <span class="contact-item-text">support@cutonlinequiz.ac.zw</span>
+                <span class="info-text">support@cutonlinequiz.ac.zw</span>
+              </div>
+              
+              <div class="info-item">
+                <div class="info-icon">
+                  <i class="fas fa-phone-alt"></i>
                 </div>
-                
-                <div class="contact-item">
-                  <i class="fas fa-phone-alt contact-item-icon"></i>
-                  <span class="contact-item-text">+263 67 2122203-5</span>
-                </div>
+                <span class="info-text">+263 67 2122203-5</span>
               </div>
             </div>
           </div>
