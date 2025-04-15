@@ -256,7 +256,13 @@ def contactus_view(request):
             email = form.cleaned_data['Email']
             name = form.cleaned_data['Name']
             message = form.cleaned_data['Message']
-            send_mail(f'{name} || {email}', message, settings.EMAIL_HOST_USER, settings.EMAIL_RECEIVING_USER, fail_silently=False)
+            send_mail(
+                subject=f'Contact Message from {name} ({email})',
+                message=message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[settings.EMAIL_RECEIVING_USER],
+                fail_silently=False
+            )
             return render(request, 'quiz/contactussuccess.html')
     return render(request, 'quiz/contactus.html', {'form': form})
 
