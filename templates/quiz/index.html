@@ -1,28 +1,154 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en" dir="ltr">
-<link rel="stylesheet" href="../../static/css/style.css">
-<body class="main_container">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #151521;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding-top: 6rem;
+    }
+    
+    .hero-section {
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      background: url('{% static "image/assets/images/background.jpeg" %}') no-repeat center center;
+      background-size: cover;
+      padding: 4rem 0;
+    }
+    
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(21, 21, 33, 0.9), rgba(26, 26, 39, 0.8));
+      z-index: 1;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .hero-title {
+      font-size: 4rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+    
+    .hero-title span {
+      color: #24b0ed;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .hero-description {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .cta-section {
+      margin-top: 2rem;
+    }
+    
+    .cta-label {
+      font-weight: 600;
+      color: #24b0ed;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    
+    .btn-primary {
+      background-color: #24b0ed;
+      border: none;
+      padding: 0.75rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(36, 176, 237, 0.3);
+    }
+    
+    .btn-primary:hover {
+      background-color: #1a8cbb;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(36, 176, 237, 0.4);
+    }
+    
+    .btn-icon {
+      margin-right: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 3rem;
+      }
+      
+      .hero-subtitle {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
   {% include "quiz/navbar.html" %}
-<br>
-<section id="section-jumbotron" class="jumbotron jumbotron-fluid d-flex justify-content-center align-items-center" style="background-color: transparent !important;">
-  <div class="container text-center">
-    <h1 class="display-1 " style="color: #24b0ed">Let's Quiz</h1>
-    <p class="display-4 d-none d-sm-block"  style="color: white;">Test your skills and become a master.</p>
-    <p class="lead"  style="color: white;">We organize quizzes on various topics.</p>
 
-    
+  <div class="main-content">
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Let's <span>Quiz</span></h1>
+        <p class="hero-subtitle">Test your skills and become a master.</p>
+        <p class="hero-description">We organize quizzes on various topics. Sign up if you haven't already and get access to millions of quizzes on the topic of your interest.</p>
+        
+        <div class="cta-section">
+          <span class="cta-label">Start Your Journey Here:</span>
+          <a href="/student/studentsignup" class="btn btn-primary btn-lg">
+            <i class="fas fa-user-plus btn-icon"></i> Sign Up
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
 
-    <p class="lead"  style="color: white;">Sign up if you haven't already and get access to millions of quizzes on the topic of your interest.</p>
-    <p><strong style="color: var(--cyan);"> Start Your Journey Here:</strong></p>
-    <a href="/student/studentsignup" class="btn btn-lg btn-info" style="padding-right: 35px; border-radius: 50rem; background-color: #24b0ed;"><i class="fa fa-user-plus" aria-hidden="true"></i> Sign Up</a>
-    
-    <br><br><br>
-  </div>  
-</section>
   {% include "quiz/footer.html" %}
 
-
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
