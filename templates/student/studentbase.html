@@ -208,6 +208,7 @@
   <!--header area end-->
   
   <!--sidebar start-->
+  {% if not hide_sidebar %}
   <div class="sidebar">
     <br><br>
     <center>
@@ -227,11 +228,12 @@
     <a href="/student/analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
     <a href="/student/ai-chat"><i class="fas fa-robot"></i><span>AI Chat</span></a>
   </div>
+  {% endif %}
   <!--sidebar end-->
 
 
   <!--content start-->
-  <div class="content">
+  <div class="content" {% if hide_sidebar %}style="margin-left: 0; padding-top: 60px;"{% endif %}>
     <br><br><br><br><br>
     {% block content %}
 
@@ -241,6 +243,9 @@
     {% include "quiz/footer.html" %}
   </div>
   <!--content end-->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 
 </html>
