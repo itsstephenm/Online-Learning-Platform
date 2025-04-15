@@ -15,6 +15,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import requests
 from openai import OpenAI
+import dj_database_url
 
 # Load environment variables from .env file
 load_dotenv()
@@ -83,9 +84,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 # Ensure CSRF settings are properly configured
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False  # Set to True in production for better security
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True  # Better security in production
 CSRF_USE_SESSIONS = True  # Store CSRF token in the session instead of a cookie
+SESSION_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
 ROOT_URLCONF = 'final_year_project.urls'
 
 TEMPLATES = [
@@ -110,12 +118,22 @@ WSGI_APPLICATION = 'final_year_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+# Default database configuration using SQLite locally
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+# Use DATABASE_URL environment variable if provided (for Render deployment)
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 
 # Password validation
@@ -192,3 +210,4 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# Add logging configuration for production
