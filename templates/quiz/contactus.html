@@ -186,10 +186,25 @@
   <div class="main-content">
     <section class="contact-section">
      <center>
-
-     </center>
-     
+      <div class="container">
+        <h1 class="contact-title">Send Us Your Feedback</h1>
         
+        <div class="contact-card">
+          <form method="POST" autocomplete="off">
+            {% csrf_token %}
+            
+            <div class="form-group">
+              {{ form.as_p }}
+              
+              <div class="text-center">
+                <button type="submit" class="btn-submit">
+                  <i class="fas fa-paper-plane btn-icon"></i> Send Message
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+     </center>
         <div class="contact-info">
           <h2 class="contact-info-title">Other Ways to Reach Us</h2>
           
