@@ -126,7 +126,33 @@
     <div class="main-content">
       <section class="login-section">
         <center>
-          
+          <div class="container">
+            <div class="row justify-content-center">
+              <div class="col-lg-6">
+                <div class="login-card">
+                  <i class="fas fa-user-shield login-icon"></i>
+                  <h1 class="login-title">Admin Login</h1>
+                  <p class="login-subtitle">Enter your credentials to access the admin dashboard</p>
+                  
+                  <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                      {% render_field form.username class="form-control" placeholder="Username" %}
+                    </div>
+                    
+                    <div class="mb-3">
+                      {% render_field form.password class="form-control" placeholder="Password" type="password" %}
+                    </div>
+                    
+                    <button type="submit" class="btn-login">
+                      <i class="fas fa-sign-in-alt me-2"></i> Login
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
         </center>
         
       </section>
