@@ -227,6 +227,12 @@
   </div>
 </div>
 
+<div class="mt-3 text-center">
+  <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" disabled>Previous</button>
+  <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next</button>
+  <button class="btn btn-danger ms-2" id="finishBtn" onclick="finishExam()">Finish Exam</button>
+</div>
+
 <script>
   // Exam configuration
   const totalQuestions = {{ questions|length }};
@@ -276,36 +282,33 @@
   
   // Apply security measures based on the security level
   function applySecurity() {
-    if (securityLevel === 'low') {
-      // Basic protection - already applied via CSS
-    } 
-    else if (securityLevel === 'medium' || securityLevel === 'high') {
-      // Prevent right-click
-      document.addEventListener("contextmenu", event => event.preventDefault());
+    if (securityLevel >= 1) {
+      // Disable right-click
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+      });
       
-      // Add class to disable text selection
-      document.body.classList.add('secure-exam');
-      
-      if (securityLevel === 'high') {
-        // Prevent keyboard shortcuts that might open developer tools
-        document.addEventListener("keydown", function(event) {
-          const key = event.key.toLowerCase();
-          // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-          if (
-            event.keyCode === 123 || // F12
-            (event.ctrlKey && event.shiftKey && (key === 'i' || key === 'j')) || // Ctrl+Shift+I or J
-            (event.ctrlKey && key === 'u') // Ctrl+U
-          ) {
-            event.preventDefault();
-            return false;
-          }
-        });
-        
-        // Detect when the window loses focus (might be switching to dev tools)
-        window.addEventListener('blur', function() {
-          document.getElementById('exam-timer').innerHTML += '<br><small class="text-danger">Warning: Exam window lost focus!</small>';
-        });
+      // Disable sidebar navigation during exam
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) {
+        sidebar.classList.add('disabled-sidebar');
+        sidebar.style.pointerEvents = 'none';
+        sidebar.style.opacity = '0.5';
       }
+      
+      // Disable keyboard shortcuts that might help cheating
+      document.addEventListener('keydown', function(e) {
+        // Prevent view source, find, etc.
+        if (
+          (e.ctrlKey && (e.key === 'u' || e.key === 'c' || e.key === 'v' || e.key === 'f')) || 
+          e.key === 'F12' || 
+          (e.altKey && e.key === 'Tab')
+        ) {
+          e.preventDefault();
+          return false;
+        }
+      });
     }
   }
   
@@ -531,6 +534,14 @@
     // Stop the timers
     clearInterval(examTimerInterval);
     clearInterval(questionTimerInterval);
+    
+    // Enable sidebar before leaving
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('disabled-sidebar');
+      sidebar.style.pointerEvents = 'auto';
+      sidebar.style.opacity = '1';
+    }
     
     // Save the current question's state
     const currentQuestion = document.querySelector('.question-container.active-question');
