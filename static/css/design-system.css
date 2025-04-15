@@ -746,4 +746,117 @@ header {
   min-height: calc(100vh - var(--header-height));
   transition: 0.3s;
   background-color: var(--bg-color);
+}
+
+/* Footer styles */
+footer {
+  background-color: var(--primary-color);
+  padding: 25px 0;
+  margin-top: 50px;
+  border-radius: 10px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+}
+
+.footer-title {
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.footer-copyright {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.social-links {
+  margin-top: 15px;
+  display: flex;
+  gap: 15px;
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
+
+/* Enhanced responsive styling */
+@media (max-width: 768px) {
+  /* Header adjustments */
+  .left_area h3 {
+    font-size: 1.2rem;
+  }
+  
+  .logo_image {
+    height: 30px;
+  }
+  
+  /* Already collapsed sidebar on mobile */
+  .sidebar {
+    left: calc(-1 * var(--sidebar-width));
+  }
+  
+  /* Show sidebar when checked */
+  #check:checked ~ .sidebar {
+    left: 0;
+    width: var(--sidebar-width);
+  }
+  
+  /* Show sidebar text when checked on mobile */
+  #check:checked ~ .sidebar a span,
+  #check:checked ~ .sidebar .sidebar-profile h4,
+  #check:checked ~ .sidebar .sidebar-profile h6 {
+    display: block;
+  }
+  
+  #check:checked ~ .sidebar a {
+    text-align: left;
+    padding: 15px 25px;
+  }
+  
+  #check:checked ~ .sidebar a i {
+    margin-right: 15px;
+    font-size: 1.2rem;
+  }
+  
+  /* Content should be full width */
+  .content {
+    margin-left: 0;
+  }
+  
+  /* Don't shift content on sidebar toggle */
+  #check:checked ~ .content {
+    margin-left: 0;
+  }
+  
+  /* Logout button smaller on mobile */
+  .logout_btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  
+  /* Table responsiveness */
+  .table-responsive {
+    overflow-x: auto;
+  }
 } 
