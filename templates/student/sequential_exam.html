@@ -227,12 +227,6 @@
   </div>
 </div>
 
-<div class="mt-3 text-center">
-  <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()" disabled>Previous</button>
-  <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next</button>
-  <button class="btn btn-danger ms-2" id="finishBtn" onclick="finishExam()">Finish Exam</button>
-</div>
-
 <script>
   // Exam configuration
   const totalQuestions = {{ questions|length }};
@@ -278,6 +272,13 @@
     // Check for previously answered questions from cookies
     loadSavedAnswers();
     updateAnsweredCount();
+    
+    // Ensure the bootstrap modal is properly initialized
+    const confirmFinishModal = document.getElementById('confirmFinishModal');
+    if (confirmFinishModal && typeof bootstrap !== 'undefined') {
+      // Create global modal instance for finish confirmation
+      window.finishModal = new bootstrap.Modal(confirmFinishModal);
+    }
   });
   
   // Apply security measures based on the security level
@@ -526,7 +527,20 @@
     }
     
     // Show the finish confirmation modal
-    new bootstrap.Modal(document.getElementById('confirmFinishModal')).show();
+    if (window.finishModal) {
+      window.finishModal.show();
+    } else {
+      // Fallback if modal object wasn't created during initialization
+      const confirmFinishModal = document.getElementById('confirmFinishModal');
+      if (confirmFinishModal && typeof bootstrap !== 'undefined') {
+        new bootstrap.Modal(confirmFinishModal).show();
+      } else {
+        // Direct submit if modal isn't available
+        if (confirm('Are you sure you want to finish the exam?')) {
+          submitExam();
+        }
+      }
+    }
   }
   
   // Submit the exam
