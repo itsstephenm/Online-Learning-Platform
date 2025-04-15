@@ -189,14 +189,20 @@ STATIC_DIR,
 
 LOGIN_REDIRECT_URL='/afterlogin'
 
-#for contact us give your gmail id and password
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'mail.reserveddigitalbranding.com')
-EMAIL_PORT = os.getenv('EMAIL_PORT', 465)
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'rsrvd@reserveddigitalbranding.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '1979Tmw.')
+# Email Configuration
+if DEBUG:
+    # During development, use the console backend to avoid authentication issues
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # In production, use SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'mail.reserveddigitalbranding.com')
+    EMAIL_PORT = os.getenv('EMAIL_PORT', 465)
+    EMAIL_USE_TLS = False
+    EMAIL_USE_SSL = True
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'rsrvd@reserveddigitalbranding.com')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '1979Tmw.')
+
 EMAIL_RECEIVING_USER = os.getenv('EMAIL_RECEIVING_USER', 'rsrvd@reserveddigitalbranding.com')
 EXPLORER_CONNECTIONS = {'Default': 'default'}
 EXPLORER_DEFAULT_CONNECTION = 'default'

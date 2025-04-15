@@ -256,14 +256,21 @@ def contactus_view(request):
             email = form.cleaned_data['Email']
             name = form.cleaned_data['Name']
             message = form.cleaned_data['Message']
-            send_mail(
-                subject=f'Contact Message from {name} ({email})',
-                message=message,
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[settings.EMAIL_RECEIVING_USER],
-                fail_silently=False
-            )
-            return render(request, 'quiz/contactussuccess.html')
+            try:
+                send_mail(
+                    subject=f'Contact Message from {name} ({email})',
+                    message=message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[settings.EMAIL_RECEIVING_USER],
+                    fail_silently=False
+                )
+                return render(request, 'quiz/contactussuccess.html')
+            except Exception as e:
+                # For development debugging - in production you'd want to log this instead
+                if settings.DEBUG:
+                    form.add_error(None, f"Failed to send email: {str(e)}")
+                else:
+                    form.add_error(None, "Failed to send email. Please try again later or contact us directly.")
     return render(request, 'quiz/contactus.html', {'form': form})
 
 @require_POST
