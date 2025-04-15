@@ -651,7 +651,7 @@ header {
   transform: translateY(-2px);
 }
 
-/* Improved sidebar collapse behavior */
+/* Improved sidebar styling based on original design */
 .sidebar {
   position: fixed;
   top: var(--header-height);
@@ -663,9 +663,19 @@ header {
   transition: all 0.3s ease;
   overflow-y: auto;
   z-index: 900;
+  border-right: 1px solid var(--border-color);
 }
 
-/* Consistent profile image size across all screens */
+/* Professional sidebar profile section */
+.sidebar-profile {
+  padding: 25px 0;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  background-color: var(--bg-secondary);
+}
+
+/* Fixed profile image */
 .profile_image {
   width: 100px;
   height: 100px;
@@ -675,47 +685,101 @@ header {
   padding: 3px;
   background: white;
   display: block;
-  margin: 0 auto 15px;
+  margin: 0 auto 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Fixed sidebar toggle behavior */
-#check:checked ~ .sidebar {
-  width: var(--sidebar-collapsed-width);
+/* Improved sidebar navigation items */
+.sidebar a {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  margin: 2px 8px;
+  border-radius: 8px;
+  font-weight: 500;
 }
 
-#check:checked ~ .sidebar .sidebar-profile h4,
-#check:checked ~ .sidebar .sidebar-profile h6 {
-  display: none;
+.sidebar a:hover {
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+  transform: translateX(5px);
 }
 
-#check:checked ~ .sidebar a {
-  padding: 15px 0;
-  text-align: center;
-  justify-content: center;
-  margin: 5px;
-}
-
-#check:checked ~ .sidebar a span {
-  display: none;
-}
-
-#check:checked ~ .sidebar a i {
-  margin-right: 0;
-  font-size: 1.5rem;
-}
-
-#check:checked ~ .content {
-  margin-left: var(--sidebar-collapsed-width);
-}
-
-/* Improved active menu item styling */
 .sidebar a.active {
   background: var(--primary-color);
   color: white !important;
+  transform: none;
+}
+
+.sidebar i {
+  font-size: 1.2rem;
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+  opacity: 0.85;
 }
 
 .sidebar a.active i {
   color: white;
+  opacity: 1;
+}
+
+.sidebar a span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Student info styling */
+.sidebar h4 {
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin: 10px 0 5px;
+}
+
+.sidebar h6 {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 0;
+}
+
+/* Fixed mobile sidebar with proper styling */
+@media (max-width: 768px) {
+  .sidebar {
+    left: calc(-1 * var(--sidebar-width));
+    background: white;
+  }
+  
+  #check:checked ~ .sidebar {
+    left: 0;
+    width: var(--sidebar-width);
+  }
+  
+  #check:checked ~ .sidebar a span {
+    display: inline-block;
+  }
+  
+  #check:checked ~ .sidebar a {
+    justify-content: flex-start;
+    text-align: left;
+    padding-left: 20px;
+  }
+  
+  #check:checked ~ .sidebar a i {
+    margin-right: 12px;
+  }
+  
+  .content {
+    margin-left: 0;
+  }
+  
+  #check:checked ~ .content {
+    margin-left: 0;
+  }
 }
 
 /* Consistent branding in header */
@@ -814,9 +878,10 @@ footer {
   /* Already collapsed sidebar on mobile */
   .sidebar {
     left: calc(-1 * var(--sidebar-width));
+    background: white;
   }
   
-  /* Show sidebar when checked */
+  /* Show sidebar when checked on mobile */
   #check:checked ~ .sidebar {
     left: 0;
     width: var(--sidebar-width);
@@ -831,12 +896,14 @@ footer {
   
   #check:checked ~ .sidebar a {
     text-align: left;
-    padding: 15px 25px;
+    padding: 12px 20px;
+    justify-content: flex-start;
   }
   
   #check:checked ~ .sidebar a i {
-    margin-right: 15px;
+    margin-right: 12px;
     font-size: 1.2rem;
+    width: 24px;
   }
   
   /* Content should be full width */
@@ -858,5 +925,187 @@ footer {
   /* Table responsiveness */
   .table-responsive {
     overflow-x: auto;
+  }
+}
+
+/* Sidebar collapse behavior */
+#check:checked ~ .sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+#check:checked ~ .sidebar .sidebar-profile h4,
+#check:checked ~ .sidebar .sidebar-profile h6 {
+  display: none;
+}
+
+#check:checked ~ .sidebar a {
+  padding: 15px 0;
+  text-align: center;
+  justify-content: center;
+  margin: 8px 5px;
+}
+
+#check:checked ~ .sidebar a span {
+  display: none;
+}
+
+#check:checked ~ .sidebar a i {
+  margin-right: 0;
+  font-size: 1.4rem;
+  width: 100%;
+}
+
+#check:checked ~ .content {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+/* AI Chat page specific styles */
+.ai-chat-content {
+  background-color: #1e1e2d;
+  color: #fff;
+  min-height: calc(100vh - var(--header-height));
+  margin: -30px;
+  padding: 30px;
+}
+
+.ai-chat-card {
+  background-color: #2b2b3e;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.ai-chat-header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ai-chat-body {
+  padding: 20px;
+}
+
+.chat-message {
+  background-color: #323248;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.chat-message.user {
+  background-color: var(--primary-color);
+  margin-left: auto;
+  max-width: 80%;
+}
+
+.chat-message.ai {
+  background-color: #323248;
+  margin-right: auto;
+  max-width: 80%;
+}
+
+.chat-input-container {
+  display: flex;
+  margin-top: 20px;
+}
+
+.chat-input {
+  flex: 1;
+  background-color: #323248;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 12px 15px;
+}
+
+.chat-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.chat-send-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 15px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.chat-send-btn:hover {
+  background-color: var(--secondary-color);
+}
+
+/* Fix for current AI chat page layout */
+.ai-chat-page .content {
+  padding: 0;
+}
+
+/* Fix for sidebar links in mobile view */
+@media (max-width: 768px) {
+  .sidebar a {
+    white-space: nowrap;
+  }
+  
+  .sidebar a span {
+    display: inline;
+  }
+}
+
+/* Fix for horizontal menu in screenshot */
+.horizontal-menu {
+  display: none; /* Hide the incorrect horizontal menu */
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: block !important; /* Ensure sidebar is displayed properly */
+    position: fixed;
+    top: var(--header-height);
+    left: calc(-1 * var(--sidebar-width));
+    width: var(--sidebar-width) !important;
+    height: calc(100vh - var(--header-height));
+    overflow-y: auto;
+    z-index: 900;
+    background-color: white;
+    transition: all 0.3s ease;
+  }
+  
+  #check:checked ~ .sidebar {
+    left: 0;
+  }
+  
+  /* Fix for sidebar links display */
+  .sidebar a {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 12px 20px !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+  
+  .sidebar a i {
+    width: 24px !important;
+    text-align: center !important;
+    margin-right: 12px !important;
+    font-size: 1.2rem !important;
+  }
+  
+  .sidebar a span {
+    display: inline-block !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Empty alt text for profile image to prevent text display */
+  .profile_image[alt] {
+    font-size: 0;
+    color: transparent;
   }
 } 
