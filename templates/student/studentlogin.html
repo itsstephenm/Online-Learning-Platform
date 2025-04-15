@@ -1,111 +1,208 @@
 <!DOCTYPE html>
 {% load widget_tweaks %}
 <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title></title>
-    <style media="screen">
-      body {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    background: linear-gradient(to right, #b92b27, #1565c0)
-}
 
-.box {
-    width: 500px;
-    padding: 40px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    background: var(--white);
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #24b0ed;
+      --bg-color: #151521;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.8);
+      --text-tertiary: rgba(255, 255, 255, 0.6);
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .main-content {
+      flex: 1;
+      padding-top: 3rem;
+    }
+    
+    .login-section {
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 4rem 0;
+    }
+    
+    .login-card {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 3rem;
+      text-align: center;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .login-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #24b0ed;
+    }
+    
+    .login-subtitle {
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .login-icon {
+      font-size: 4rem;
+      color: #24b0ed;
+      margin-bottom: 1.5rem;
+      opacity: 0.8;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-label-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    
+    .form-control {
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      height: auto;
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+      box-shadow: none;
+      border-color: var(--primary-color);
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .form-control::placeholder {
+      color: var(--text-tertiary);
+    }
+    
+    .btn-login {
+      background-color: var(--primary-color);
+      border: none;
+      padding: 0.75rem 2.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(36, 176, 237, 0.3);
+      margin-top: 1rem;
+      width: 100%;
+      color: #fff;
+    }
+    
+    .btn-login:hover {
+      background-color: #1a8cbb;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(36, 176, 237, 0.4);
+    }
+    
+    .signup-link {
+      margin-top: 1.5rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+    
+    .signup-link a {
+      color: #24b0ed;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 768px) {
+      .login-card {
+        padding: 2rem;
+        margin: 0 1rem;
+      }
+      
+      .login-title {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
 
-    text-align: center;
-    transition: 0.25s;
-    margin-top: 100px
-}
+<body>
+  {% include "quiz/navbar.html" %}
 
-.box input[type="text"],
-.box input[type="password"] {
-    border: 0;
-    background: none;
-    display: block;
-    margin: 20px auto;
-    text-align: center;
-    border: 2px solid #3498db;
-    padding: 10px 10px;
-    width: 250px;
-    outline: none;
-    color: var(--dark);
-    border-radius: 24px;
-    transition: 0.25s
-}
-
-.box h1 {
-    color: var(--blue);
-    text-transform: uppercase;
-    font-weight: 500
-}
-
-.box input[type="text"]:focus,
-.box input[type="password"]:focus {
-    width: 300px;
-    border-color: var(--cyan)
-}
-
-.box input[type="submit"] {
-    border: 0;
-    background: none;
-    display: block;
-    margin: 20px auto;
-    text-align: center;
-    border: 2px solid var(--blue);
-    padding: 14px 40px;
-    outline: none;
-    color: var(--dark);
-    border-radius: 24px;
-    transition: 0.25s;
-    cursor: pointer
-}
-
-.box input[type="submit"]:hover {
-    background: var(--blue)
-}
-
-.main_container {
-    background-image: url("../../static/image/assets/images/back2.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-    </style>
-  </head>
-  <body class="main_container">
-    {% include "quiz/navbar.html" %}
-    <br><br>
-    <div class="container">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <form class="box" method="post">
-                    {% csrf_token %}
-                    <h1>Student Login</h1>
-                    <p class="text-muted"> Please enter your username and password!</p>
-
-                     {% render_field form.username class="form-control" placeholder="Username" %}
-                     {% render_field form.password class="form-control" placeholder="Password" %}
-
-                     <input type="submit" name="" value="Login" style="border-radius: 50rem;">
-
-                </form>
+  <div class="main-content">
+    <section class="login-section">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <div class="login-card">
+              <i class="fas fa-user-graduate login-icon"></i>
+              <h1 class="login-title">Student Login</h1>
+              <p class="login-subtitle">Enter your credentials to access your account</p>
+              
+              <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                  {% render_field form.username class="form-control" placeholder="Username" %}
+                </div>
+                
+                <div class="form-group">
+                  {% render_field form.password class="form-control" placeholder="Password" type="password" %}
+                </div>
+                
+                <button type="submit" class="btn-login">
+                  <i class="fas fa-sign-in-alt me-2"></i> Login
+                </button>
+                
+                <div class="signup-link">
+                  Don't have an account? <a href="studentsignup">Sign up</a>
+                </div>
+              </form>
             </div>
+          </div>
         </div>
-    </div>
-</div>
-<br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br><br><br><br><br>
-<br><br><br><br><br>
-{% include "quiz/footer.html" %}
-  </body>
+      </div>
+    </section>
+  </div>
+
+  {% include "quiz/footer.html" %}
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
 </html>
