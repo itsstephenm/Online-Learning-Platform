@@ -6,54 +6,250 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #1e40af;
+      --accent-color: #3b82f6;
+      --warning-color: #ef4444;
+      --success-color: #22c55e;
+      --bg-color: #f8fafc;
+      --text-color: #1e293b;
+      --timer-bg: #dbeafe;
+      --card-bg: #ffffff;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    
+    .exam-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
     .question-container {
       display: none;
-      padding: 20px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+      padding: 30px;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 30px;
+      border-left: 5px solid var(--accent-color);
     }
     
     .active-question {
       display: block;
+      animation: fadeIn 0.3s ease-in-out;
     }
     
-    .timer-container {
-      background-color: #f0f8ff;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .timer-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 30px;
+    }
+    
+    .timer-header {
+      background-color: var(--primary-color);
+      color: white;
       padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
       text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-weight: 500;
+    }
+    
+    .timer-body {
+      display: flex;
+      padding: 0;
+    }
+    
+    .timer-column {
+      flex: 1;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .timer-column:first-child {
+      background-color: var(--timer-bg);
+    }
+    
+    .timer-column:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 20%;
+      height: 60%;
+      width: 1px;
+      background-color: #e5e7eb;
+    }
+    
+    .timer-label {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      color: #64748b;
+    }
+    
+    .timer-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-color);
     }
     
     .timer-warning {
-      color: #ff0000;
-      animation: blink 1s infinite;
+      color: var(--warning-color);
+      animation: pulse 1s infinite;
     }
     
-    @keyframes blink {
+    @keyframes pulse {
       0% { opacity: 1; }
-      50% { opacity: 0.5; }
+      50% { opacity: 0.6; }
       100% { opacity: 1; }
     }
     
     .progress-indicator {
-      margin: 20px 0;
+      margin: 30px 0;
     }
     
     .progress-text {
-      text-align: center;
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 10px;
-      font-weight: bold;
+      font-weight: 500;
+      color: #64748b;
+    }
+    
+    .progress {
+      height: 8px;
+      border-radius: 4px;
+      background-color: #e2e8f0;
+    }
+    
+    .progress-bar {
+      background-color: var(--primary-color);
+      border-radius: 4px;
+      transition: width 0.5s ease-in-out;
+    }
+    
+    .question-title {
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .question-marks {
+      display: inline-block;
+      background-color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: #64748b;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    
+    .option-container {
+      margin-bottom: 15px;
+      background-color: #f8fafc;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
+    }
+    
+    .option-container:hover {
+      background-color: #f1f5f9;
+    }
+    
+    .form-check {
+      padding: 15px 45px;
+      margin: 0;
+      cursor: pointer;
+    }
+    
+    .form-check-input {
+      margin-left: -25px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .form-check-input:checked {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .form-check-input:checked ~ .form-check-label {
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    
+    .form-check-input:checked ~ .option-container {
+      border-color: var(--primary-color);
+      background-color: #eff6ff;
+    }
+    
+    .form-check-label {
+      font-weight: 500;
+      cursor: pointer;
     }
     
     .navigation-buttons {
       display: flex;
       justify-content: space-between;
-      margin-top: 20px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .btn-prev {
+      background-color: #e2e8f0;
+      color: #475569;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-prev:hover:not(:disabled) {
+      background-color: #cbd5e1;
+    }
+    
+    .btn-next {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-next:hover {
+      background-color: var(--secondary-color);
+    }
+    
+    .btn-success {
+      background-color: var(--success-color);
+    }
+    
+    .btn-success:hover {
+      background-color: #16a34a;
     }
     
     /* Disable text selection */
@@ -70,58 +266,147 @@
       bottom: 0;
       right: 0;
       left: 0;
-      padding: 10px 20px;
-      background-color: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-      text-align: right;
+      padding: 15px 25px;
+      background-color: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
       z-index: 100;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      backdrop-filter: blur(5px);
     }
 
     .finish-exam-btn {
-      background-color: #dc3545;
+      background-color: var(--warning-color);
       color: white;
       border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      font-weight: bold;
-      transition: background-color 0.2s;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
     }
 
     .finish-exam-btn:hover {
-      background-color: #c82333;
+      background-color: #dc2626;
+      transform: translateY(-2px);
     }
 
     .exam-progress-status {
+      background-color: #f1f5f9;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: 600;
+      color: #475569;
+    }
+    
+    .course-title {
+      text-align: center;
+      margin-bottom: 30px;
+      color: var(--primary-color);
+      font-weight: 700;
+    }
+    
+    /* Modal styling */
+    .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-header {
+      background-color: #f8fafc;
+      border-radius: 12px 12px 0 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .modal-title {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+    
+    .modal-footer {
+      border-top: 1px solid #e5e7eb;
+      padding: 15px;
+    }
+    
+    .btn-modal-cancel {
+      background-color: #e2e8f0;
+      color: #475569;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
       font-weight: 500;
+    }
+    
+    .btn-modal-submit {
+      background-color: var(--warning-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .timer-body {
+        flex-direction: column;
+      }
+      
+      .timer-column:not(:last-child)::after {
+        display: none;
+      }
+      
+      .timer-value {
+        font-size: 24px;
+      }
+      
+      .option-container {
+        margin-bottom: 10px;
+      }
+      
+      .form-check {
+        padding: 12px 40px;
+      }
     }
   </style>
 </head>
 
-<div class="jumbotron my-4">
-  <div class="timer-container">
-    <h3>Time Remaining</h3>
-    <div id="exam-timer" class="h2">Loading...</div>
-    <div id="question-timer-container">
-      <h4>Current Question Time</h4>
-      <div id="question-timer" class="h3">Loading...</div>
+<div class="exam-container">
+  <div class="timer-card">
+    <div class="timer-header">
+      Exam Timer
+    </div>
+    <div class="timer-body">
+      <div class="timer-column">
+        <div class="timer-label">
+          <i class="fas fa-clock me-1"></i> Total Time Remaining
+        </div>
+        <div id="exam-timer" class="timer-value">Loading...</div>
+      </div>
+      <div class="timer-column">
+        <div class="timer-label">
+          <i class="fas fa-hourglass-half me-1"></i> Current Question Time
+        </div>
+        <div id="question-timer" class="timer-value">Loading...</div>
+      </div>
     </div>
   </div>
 
   <div class="progress-indicator">
     <div class="progress-text">
-      Question <span id="current-question-num">1</span> of <span id="total-questions">{{ questions|length }}</span>
+      <div>Question <span id="current-question-num">1</span> of <span id="total-questions">{{ questions|length }}</span></div>
+      <div class="answered-status"><span id="answered-count">0</span>/<span id="total-count">{{ questions|length }}</span> answered</div>
     </div>
     <div class="progress">
       <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
     </div>
   </div>
 
+  <h2 class="course-title">{{course.course_name}}</h2>
+
   <form id="exam-form" class="form" autocomplete="off" method="POST">
     {% csrf_token %}
-    <h1 style="text-align: center;">{{course.course_name}}</h1>
     
     {% for q in questions %}
     <div class="question-container {% if forloop.first %}active-question{% endif %}" 
@@ -129,68 +414,86 @@
          data-question-id="{{q.id}}" 
          data-question-index="{{forloop.counter0}}">
          
-      <h3 class="text-info">{{ forloop.counter }}. {{q.question}}</h3>
-      <h4 style="text-align: right;">[Marks {{q.marks}}]</h4>
+      <h3 class="question-title">
+        {{ forloop.counter }}. {{q.question}}
+        <span class="question-marks">[Marks {{q.marks}}]</span>
+      </h3>
       
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="question_{{q.id}}" 
-              id="option1-{{q.id}}" 
-              value="Option1"
-              data-question-id="{{q.id}}"
-              onclick="handleOptionSelect(this)">
-        <label class="form-check-label" for="option1-{{q.id}}">
-          {{q.option1}}
-        </label>
-      </div>
+      <div class="options-list">
+        <div class="option-container">
+          <div class="form-check">
+            <input class="form-check-input question-option" type="radio" 
+                  name="question_{{q.id}}" 
+                  id="option1-{{q.id}}" 
+                  value="Option1"
+                  data-question-id="{{q.id}}"
+                  onclick="handleOptionSelect(this)">
+            <label class="form-check-label" for="option1-{{q.id}}">
+              {{q.option1}}
+            </label>
+          </div>
+        </div>
 
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="question_{{q.id}}" 
-              id="option2-{{q.id}}" 
-              value="Option2"
-              data-question-id="{{q.id}}"
-              onclick="handleOptionSelect(this)">
-        <label class="form-check-label" for="option2-{{q.id}}">
-          {{q.option2}}
-        </label>
-      </div>
+        <div class="option-container">
+          <div class="form-check">
+            <input class="form-check-input question-option" type="radio" 
+                  name="question_{{q.id}}" 
+                  id="option2-{{q.id}}" 
+                  value="Option2"
+                  data-question-id="{{q.id}}"
+                  onclick="handleOptionSelect(this)">
+            <label class="form-check-label" for="option2-{{q.id}}">
+              {{q.option2}}
+            </label>
+          </div>
+        </div>
 
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="question_{{q.id}}" 
-              id="option3-{{q.id}}" 
-              value="Option3"
-              data-question-id="{{q.id}}"
-              onclick="handleOptionSelect(this)">
-        <label class="form-check-label" for="option3-{{q.id}}">
-          {{q.option3}}
-        </label>
-      </div>
+        <div class="option-container">
+          <div class="form-check">
+            <input class="form-check-input question-option" type="radio" 
+                  name="question_{{q.id}}" 
+                  id="option3-{{q.id}}" 
+                  value="Option3"
+                  data-question-id="{{q.id}}"
+                  onclick="handleOptionSelect(this)">
+            <label class="form-check-label" for="option3-{{q.id}}">
+              {{q.option3}}
+            </label>
+          </div>
+        </div>
 
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="question_{{q.id}}" 
-              id="option4-{{q.id}}" 
-              value="Option4"
-              data-question-id="{{q.id}}"
-              onclick="handleOptionSelect(this)">
-        <label class="form-check-label" for="option4-{{q.id}}">
-          {{q.option4}}
-        </label>
+        <div class="option-container">
+          <div class="form-check">
+            <input class="form-check-input question-option" type="radio" 
+                  name="question_{{q.id}}" 
+                  id="option4-{{q.id}}" 
+                  value="Option4"
+                  data-question-id="{{q.id}}"
+                  onclick="handleOptionSelect(this)">
+            <label class="form-check-label" for="option4-{{q.id}}">
+              {{q.option4}}
+            </label>
+          </div>
+        </div>
       </div>
 
       <div class="navigation-buttons">
         {% if course.allow_backtracking %}
-        <button type="button" class="btn btn-secondary btn-prev" onclick="prevQuestion()" {% if forloop.first %}disabled{% endif %}>Previous</button>
+        <button type="button" class="btn btn-prev" onclick="prevQuestion()" {% if forloop.first %}disabled{% endif %}>
+          <i class="fas fa-arrow-left me-1"></i> Previous
+        </button>
         {% else %}
         <div></div> <!-- Empty div to maintain flex spacing -->
         {% endif %}
         
         {% if forloop.last %}
-        <button type="button" class="btn btn-success btn-next" onclick="finishExam()">Finish Exam</button>
+        <button type="button" class="btn btn-success btn-next" onclick="finishExam()">
+          Finish Exam <i class="fas fa-check ms-1"></i>
+        </button>
         {% else %}
-        <button type="button" class="btn btn-primary btn-next" onclick="nextQuestion()">Next Question</button>
+        <button type="button" class="btn btn-next" onclick="nextQuestion()">
+          Next <i class="fas fa-arrow-right ms-1"></i>
+        </button>
         {% endif %}
       </div>
     </div>
@@ -200,27 +503,31 @@
   <!-- Sticky Footer with Finish Button -->
   <div class="exam-footer">
     <div class="exam-progress-status">
-      <span id="answered-count">0</span>/<span id="total-count">{{ questions|length }}</span> questions answered
+      <i class="fas fa-check-circle me-1"></i> <span id="answered-count-footer">0</span>/<span id="total-count-footer">{{ questions|length }}</span> questions answered
     </div>
-    <button type="button" class="finish-exam-btn" onclick="finishExam()">Finish Exam</button>
+    <button type="button" class="finish-exam-btn" onclick="finishExam()">
+      <i class="fas fa-paper-plane me-1"></i> Finish Exam
+    </button>
   </div>
 
   <!-- Confirmation Modal -->
-  <div class="modal fade" id="confirmFinishModal" tabindex="-1" role="dialog" aria-labelledby="confirmFinishModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+  <div class="modal fade" id="confirmFinishModal" tabindex="-1" aria-labelledby="confirmFinishModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="confirmFinishModalLabel">Confirm Submission</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <h5 class="modal-title" id="confirmFinishModalLabel">
+            <i class="fas fa-exclamation-triangle text-warning me-2"></i>Confirm Submission
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="finishModalBody">
           Are you sure you want to finish the exam?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-danger" onclick="submitExam()">Yes, Submit Exam</button>
+          <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-modal-submit" onclick="submitExam()">
+            <i class="fas fa-paper-plane me-1"></i> Yes, Submit Exam
+          </button>
         </div>
       </div>
     </div>
@@ -279,6 +586,9 @@
       // Create global modal instance for finish confirmation
       window.finishModal = new bootstrap.Modal(confirmFinishModal);
     }
+    
+    // Set total questions count in footer
+    document.getElementById('total-count-footer').textContent = totalQuestions;
   });
   
   // Apply security measures based on the security level
@@ -487,6 +797,20 @@
     // Save to cookie for backup
     setCookie(`question_${questionId}`, value, 1);
     
+    // Highlight the selected option's container
+    const optionContainers = document.querySelectorAll(`.question-container[data-question-id="${questionId}"] .option-container`);
+    optionContainers.forEach(container => {
+      container.style.borderColor = 'transparent';
+      container.style.backgroundColor = '#f8fafc';
+    });
+    
+    // Highlight the selected option
+    const selectedContainer = element.closest('.option-container');
+    if (selectedContainer) {
+      selectedContainer.style.borderColor = 'var(--primary-color)';
+      selectedContainer.style.backgroundColor = '#eff6ff';
+    }
+    
     // Update answered questions count
     updateAnsweredCount();
   }
@@ -495,6 +819,17 @@
   function updateAnsweredCount() {
     const answeredCount = Object.keys(answers).length;
     document.getElementById('answered-count').textContent = answeredCount;
+    document.getElementById('answered-count-footer').textContent = answeredCount;
+    
+    // Update progress color based on completion
+    const progressBar = document.getElementById('progress-bar');
+    const completionRatio = answeredCount / totalQuestions;
+    
+    if (completionRatio === 1) {
+      progressBar.classList.add('bg-success');
+    } else {
+      progressBar.classList.remove('bg-success');
+    }
   }
   
   // Update the progress bar
@@ -512,18 +847,22 @@
     
     if (unansweredCount > 0) {
       // Create warning message
-      let warningMessage = `Warning: You have ${unansweredCount} unanswered question`;
-      if (unansweredCount > 1) warningMessage += 's';
-      warningMessage += `. Unanswered questions will be marked as incorrect.`;
+      let warningMessage = `<div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Warning:</strong> You have ${unansweredCount} unanswered question${unansweredCount > 1 ? 's' : ''}.
+        <br>Unanswered questions will be marked as incorrect.
+      </div>`;
       
       // Set the warning message in the modal
-      document.getElementById('finishModalBody').textContent = warningMessage;
-      
-      // Show the warning in the modal
-      document.getElementById('finishModalBody').style.display = 'block';
+      document.getElementById('finishModalBody').innerHTML = warningMessage;
     } else {
-      // Hide the warning if all questions are answered
-      document.getElementById('finishModalBody').style.display = 'none';
+      // Confirmation message if all questions are answered
+      document.getElementById('finishModalBody').innerHTML = `
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle me-2"></i>
+          <strong>Great job!</strong> You've answered all questions.
+          <br>Are you ready to submit your exam?
+        </div>`;
     }
     
     // Show the finish confirmation modal
@@ -600,8 +939,32 @@
       }
     });
     
+    // Show loading overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.style.position = 'fixed';
+    loadingOverlay.style.top = '0';
+    loadingOverlay.style.left = '0';
+    loadingOverlay.style.width = '100%';
+    loadingOverlay.style.height = '100%';
+    loadingOverlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+    loadingOverlay.style.display = 'flex';
+    loadingOverlay.style.alignItems = 'center';
+    loadingOverlay.style.justifyContent = 'center';
+    loadingOverlay.style.zIndex = '9999';
+    loadingOverlay.innerHTML = `
+      <div class="text-center">
+        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4>Submitting your exam...</h4>
+      </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+    
     // Redirect to calculate-marks
-    window.location.href = '/student/calculate-marks';
+    setTimeout(() => {
+      window.location.href = '/student/calculate-marks';
+    }, 800);
   }
   
   // Auto-submit the exam when the total time expires
@@ -633,6 +996,13 @@
         const radioInput = document.querySelector(`input[name="question_${questionId}"][value="${savedAnswer}"]`);
         if (radioInput) {
           radioInput.checked = true;
+          
+          // Highlight the selected option
+          const selectedContainer = radioInput.closest('.option-container');
+          if (selectedContainer) {
+            selectedContainer.style.borderColor = 'var(--primary-color)';
+            selectedContainer.style.backgroundColor = '#eff6ff';
+          }
         }
       }
     });
