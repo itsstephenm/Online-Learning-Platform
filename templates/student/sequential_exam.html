@@ -504,18 +504,29 @@
   
   // Show the finish confirmation modal
   function finishExam() {
-    // Check for unanswered questions
-    const answeredCount = Object.keys(answers).length;
-    const unansweredCount = totalQuestions - answeredCount;
+    // Get total questions and count answered questions
+    const totalQuestions = document.querySelectorAll('.question-container').length;
+    const answeredQuestions = Object.keys(answers).length;
+    const unansweredCount = totalQuestions - answeredQuestions;
     
     if (unansweredCount > 0) {
-      document.getElementById('unanswered-warning').textContent = 
-        `Warning: You have ${unansweredCount} unanswered question(s).`;
+      // Create warning message
+      let warningMessage = `Warning: You have ${unansweredCount} unanswered question`;
+      if (unansweredCount > 1) warningMessage += 's';
+      warningMessage += `. Unanswered questions will be marked as incorrect.`;
+      
+      // Set the warning message in the modal
+      document.getElementById('unanswered-warning').textContent = warningMessage;
+      
+      // Show the warning in the modal
+      document.getElementById('unanswered-warning').style.display = 'block';
     } else {
-      document.getElementById('unanswered-warning').textContent = '';
+      // Hide the warning if all questions are answered
+      document.getElementById('unanswered-warning').style.display = 'none';
     }
     
-    $('#finish-confirmation').modal('show');
+    // Show the finish confirmation modal
+    new bootstrap.Modal(document.getElementById('finish-confirmation')).show();
   }
   
   // Submit the exam
