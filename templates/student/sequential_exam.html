@@ -200,30 +200,27 @@
   <!-- Sticky Footer with Finish Button -->
   <div class="exam-footer">
     <div class="exam-progress-status">
-      <span id="answered-count">0</span>/<span>{{ questions|length }}</span> questions answered
+      <span id="answered-count">0</span>/<span id="total-count">{{ questions|length }}</span> questions answered
     </div>
-    <button type="button" class="finish-exam-btn" onclick="finishExam()">
-      <i class="fas fa-check-circle"></i> Finish Exam
-    </button>
+    <button type="button" class="finish-exam-btn" onclick="finishExam()">Finish Exam</button>
   </div>
 
-  <div id="finish-confirmation" class="modal fade" tabindex="-1" role="dialog">
+  <!-- Confirmation Modal -->
+  <div class="modal fade" id="confirmFinishModal" tabindex="-1" role="dialog" aria-labelledby="confirmFinishModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h4 class="modal-title">Finish Exam?</h4>
+          <h5 class="modal-title" id="confirmFinishModalLabel">Confirm Submission</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
-          <p>Are you sure you want to finish and submit this exam?</p>
-          <p>Unanswered questions will be marked as incorrect.</p>
-          <p id="unanswered-warning" class="text-danger"></p>
+        <div class="modal-body" id="finishModalBody">
+          Are you sure you want to finish the exam?
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="submitExam()">Submit Exam</button>
+          <button type="button" class="btn btn-danger" onclick="submitExam()">Yes, Submit Exam</button>
         </div>
       </div>
     </div>
@@ -516,17 +513,17 @@
       warningMessage += `. Unanswered questions will be marked as incorrect.`;
       
       // Set the warning message in the modal
-      document.getElementById('unanswered-warning').textContent = warningMessage;
+      document.getElementById('finishModalBody').textContent = warningMessage;
       
       // Show the warning in the modal
-      document.getElementById('unanswered-warning').style.display = 'block';
+      document.getElementById('finishModalBody').style.display = 'block';
     } else {
       // Hide the warning if all questions are answered
-      document.getElementById('unanswered-warning').style.display = 'none';
+      document.getElementById('finishModalBody').style.display = 'none';
     }
     
     // Show the finish confirmation modal
-    new bootstrap.Modal(document.getElementById('finish-confirmation')).show();
+    new bootstrap.Modal(document.getElementById('confirmFinishModal')).show();
   }
   
   // Submit the exam
