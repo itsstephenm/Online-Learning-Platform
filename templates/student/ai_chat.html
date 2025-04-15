@@ -4,6 +4,10 @@
   <div class="main-card">
     <div class="card-header">
       <h5>AI Quiz Assistant</h5>
+      <div class="connection-status">
+        <span id="connection-indicator" class="status-indicator offline"></span>
+        <span id="connection-text">Checking connection...</span>
+      </div>
     </div>
     <div class="card-body two-column-layout">
       <!-- Left Column - Chat Section -->
@@ -147,6 +151,44 @@ const renderer = {
 
 marked.use({ renderer });
 
+// Function to check AI service connection
+function checkAIConnection() {
+    const connectionIndicator = document.getElementById('connection-indicator');
+    const connectionText = document.getElementById('connection-text');
+    
+    fetch('{% url "check_ai_connection" %}', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.connected) {
+            connectionIndicator.className = 'status-indicator online';
+            connectionText.textContent = 'AI Service Connected';
+            connectionText.className = 'connection-text online';
+            document.getElementById('question-input').disabled = false;
+            document.querySelector('.send-btn').disabled = false;
+        } else {
+            connectionIndicator.className = 'status-indicator offline';
+            connectionText.textContent = 'AI Service Disconnected';
+            connectionText.className = 'connection-text offline';
+            document.getElementById('question-input').disabled = true;
+            document.querySelector('.send-btn').disabled = true;
+        }
+    })
+    .catch(error => {
+        console.error('Connection check failed:', error);
+        connectionIndicator.className = 'status-indicator offline';
+        connectionText.textContent = 'Connection Error';
+        connectionText.className = 'connection-text offline';
+        document.getElementById('question-input').disabled = true;
+        document.querySelector('.send-btn').disabled = true;
+    });
+}
+
 // Function to process markdown content
 function processMarkdown(content) {
     try {
@@ -183,6 +225,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Check connection initially
+    checkAIConnection();
+    
+    // Set up periodic connection checks
+    setInterval(checkAIConnection, 30000); // Check every 30 seconds
 
     chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -210,17 +258,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     course_id: courseSelect.value
                 })
             });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                let errorMsg = `Server error: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) errorMsg = errorData.error;
+                } catch (e) {}
+                throw new Error(errorMsg);
+            }
+            
             const data = await response.json();
+            chatMessages.removeChild(typingIndicator);
+            
             if (data.error) {
-                appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
+                appendMessage('ai', `Sorry, I encountered an error: ${data.error}`);
+                // Update connection status if there's a connection issue
+                checkAIConnection();
+            } else if (!data.response || data.response.trim() === '') {
+                appendMessage('ai', 'Sorry, I couldn\'t generate a response. Please try again.');
+                checkAIConnection();
             } else {
-                chatMessages.removeChild(typingIndicator);
                 appendMessage('ai', data.response);
             }
         } catch (error) {
             console.error('Error:', error);
-            appendMessage('ai', 'Sorry, I encountered an error. Please try again.');
+            chatMessages.removeChild(typingIndicator);
+            appendMessage('ai', `Sorry, I encountered an error: ${error.message || 'Unknown error'}`);
+            checkAIConnection();
         } finally {
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
@@ -271,80 +335,155 @@ document.addEventListener('DOMContentLoaded', function() {
         return container;
     }
 
-    // Initialize copy buttons
-    document.querySelectorAll('.copy-button').forEach(button => {
-        button.addEventListener('click', function() {
-            const codeBlock = this.closest('.code-block');
-            const code = codeBlock.querySelector('code');
-            const tooltip = codeBlock.querySelector('.copy-tooltip');
-            
-            navigator.clipboard.writeText(code.innerText).then(() => {
-                tooltip.classList.add('show');
+    // Initialize copy buttons for code blocks
+    function initializeCodeActions() {
+        document.querySelectorAll('.copy-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const codeBlock = this.closest('.code-block');
+                const code = codeBlock.querySelector('code');
+                const tooltip = codeBlock.querySelector('.copy-tooltip');
                 
-                const originalContent = this.innerHTML;
-                this.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Copied!
-                `;
-                this.style.color = '#50fa7b';
-                
-                setTimeout(() => {
-                    tooltip.classList.remove('show');
-                    this.innerHTML = originalContent;
-                    this.style.color = '';
-                }, 2000);
+                navigator.clipboard.writeText(code.innerText).then(() => {
+                    tooltip.classList.add('show');
+                    
+                    const originalContent = this.innerHTML;
+                    this.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Copied!
+                    `;
+                    this.style.color = '#50fa7b';
+                    
+                    setTimeout(() => {
+                        tooltip.classList.remove('show');
+                        this.innerHTML = originalContent;
+                        this.style.color = '';
+                    }, 2000);
+                });
             });
         });
-    });
 
-    // Initialize edit buttons
-    document.querySelectorAll('.edit-button').forEach(button => {
-        button.addEventListener('click', function() {
-            const codeBlock = this.closest('.code-block');
-            const codeContent = codeBlock.querySelector('.code-content');
-            const code = codeBlock.querySelector('code');
-            const originalCode = code.innerText;
-            
-            const textarea = document.createElement('textarea');
-            textarea.className = 'code-edit-textarea';
-            textarea.value = originalCode;
-            
-            const actions = document.createElement('div');
-            actions.className = 'code-edit-actions';
-            
-            const saveButton = document.createElement('button');
-            saveButton.textContent = 'Save';
-            saveButton.className = 'copy-button';
-            
-            const cancelButton = document.createElement('button');
-            cancelButton.textContent = 'Cancel';
-            cancelButton.className = 'edit-button';
-            
-            actions.appendChild(saveButton);
-            actions.appendChild(cancelButton);
-            
-            const originalContent = codeContent.innerHTML;
-            codeContent.innerHTML = '';
-            codeContent.appendChild(textarea);
-            codeContent.appendChild(actions);
-            
-            saveButton.onclick = () => {
-                const newCode = textarea.value;
-                const language = code.className.replace('language-', '');
-                const highlightedCode = hljs.highlight(newCode, { language }).value;
-                code.innerHTML = highlightedCode;
-                codeContent.innerHTML = originalContent;
-            };
-            
-            cancelButton.onclick = () => {
-                codeContent.innerHTML = originalContent;
-            };
-            
-            textarea.focus();
+        document.querySelectorAll('.edit-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const codeBlock = this.closest('.code-block');
+                const codeContent = codeBlock.querySelector('.code-content');
+                const code = codeBlock.querySelector('code');
+                const originalCode = code.innerText;
+                
+                const textarea = document.createElement('textarea');
+                textarea.className = 'code-edit-textarea';
+                textarea.value = originalCode;
+                
+                const actions = document.createElement('div');
+                actions.className = 'code-edit-actions';
+                
+                const saveButton = document.createElement('button');
+                saveButton.textContent = 'Save';
+                saveButton.className = 'copy-button';
+                
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = 'Cancel';
+                cancelButton.className = 'edit-button';
+                
+                actions.appendChild(saveButton);
+                actions.appendChild(cancelButton);
+                
+                const originalContent = codeContent.innerHTML;
+                codeContent.innerHTML = '';
+                codeContent.appendChild(textarea);
+                codeContent.appendChild(actions);
+                
+                saveButton.onclick = () => {
+                    const newCode = textarea.value;
+                    const language = code.className.replace('language-', '');
+                    const highlightedCode = hljs.highlight(newCode, { language }).value;
+                    code.innerHTML = highlightedCode;
+                    codeContent.innerHTML = originalContent;
+                };
+                
+                cancelButton.onclick = () => {
+                    codeContent.innerHTML = originalContent;
+                };
+                
+                textarea.focus();
+            });
         });
-    });
+    }
+
+    // Initialize code action buttons
+    initializeCodeActions();
+
+    // Function to copy code
+    window.copyCode = function(button) {
+        const codeBlock = button.closest('.code-block');
+        const code = codeBlock.querySelector('code');
+        const tooltip = codeBlock.querySelector('.copy-tooltip');
+        
+        navigator.clipboard.writeText(code.innerText).then(() => {
+            tooltip.classList.add('show');
+            
+            const originalContent = button.innerHTML;
+            button.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Copied!
+            `;
+            button.style.color = '#50fa7b';
+            
+            setTimeout(() => {
+                tooltip.classList.remove('show');
+                button.innerHTML = originalContent;
+                button.style.color = '';
+            }, 2000);
+        });
+    };
+
+    // Function to edit code
+    window.editCode = function(button) {
+        const codeBlock = button.closest('.code-block');
+        const codeContent = codeBlock.querySelector('.code-content');
+        const code = codeBlock.querySelector('code');
+        const originalCode = code.innerText;
+        
+        const textarea = document.createElement('textarea');
+        textarea.className = 'code-edit-textarea';
+        textarea.value = originalCode;
+        
+        const actions = document.createElement('div');
+        actions.className = 'code-edit-actions';
+        
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Save';
+        saveButton.className = 'copy-button';
+        
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.className = 'edit-button';
+        
+        actions.appendChild(saveButton);
+        actions.appendChild(cancelButton);
+        
+        const originalContent = codeContent.innerHTML;
+        codeContent.innerHTML = '';
+        codeContent.appendChild(textarea);
+        codeContent.appendChild(actions);
+        
+        saveButton.onclick = () => {
+            const newCode = textarea.value;
+            const language = code.className.replace('language-', '');
+            const highlightedCode = hljs.highlight(newCode, { language }).value;
+            code.innerHTML = highlightedCode;
+            codeContent.innerHTML = originalContent;
+        };
+        
+        cancelButton.onclick = () => {
+            codeContent.innerHTML = originalContent;
+        };
+        
+        textarea.focus();
+    };
 
     questionInput.focus();
 });
@@ -371,11 +510,51 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 1rem;
     color: white;
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .card-header h5 {
     margin: 0;
     font-size: 1.25rem;
+}
+
+/* Connection Status Styles */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.online {
+    background-color: #4caf50;
+    box-shadow: 0 0 8px #4caf50;
+}
+
+.status-indicator.offline {
+    background-color: #f44336;
+    box-shadow: 0 0 8px #f44336;
+}
+
+.connection-text {
+    font-weight: 500;
+}
+
+.connection-text.online {
+    color: #e0f2f1;
+}
+
+.connection-text.offline {
+    color: #ffebee;
 }
 
 .card-body {
@@ -555,6 +734,11 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.9rem;
 }
 
+#question-input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
 .send-btn {
     background: #0066ff;
     color: white;
@@ -567,6 +751,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .send-btn:hover {
     background: #0052cc;
+}
+
+.send-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
 }
 
 /* Code Block Layout */
@@ -768,6 +957,17 @@ document.addEventListener('DOMContentLoaded', function() {
     30% { transform: translateY(-5px); }
 }
 
+/* Pulse animation for connection indicator */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+.status-indicator.online {
+    animation: pulse 2s infinite;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .two-column-layout {
@@ -788,6 +988,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .app-container {
         height: auto;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .connection-status {
+        width: 100%;
+        justify-content: flex-start;
     }
 }
 </style>
