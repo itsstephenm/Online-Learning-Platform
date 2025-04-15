@@ -10,7 +10,7 @@ from datetime import date, timedelta, timezone
 from quiz import models as QMODEL
 from teacher import models as TMODEL
 from django.contrib.auth import logout
-from .ai_utils import get_ai_response, get_student_ai_insights
+from .ai_utils import get_ai_response, get_student_ai_insights, extract_topics
 import json
 import logging
 import requests
