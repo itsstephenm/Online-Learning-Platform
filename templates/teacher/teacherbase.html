@@ -9,116 +9,88 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css">
-  <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
 
   <style media="screen">
-     :root {
-    --blue: #24b0ed;
-    --indigo: #6610f2;
-    --purple: #6f42c1;
-    --pink: #e83e8c;
-    --red: #dc3545;
-    --orange: #fd7e14;
-    --yellow: #ffc107;
-    --green: #28a745;
-    --teal: #20c997;
-    --cyan: #17a2b8;
-    --white: #fff;
-    --gray: #6c757d;
-    --gray-dark: #343a40;
-    --primary: #24b0ed;
-    --secondary: #6c757d;
-    --success: #28a745;
-    --info: #17a2b8;
-    --warning: #ffc107;
-    --danger: #dc3545;
-    --light: #f8f9fa;
-    --dark: #343a40;
-    --text-color: #ffffff;
-    --primary-color: #19B3D3;
-    --breakpoint-xs: 0;
-    --breakpoint-sm: 576px;
-    --breakpoint-md: 768px;
-    --breakpoint-lg: 992px;
-    --breakpoint-xl: 1200px;
-    --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-   
-    a:link {
-      text-decoration: none;
-    }
-
     body {
       margin: 0;
       padding: 0;
-      font-family: "Gill Sans", sans-serif;;
+      font-family: 'Inter', sans-serif;
+      background-color: #1e1e2d;
+      color: #ffffff;
     }
 
+    /* Header styling */
     header {
       position: fixed;
-      background: var(--dark);
-      padding: 20px;
+      background: #1e1e2d;
+      padding: 15px 20px;
       width: 100%;
-      z-index: 1;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .left_area {
+      display: flex;
+      align-items: center;
     }
 
     .left_area h3 {
-      color: var(--white);
-      margin: 0px;
-      text-transform: uppercase;
+      color: #fff;
+      margin: 0 0 0 15px;
       font-size: 22px;
-      font-weight: 900;
+      font-weight: 600;
     }
 
     .left_area span {
-      color: var(--primary-color);
+      color: #24b0ed;
+    }
+
+    .logo_image {
+      height: 40px;
+      width: auto;
     }
 
     .logout_btn {
-      padding: 8px 15px;
-      background: var(--primary-color);
-      text-decoration: none;
-      float: right;
-      margin-top: -30px;
-      margin-right: 40px;
-      border-radius: 4px;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--white);
-      transition: 0.3s;
+      background-color: #24b0ed;
+      color: #fff;
       border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .logout_btn:hover {
-      background: #0B87A6;
+      background-color: #1a8cbb;
       transform: translateY(-2px);
     }
 
+    /* Sidebar styling */
     .sidebar {
-      background: var(--dark);
+      background: #1a1a27;
       margin-top: 70px;
       padding-top: 30px;
       position: fixed;
       left: 0;
       width: 250px;
-      height: 100%;
-      transition: 0.5s;
-      transition-property: left;
-      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar .profile_image {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      margin-bottom: 10px;
-      object-fit: cover;
-      border: 4px solid var(--primary-color);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      height: calc(100% - 70px);
+      overflow-y: auto;
+      transition: 0.3s;
+      z-index: 900;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     }
 
     .sidebar-profile {
@@ -128,111 +100,289 @@
       margin-bottom: 20px;
     }
 
+    .profile_image {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #24b0ed;
+      padding: 3px;
+      margin: 0 auto 15px;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
     .sidebar h4 {
-      color: var(--white);
-      margin-top: 10px;
+      color: #fff;
+      margin-top: 5px;
       margin-bottom: 5px;
       font-weight: 600;
+      font-size: 16px;
     }
     
     .sidebar h6 {
-      color: var(--primary-color);
+      color: #24b0ed;
       margin-top: 0;
       font-weight: 500;
+      font-size: 14px;
     }
 
     .sidebar a {
-      color: var(--white);
-      display: block;
+      color: rgba(255, 255, 255, 0.85);
+      display: flex;
+      align-items: center;
       width: 100%;
-      line-height: 60px;
+      padding: 15px 25px;
       text-decoration: none;
-      padding-left: 40px;
-      box-sizing: border-box;
       transition: 0.3s;
       border-left: 3px solid transparent;
     }
 
+    .sidebar a.active {
+      background: rgba(36, 176, 237, 0.2);
+      color: #fff;
+      border-left: 3px solid #24b0ed;
+    }
+
     .sidebar a:hover {
-      background: rgba(25, 179, 211, 0.1);
-      border-left: 3px solid var(--primary-color);
+      background: rgba(36, 176, 237, 0.1);
+      color: #fff;
+      border-left: 3px solid #24b0ed;
     }
 
     .sidebar i {
-      padding-right: 10px;
+      font-size: 18px;
+      margin-right: 15px;
+      width: 20px;
+      text-align: center;
     }
 
-    label #sidebar_btn {
-      z-index: 1;
-      color: var(--white);
-      position: fixed;
+    .sidebar a span {
+      font-size: 15px;
+    }
+
+    /* Content area */
+    .content {
+      margin-left: 250px;
+      padding: 90px 30px 30px;
+      min-height: 100vh;
+      transition: 0.3s;
+      background-color: #151521;
+    }
+
+    /* Responsive sidebar toggle */
+    #sidebar_btn {
+      color: #fff;
       cursor: pointer;
-      left: 300px;
       font-size: 20px;
-      margin: 5px 0;
-      transition: 0.5s;
-      transition-property: color;
+      transition: 0.3s;
+      margin-right: 15px;
     }
 
-    label #sidebar_btn:hover {
-      color: var(--primary-color);
+    #sidebar_btn:hover {
+      color: #24b0ed;
     }
 
-    #check:checked~.sidebar {
+    #check:checked ~ .sidebar {
       left: -190px;
     }
 
-    #check:checked~.sidebar a span {
+    #check:checked ~ .sidebar a span {
       display: none;
     }
 
-    #check:checked~.sidebar a {
-      font-size: 20px;
-      margin-left: 170px;
-      width: 80px;
+    #check:checked ~ .sidebar a {
+      padding: 15px 15px;
+      text-align: center;
+      margin-left: 160px;
+      width: 90px;
     }
 
-    .content {
-      margin-left: 250px;
-      background: url(./../../static/image/assets/images/background.jpeg) no-repeat;
-      background-position: center;
-      background-size: cover;
-      transition: 0.5s;
-      min-height: 100vh;
-    }
-
-    #check:checked~.content {
+    #check:checked ~ .content {
       margin-left: 60px;
     }
 
     #check {
       display: none;
     }
+
+    /* Card styling for dashboard */
+    .stats-card {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      border-left: 4px solid #24b0ed;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .stats-card h4 {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .stats-card .stats-value {
+      color: #fff;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 0;
+    }
+
+    .stats-card .stats-icon {
+      float: right;
+      font-size: 48px;
+      color: rgba(36, 176, 237, 0.4);
+    }
+
+    /* Action button styling */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      background-color: #24b0ed;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      box-shadow: 0 4px 10px rgba(36, 176, 237, 0.3);
+    }
+
+    .action-btn:hover {
+      background-color: #1a8cbb;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(36, 176, 237, 0.4);
+    }
+
+    .action-btn i {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+
+    /* Footer styling */
+    footer {
+      background-color: rgba(36, 176, 237, 0.1);
+      border-radius: 10px;
+      padding: 25px;
+      margin-top: 40px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .footer-content {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .footer-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 5px;
+      font-size: 18px;
+    }
+
+    .footer-copyright {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 15px;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .social-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      color: #fff;
+      transition: all 0.3s ease;
+    }
+
+    .social-icon:hover {
+      background-color: #24b0ed;
+      transform: translateY(-3px);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .sidebar {
+        left: -250px;
+        width: 250px;
+      }
+      
+      .content {
+        margin-left: 0;
+      }
+      
+      #check:checked ~ .sidebar {
+        left: 0;
+      }
+      
+      #check:checked ~ .content {
+        margin-left: 0;
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+      
+      .stats-card .stats-value {
+        font-size: 24px;
+      }
+      
+      .stats-card .stats-icon {
+        font-size: 36px;
+      }
+      
+      .action-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 
 <body>
-
   <input type="checkbox" id="check">
-  <!--header area start-->
+  
+  <!-- Header area start -->
   <header>
-    <label for="check">
-      <i style="left: 200px;margin-top: 17px;"class="fas fa-bars" id="sidebar_btn"></i>
-    </label>
     <div class="left_area">
-      <img src="{% static "../static/image/assets/images/oem.png" %}" width="100rem" style="margin-right: 15px;" alt="Logo">
-      <h3>CUT <span>Online Quiz</span></h3>
+      <label for="check">
+        <i class="fas fa-bars" id="sidebar_btn"></i>
+      </label>
+      <img src="{% static "../static/image/assets/images/oem.png" %}" class="logo_image" alt="Logo">
+      <h3>CUT <span>ONLINE QUIZ</span></h3>
     </div>
     <div class="right_area">
-  <form action="{% url 'logout' %}" method="POST">
-    {% csrf_token %}
-    <button class="logout_btn" type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button>
-  </form>
+      <form action="{% url 'logout' %}" method="POST">
+        {% csrf_token %}
+        <button class="logout_btn" type="submit">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </form>
     </div>
   </header>
-  <!--header area end-->
+  <!-- Header area end -->
 
-  <!--sidebar start-->
+  <!-- Sidebar start -->
   <div class="sidebar">
     <div class="sidebar-profile">
       {% if teacher.profile_pic %}
@@ -265,21 +415,29 @@
       <span>Adaptive Quiz</span>
     </a>
   </div>
-  <!--sidebar end-->
+  <!-- Sidebar end -->
 
-
-  <!--content start-->
+  <!-- Content start -->
   <div class="content">
-    <br><br><br><br><br>
     {% block content %}
-
     {% endblock content %}
 
-
-    <br><br><br>
-    {% include "quiz/footer.html" %}
+    <!-- Footer -->
+    <footer>
+      <div class="footer-content">
+        <div class="footer-title">CUT Online Quiz System</div>
+        <div class="footer-copyright">© {% now "Y" %} Chinhoyi University of Technology. All rights reserved.</div>
+        <p>A modern assessment platform designed for efficient and secure online examinations.</p>
+        <div class="social-links">
+          <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+    </footer>
   </div>
-  <!--content end-->
+  <!-- Content end -->
 
   <!-- Bootstrap JS Bundle with Popper -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -287,12 +445,10 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   
   <script>
-    // Add active class based on current path
+    // Highlight active menu item
     $(document).ready(function() {
-      // Get current path
-      var path = window.location.pathname;
+      const path = window.location.pathname;
       
-      // Add active class to corresponding sidebar link
       $(".sidebar a").each(function() {
         if ($(this).attr("href") === path) {
           $(this).addClass("active");
@@ -301,5 +457,4 @@
     });
   </script>
 </body>
-
 </html>
