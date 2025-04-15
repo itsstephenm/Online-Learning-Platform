@@ -238,8 +238,8 @@
               <div class="ai-stat-card">
                 <h6><i class="fas fa-bookmark"></i> Top Topics You've Explored</h6>
                 <div class="mt-3">
-                  {% for topic, count in ai_insights.top_topics %}
-                    <span class="topic-badge">{{ topic|title }} ({{ count }})</span>
+                  {% for topic in ai_insights.top_topics %}
+                    <span class="topic-badge">{{ topic|title }}</span>
                   {% endfor %}
                 </div>
               </div>
