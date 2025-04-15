@@ -3,6 +3,58 @@
 
 <head>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    footer {
+      background-color: rgba(36, 176, 237, 0.1);
+      border-radius: 10px;
+      padding: 25px;
+      margin-top: 40px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .footer-content {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .footer-title {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 5px;
+      font-size: 18px;
+    }
+    
+    .footer-copyright {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 15px;
+    }
+    
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .social-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      color: #fff;
+      transition: all 0.3s ease;
+    }
+    
+    .social-icon:hover {
+      background-color: #24b0ed;
+      transform: translateY(-3px);
+    }
+  </style>
 </head>
 
 <footer>
@@ -10,9 +62,9 @@
     <div class="footer-content">
       <div class="footer-title">CUT Online Quiz</div>
       <div class="footer-copyright">
-        &copy; 2025 Online Quiz System. All rights reserved.
+        &copy; {% now "Y" %} Chinhoyi University of Technology. All rights reserved.
       </div>
-      
+      <p>A modern assessment platform designed for efficient and secure online examinations.</p>
       <div class="social-links">
         <a href="#" class="social-icon">
           <i class="fab fa-facebook-f"></i>

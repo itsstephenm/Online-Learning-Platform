@@ -44,6 +44,16 @@
         font-size: 14px;
         line-height: 25px;
     }
+    .progress-bar-10 { width: 10%; }
+    .progress-bar-20 { width: 20%; }
+    .progress-bar-30 { width: 30%; }
+    .progress-bar-40 { width: 40%; }
+    .progress-bar-50 { width: 50%; }
+    .progress-bar-60 { width: 60%; }
+    .progress-bar-70 { width: 70%; }
+    .progress-bar-80 { width: 80%; }
+    .progress-bar-90 { width: 90%; }
+    .progress-bar-100 { width: 100%; }
     .bg-info {
         background-color: #24b0ed !important;
     }
@@ -252,8 +262,7 @@
                         <div class="progress">
                             {% if detailed_analytics.skill_level|stringformat:"s" != "Not available yet" %}
                             {% with skill_level=detailed_analytics.skill_level|floatformat:1 %}
-                            <div class="progress-bar bg-info" role="progressbar" 
-                                style="width: {% widthratio skill_level 10 100 %}%;" 
+                            <div class="progress-bar bg-info progress-bar-{% widthratio skill_level 10 10 %}0" 
                                 aria-valuenow="{{ skill_level }}" 
                                 aria-valuemin="1" 
                                 aria-valuemax="10">
@@ -261,8 +270,8 @@
                             </div>
                             {% endwith %}
                             {% else %}
-                            <div class="progress-bar bg-secondary" role="progressbar" 
-                                style="width: 0%">
+                            <div class="progress-bar bg-secondary" 
+                                 style="width: 0%">
                                 No data available
                             </div>
                             {% endif %}
