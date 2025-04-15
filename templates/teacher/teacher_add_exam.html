@@ -14,6 +14,38 @@
   a:link {
         text-decoration: none;
       }
+  
+  .settings-section {
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .settings-heading {
+    margin-top: 0;
+    color: #333;
+    font-size: 1.2em;
+  }
+  
+  .timed-settings, .sequential-settings {
+    display: none;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+  }
+  
+  .form-check {
+    padding-left: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .form-check-label {
+    font-weight: normal;
+    cursor: pointer;
+  }
     
   </style>
 </head>
@@ -31,8 +63,84 @@
       {% render_field courseForm.total_marks class="form-control" placeholder="50" %}
     </div>
     
-
+    <!-- Timed Exam Settings -->
+    <div class="settings-section">
+      <h4 class="settings-heading">Timed Exam Settings</h4>
+      <div class="form-check">
+        <label class="form-check-label">
+          {% render_field courseForm.is_timed %} {{ courseForm.is_timed.label }}
+        </label>
+      </div>
+      
+      <div id="timed-settings" class="timed-settings">
+        <div class="form-group">
+          <label for="total_time_minutes">{{ courseForm.total_time_minutes.label }}</label>
+          {% render_field courseForm.total_time_minutes class="form-control" placeholder="60" %}
+          <small class="form-text text-muted">Set the total time allowed for the entire exam in minutes.</small>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Question Display Settings -->
+    <div class="settings-section">
+      <h4 class="settings-heading">Question Display Settings</h4>
+      <div class="form-check">
+        <label class="form-check-label">
+          {% render_field courseForm.sequential_questions %} {{ courseForm.sequential_questions.label }}
+        </label>
+        <small class="form-text text-muted">If enabled, students will see one question at a time with time limits for each question.</small>
+      </div>
+      
+      <div id="sequential-settings" class="sequential-settings">
+        <div class="form-check">
+          <label class="form-check-label">
+            {% render_field courseForm.allow_backtracking %} {{ courseForm.allow_backtracking.label }}
+          </label>
+          <small class="form-text text-muted">If enabled, students can go back to previous questions. If disabled, they must answer in sequence.</small>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Security Settings -->
+    <div class="settings-section">
+      <h4 class="settings-heading">Exam Security Settings</h4>
+      <div class="form-group">
+        <label for="security_level">{{ courseForm.security_level.label }}</label>
+        {% render_field courseForm.security_level class="form-control" %}
+        <small class="form-text text-muted">
+          <strong>Low</strong>: Basic protection<br>
+          <strong>Medium</strong>: Prevent copy-paste and right-click<br>
+          <strong>High</strong>: Block dev tools and keyboard shortcuts
+        </small>
+      </div>
+    </div>
+    
     <button type="submit" class="btn btn-primary">ADD</button>
   </form>
+
+<script>
+  // Show/hide timed exam settings
+  const isTimedCheckbox = document.getElementById('is_timed');
+  const timedSettings = document.getElementById('timed-settings');
+  
+  isTimedCheckbox.addEventListener('change', function() {
+    timedSettings.style.display = this.checked ? 'block' : 'none';
+  });
+  
+  // Show/hide sequential questions settings
+  const sequentialCheckbox = document.getElementById('sequential_questions');
+  const sequentialSettings = document.getElementById('sequential-settings');
+  
+  sequentialCheckbox.addEventListener('change', function() {
+    sequentialSettings.style.display = this.checked ? 'block' : 'none';
+  });
+  
+  // Initialize display state based on current values
+  document.addEventListener('DOMContentLoaded', function() {
+    timedSettings.style.display = isTimedCheckbox.checked ? 'block' : 'none';
+    sequentialSettings.style.display = sequentialCheckbox.checked ? 'block' : 'none';
+  });
+</script>
+
 <br><br><br>
 {% endblock content %}
