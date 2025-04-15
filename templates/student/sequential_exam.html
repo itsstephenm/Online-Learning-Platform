@@ -63,6 +63,40 @@
       -moz-user-select: none;
       -ms-user-select: none;
     }
+
+    /* Sticky footer with finish button */
+    .exam-footer {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      padding: 10px 20px;
+      background-color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      text-align: right;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .finish-exam-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    .finish-exam-btn:hover {
+      background-color: #c82333;
+    }
+
+    .exam-progress-status {
+      font-weight: 500;
+    }
   </style>
 </head>
 
@@ -154,7 +188,7 @@
         {% endif %}
         
         {% if forloop.last %}
-        <button type="button" class="btn btn-success btn-finish" onclick="finishExam()">Finish Exam</button>
+        <button type="button" class="btn btn-success btn-next" onclick="finishExam()">Finish Exam</button>
         {% else %}
         <button type="button" class="btn btn-primary btn-next" onclick="nextQuestion()">Next Question</button>
         {% endif %}
@@ -163,6 +197,16 @@
     {% endfor %}
   </form>
   
+  <!-- Sticky Footer with Finish Button -->
+  <div class="exam-footer">
+    <div class="exam-progress-status">
+      <span id="answered-count">0</span>/<span>{{ questions|length }}</span> questions answered
+    </div>
+    <button type="button" class="finish-exam-btn" onclick="finishExam()">
+      <i class="fas fa-check-circle"></i> Finish Exam
+    </button>
+  </div>
+
   <div id="finish-confirmation" class="modal fade" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
@@ -175,6 +219,7 @@
         <div class="modal-body">
           <p>Are you sure you want to finish and submit this exam?</p>
           <p>Unanswered questions will be marked as incorrect.</p>
+          <p id="unanswered-warning" class="text-danger"></p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
