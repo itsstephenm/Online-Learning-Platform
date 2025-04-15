@@ -6,6 +6,17 @@ class Course(models.Model):
    course_name = models.CharField(max_length=50)
    question_number = models.PositiveIntegerField()
    total_marks = models.PositiveIntegerField()
+   # New fields for timed quiz functionality
+   is_timed = models.BooleanField(default=False, help_text="Whether this course has a time limit")
+   total_time_minutes = models.PositiveIntegerField(default=0, help_text="Total time allowed for the quiz in minutes (0 = unlimited)")
+   sequential_questions = models.BooleanField(default=False, help_text="Display questions one at a time sequentially")
+   allow_backtracking = models.BooleanField(default=True, help_text="Whether students can go back to previous questions")
+   security_level = models.CharField(max_length=50, choices=[
+       ('low', 'Low - Basic protection'),
+       ('medium', 'Medium - Prevent copy-paste and right-click'),
+       ('high', 'High - Block dev tools and keyboard shortcuts')
+   ], default='medium', help_text="Level of security measures to prevent cheating")
+   
    def __str__(self):
         return self.course_name
 

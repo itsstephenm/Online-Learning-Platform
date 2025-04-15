@@ -19,6 +19,7 @@ path('logout', views.logout_view, name='logout'),
 # AI Chat URLs
 path('ai-chat', views.ai_chat_view, name='ai_chat'),
 path('get-ai-response', views.get_ai_response_view, name='get_ai_response'),
+path('check-ai-connection', views.check_ai_connection_view, name='check_ai_connection'),
 # Analytics URL
 path('analytics', views.student_analytics_view, name='student_analytics'),
 ]

@@ -13,6 +13,8 @@ from django.contrib.auth import logout
 from .ai_utils import get_ai_response, get_student_ai_insights
 import json
 import logging
+import requests
+from decouple import config
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +84,11 @@ def start_exam_view(request,pk):
     course=QMODEL.Course.objects.get(id=pk)
     student = models.Student.objects.get(user_id=request.user.id)
     
+    # Check if this course uses timed sequential questions
+    if course.is_timed and course.sequential_questions:
+        # Redirect to sequential exam view
+        return HttpResponseRedirect(reverse('start-sequential-exam', args=[pk]))
+    
     # Check if adaptive quizzing is enabled for this course
     try:
         adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
@@ -104,6 +111,42 @@ def start_exam_view(request,pk):
     response.set_cookie('course_id',course.id)
     return response
 
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def start_sequential_exam_view(request, pk):
+    """
+    Start a sequential timed exam where questions are shown one at a time
+    with specific time limits per question
+    """
+    course = QMODEL.Course.objects.get(id=pk)
+    student = models.Student.objects.get(user_id=request.user.id)
+    
+    # Check if adaptive quizzing is enabled for this course
+    try:
+        adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
+        is_adaptive = adaptive_settings.is_adaptive
+    except QMODEL.AdaptiveQuizSettings.DoesNotExist:
+        is_adaptive = False
+    
+    # Get questions based on adaptive settings or standard approach
+    if is_adaptive:
+        # Import our new adaptive quiz utility
+        from quiz.adaptive_quiz_utils import get_adaptive_questions
+        questions = get_adaptive_questions(student, course, course.question_number)
+    else:
+        # Fallback to existing behavior
+        questions = QMODEL.Question.objects.all().filter(course=course)
+    
+    # Render the sequential exam template
+    response = render(request, 'student/sequential_exam.html', {
+        'course': course,
+        'questions': questions,
+    })
+    
+    # Set cookie for exam identification
+    response.set_cookie('course_id', course.id)
+    
+    return response
 
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
@@ -483,3 +526,38 @@ def student_analytics_view(request):
     }
     
     return render(request, 'student/student_analytics.html', context)
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def check_ai_connection_view(request):
+    """Check if the AI service is available"""
+    try:
+        # Get the OpenRouter API key from settings
+        openrouter_api_key = config('OPENROUTER_API_KEY', default=None)
+        
+        # If no API key is configured, we are in mock mode
+        if not openrouter_api_key:
+            # In development/testing mode with mock responses
+            return JsonResponse({'connected': True, 'mode': 'mock'})
+        
+        # Check the OpenRouter API connection
+        url = "https://openrouter.ai/api/v1/auth/key"
+        headers = {
+            'Authorization': f'Bearer {openrouter_api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=3)
+        
+        if response.status_code == 200:
+            return JsonResponse({'connected': True, 'mode': 'api'})
+        else:
+            logger.error(f"API connection check failed: {response.status_code}")
+            return JsonResponse({'connected': False, 'error': 'API authentication failed'})
+            
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Connection check failed: {str(e)}")
+        return JsonResponse({'connected': False, 'error': 'Connection timeout'})
+    except Exception as e:
+        logger.error(f"Unexpected error checking AI connection: {str(e)}")
+        return JsonResponse({'connected': False, 'error': str(e)})
