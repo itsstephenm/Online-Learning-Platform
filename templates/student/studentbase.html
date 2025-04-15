@@ -4,248 +4,340 @@
 
 <head>
   <meta charset="utf-8">
- 
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>CUT Online Quiz</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <style media="screen">
-         :root {
-    --blue: #24b0ed;
-    --indigo: #6610f2;
-    --purple: #6f42c1;
-    --pink: #e83e8c;
-    --red: #dc3545;
-    --orange: #fd7e14;
-    --yellow: #ffc107;
-    --green: #28a745;
-    --teal: #20c997;
-    --cyan: #17a2b8;
-    --white: #fff;
-    --gray: #6c757d;
-    --gray-dark: #343a40;
-    --primary: #24b0ed;
-    --secondary: #6c757d;
-    --success: #28a745;
-    --info: #17a2b8;
-    --warning: #ffc107;
-    --danger: #dc3545;
-    --light: #f8f9fa;
-    --dark: #343a40;
-    --breakpoint-xs: 0;
-    --breakpoint-sm: 576px;
-    --breakpoint-md: 768px;
-    --breakpoint-lg: 992px;
-    --breakpoint-xl: 1200px;
-    --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-    a:link {
-      text-decoration: none;
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #1e40af;
+      --accent-color: #3b82f6;
+      --warning-color: #ef4444;
+      --success-color: #22c55e;
+      --danger-color: #dc2626;
+      --info-color: #0ea5e9;
+      --bg-color: #f8fafc;
+      --bg-secondary: #f1f5f9;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --card-bg: #ffffff;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --header-height: 70px;
+      --sidebar-width: 260px;
+      --sidebar-collapsed-width: 70px;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
     body {
-      margin: 0;
-      padding: 0;
-      font-family: "Gill Sans", sans-serif;;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+    
+    a {
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
     }
 
+    /* Header Styles */
     header {
       position: fixed;
-      background: var(--cyan);
-      padding: 20px;
-      width: 100%;
-      z-index: 1;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      background: var(--primary-color);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    .left_area {
+      display: flex;
+      align-items: center;
     }
 
     .left_area h3 {
       color: #fff;
-      margin: 0px;
-      text-transform: uppercase;
-      font-size: 22px;
-      font-weight: 900;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0 15px;
     }
 
-    .left_area span {
-      color: #19B3D3;
+    .logo_image {
+      height: 40px;
+      width: auto;
+      object-fit: contain;
     }
 
     .logout_btn {
-      padding: 5px;
-      background: #19B3D3;
-      text-decoration: none;
-      float: right;
-      margin-top: -30px;
-      margin-right: 40px;
-      border-radius: 2px;
-      font-size: 15px;
-      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.2);
       color: #fff;
-      transition: 0.5s;
-      border:none;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
 
     .logout_btn:hover {
-      background: #0B87A6;
+      background-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
     }
 
+    /* Sidebar Styles */
     .sidebar {
-      background: var(--cyan);
-      margin-top: 70px;
-      padding-top: 30px;
       position: fixed;
+      top: var(--header-height);
       left: 0;
-      width: 250px;
-      height: 100%;
-      transition: 0.5s;
-      transition-property: left;
+      width: var(--sidebar-width);
+      height: calc(100vh - var(--header-height));
+      background: #fff;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      overflow-y: auto;
+      z-index: 900;
     }
-
-    .sidebar .profile_image {
-      width: 100px;
-      height: 100px;
-      border-radius: 100px;
+    
+    .sidebar-profile {
+      padding: 30px 0;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
       margin-bottom: 10px;
     }
 
+    .profile_image {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--primary-color);
+      padding: 3px;
+      background: white;
+    }
+
     .sidebar h4 {
-      color: #ccc;
-      margin-top: 0;
-      
+      color: var(--text-color);
+      font-weight: 600;
+      font-size: 1.2rem;
+      margin: 15px 0 5px;
+    }
+    
+    .sidebar h6 {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.9rem;
     }
 
     .sidebar a {
-      color: #fff;
-      display: block;
-      width: 100%;
-      line-height: 60px;
-      text-decoration: none;
-      padding-left: 40px;
-      box-sizing: border-box;
-      transition: 0.5s;
-
+      display: flex;
+      align-items: center;
+      padding: 15px 25px;
+      color: var(--text-color);
+      transition: all 0.3s ease;
+      margin: 5px 0;
+      border-radius: 0 25px 25px 0;
     }
 
     .sidebar a:hover {
-      background: #19B3D3;
+      background: var(--bg-secondary);
+      color: var(--primary-color);
+      border-left: 4px solid var(--primary-color);
+    }
+
+    .sidebar a.active {
+      background: var(--primary-color);
+      color: white;
     }
 
     .sidebar i {
-      padding-right: 10px;
+      font-size: 1.2rem;
+      margin-right: 15px;
+      width: 20px;
+      text-align: center;
     }
 
-    label #sidebar_btn {
-      z-index: 1;
+    /* Sidebar Toggle */
+    #sidebar_btn {
       color: #fff;
-      position: fixed;
       cursor: pointer;
-      left: 300px;
       font-size: 20px;
-      margin: 5px 0;
-      transition: 0.5s;
-      transition-property: color;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
     }
 
-    label #sidebar_btn:hover {
-      color: #19B3D3;
+    #sidebar_btn:hover {
+      opacity: 0.8;
     }
 
-    #check:checked~.sidebar {
-      left: -190px;
+    #check:checked ~ .sidebar {
+      left: calc(-1 * var(--sidebar-width) + var(--sidebar-collapsed-width));
     }
 
-    #check:checked~.sidebar a span {
+    #check:checked ~ .sidebar a span {
       display: none;
     }
 
-    #check:checked~.sidebar a {
-      font-size: 20px;
-      margin-left: 170px;
-      width: 80px;
+    #check:checked ~ .sidebar a {
+      padding: 15px 25px;
+      text-align: center;
+      justify-content: center;
+      margin: 5px;
+    }
+    
+    #check:checked ~ .sidebar i {
+      margin-right: 0;
     }
 
-    .content {
-      margin-left: 250px;
-      background: url(./../../static/image/assets/images/back2.jpg) no-repeat;
-      background-position: center;
-      background-size: cover;
-      height: 100vh;
-      transition: 0.5s;
-    }
-
-    #check:checked~.content {
-      margin-left: 60px;
+    #check:checked ~ .content {
+      margin-left: var(--sidebar-collapsed-width);
     }
 
     #check {
       display: none;
     }
+
+    /* Content Area */
+    .content {
+      margin-left: var(--sidebar-width);
+      margin-top: var(--header-height);
+      padding: 30px;
+      min-height: calc(100vh - var(--header-height));
+      transition: 0.3s;
+      background-color: var(--bg-color);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        left: calc(-1 * var(--sidebar-width));
+      }
+      
+      #check:checked ~ .sidebar {
+        left: 0;
+      }
+      
+      .content {
+        margin-left: 0;
+      }
+      
+      #check:checked ~ .content {
+        margin-left: 0;
+      }
+    }
+    
+    /* Disabled sidebar */
+    .disabled-sidebar {
+      pointer-events: none;
+      opacity: 0.5;
+    }
   </style>
-
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css">
-
-
 </head>
 
 <body>
-
   <input type="checkbox" id="check">
-  <!--header area start-->
+  
+  <!-- Header area start -->
   <header>
-    <label for="check">
-      <i style="left: 200px;margin-top: 17px;"class="fas fa-bars" id="sidebar_btn"></i>
-    </label>
     <div class="left_area">
-      <img src="{% static "../static/image/assets/images/oem.png" %}" width="100rem" class="logo_image" alt="jj">
-      <h3 style="color: var(--white);">CUT Online Quiz</h3>
+      <label for="check">
+        <i class="fas fa-bars" id="sidebar_btn"></i>
+      </label>
+      <img src="{% static "../static/image/assets/images/oem.png" %}" class="logo_image" alt="Logo">
+      <h3>CUT Online Quiz</h3>
     </div>
     <div class="right_area">
-       <!-- <a href="/logout" class="logout_btn">Logout</a> -->
-       <form action="{% url 'logout' %}" method="POST">
+      <form action="{% url 'logout' %}" method="POST">
         {% csrf_token %}
-        <button class="logout_btn" type="submit">Logout</button>
-    </form>
+        <button class="logout_btn" type="submit">
+          <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </button>
+      </form>
     </div>
   </header>
-  <!--header area end-->
+  <!-- Header area end -->
   
-  <!--sidebar start-->
+  <!-- Sidebar start -->
   {% if not hide_sidebar %}
   <div class="sidebar">
-    <br><br>
-    <center>
+    <div class="sidebar-profile">
       {% if student.profile_pic %}
-      <img src="{{ student.profile_pic.url }}" class="profile_image" alt="Profile Picture">
-  {% else %}
-      <img src="{% static 'image/student.png' %}" class="profile_image" alt="Default Profile Picture">
-  {% endif %}
+        <img src="{{ student.profile_pic.url }}" class="profile_image" alt="Profile Picture">
+      {% else %}
+        <img src="{% static 'image/student.png' %}" class="profile_image" alt="Default Profile Picture">
+      {% endif %}
       <h4>{{request.user.first_name}}</h4>
-      <h6 style="color: rgb(255, 255, 255);">( Student )</h6>
+      <h6>Student</h6>
+    </div>
 
-    </center>
-
-    <a href="/student/student-dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
-    <a href="/student/student-exam"><i class="fas fa-book"></i><span>Exam</span></a>
-    <a href="/student/student-marks"><i class="fas fa-sort-numeric-up"></i><span>Marks</span></a>
-    <a href="/student/analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
-    <a href="/student/ai-chat"><i class="fas fa-robot"></i><span>AI Chat</span></a>
+    <a href="/student/student-dashboard" class="{% if request.path == '/student/student-dashboard' %}active{% endif %}">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="/student/student-exam" class="{% if '/student/student-exam' in request.path %}active{% endif %}">
+      <i class="fas fa-book"></i>
+      <span>Exams</span>
+    </a>
+    <a href="/student/student-marks" class="{% if '/student/student-marks' in request.path %}active{% endif %}">
+      <i class="fas fa-sort-numeric-up"></i>
+      <span>Marks</span>
+    </a>
+    <a href="/student/analytics" class="{% if '/student/analytics' in request.path %}active{% endif %}">
+      <i class="fas fa-chart-line"></i>
+      <span>Analytics</span>
+    </a>
+    <a href="/student/ai-chat" class="{% if '/student/ai-chat' in request.path %}active{% endif %}">
+      <i class="fas fa-robot"></i>
+      <span>AI Chat</span>
+    </a>
   </div>
   {% endif %}
-  <!--sidebar end-->
+  <!-- Sidebar end -->
 
-
-  <!--content start-->
-  <div class="content" {% if hide_sidebar %}style="margin-left: 0; padding-top: 60px;"{% endif %}>
-    <br><br><br><br><br>
+  <!-- Content start -->
+  <div class="content" {% if hide_sidebar %}style="margin-left: 0;"{% endif %}>
     {% block content %}
-
     {% endblock content %}
-
 
     {% include "quiz/footer.html" %}
   </div>
-  <!--content end-->
+  <!-- Content end -->
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <script>
+    // Highlight active menu item
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentLocation = window.location.pathname;
+      const menuItems = document.querySelectorAll('.sidebar a');
+      
+      menuItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (currentLocation.includes(href) && href !== '/student/student-dashboard') {
+          item.classList.add('active');
+        } else if (currentLocation === '/student/student-dashboard' && href === '/student/student-dashboard') {
+          item.classList.add('active');
+        }
+      });
+    });
+  </script>
 </body>
-
 </html>
