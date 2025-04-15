@@ -192,8 +192,9 @@ LOGIN_REDIRECT_URL='/afterlogin'
 #for contact us give your gmail id and password
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'mail.reserveddigitalbranding.com')
-EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
-EMAIL_USE_TLS = True
+EMAIL_PORT = os.getenv('EMAIL_PORT', 465)
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'rsrvd@reserveddigitalbranding.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '1979Tmw.')
 EMAIL_RECEIVING_USER = os.getenv('EMAIL_RECEIVING_USER', 'rsrvd@reserveddigitalbranding.com')
