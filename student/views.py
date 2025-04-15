@@ -152,6 +152,7 @@ def start_sequential_exam_view(request, pk):
     response = render(request, 'student/sequential_exam.html', {
         'course': course,
         'questions': questions,
+        'hide_sidebar': True,
     })
     
     # Set cookie for exam identification
