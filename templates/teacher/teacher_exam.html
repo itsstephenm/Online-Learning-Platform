@@ -2,119 +2,237 @@
 {% load widget_tweaks %}
 {% block content %}
 
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-    <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-    <style type="text/css">
-      a:link {
-        text-decoration: none;
-      }
-  
-      .order-card {
-        color: rgb(255, 255, 255);
-      }
-  
-      .bg-c-blue {
-        background: #04868f;
-      }
-  
-      .bg-c-green {
-        background:#4C51BF;
-      }
-  
-      .bg-c-yellow {
-        background: #F56565;
-      }
-  
-      .bg-c-pink {
-        background: #663a30;
-      }
-
-      .bg-c-purple {
-        background: #6f42c1;
-      }
-  
-  
-      .card {
-        
-        -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        border: 1px solid black;
-        margin-bottom: 30px;
-        -webkit-transition: all 0.3s ease-in-out;
-        transition: all 0.3s ease-in-out;
-      }
-  
-      .card .card-block {
-        padding: 25px;
-      }
-  
-      .order-card i {
-        font-size: 26px;
-      }
-  
-      .f-left {
-        float: left;
-      }
-  
-      .f-right {
-        float: right;
-      }
-      header {
-      left: 0px;
-      right: 0px;
-    }
-    </style>
-  </head>
-<br><br>
-
-  <div class="container">
+<div class="content-wrapper">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="section-title">Exam Management</h2>
+        <p class="text-muted">Create, view and manage your exams</p>
+      </div>
+    </div>
+    
+    <!-- Exam Cards -->
     <div class="row">
-      <div class="col-md-4 col-xl-4">
-        <div class="card bg-c-blue order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"> <a href="teacher-add-exam" style="text-decoration: none;color:white;">Add Exam</a> </h6>
-            <h2 class="text-right"><i class="fas fa-plus f-left"></i></h2>
-            
+      <div class="col-md-4 mb-4">
+        <a href="teacher-add-exam" class="text-decoration-none">
+          <div class="card feature-card">
+            <div class="card-body">
+              <div class="feature-icon bg-primary">
+                <i class="fas fa-plus"></i>
+              </div>
+              <h4 class="feature-title">Add Exam</h4>
+              <p class="feature-desc">Create a new exam for your students</p>
+            </div>
+            <div class="card-footer">
+              <span class="btn-link">Create Now <i class="fas fa-arrow-right ms-2"></i></span>
+            </div>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-4 mb-4">
+        <a href="teacher-view-exam" class="text-decoration-none">
+          <div class="card feature-card">
+            <div class="card-body">
+              <div class="feature-icon bg-success">
+                <i class="fas fa-eye"></i>
+              </div>
+              <h4 class="feature-title">View Exams</h4>
+              <p class="feature-desc">See all your existing exams</p>
+            </div>
+            <div class="card-footer">
+              <span class="btn-link">View All <i class="fas fa-arrow-right ms-2"></i></span>
+            </div>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-4 mb-4">
+        <a href="teacher-ai-exam" class="text-decoration-none">
+          <div class="card feature-card">
+            <div class="card-body">
+              <div class="feature-icon bg-info">
+                <i class="fas fa-robot"></i>
+              </div>
+              <h4 class="feature-title">AI Exam Generation</h4>
+              <p class="feature-desc">Generate exams using artificial intelligence</p>
+            </div>
+            <div class="card-footer">
+              <span class="btn-link">Generate <i class="fas fa-arrow-right ms-2"></i></span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Additional Resources -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Exam Resources</h3>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 resource-item">
+                <div class="resource-icon">
+                  <i class="fas fa-book-open"></i>
+                </div>
+                <div class="resource-content">
+                  <h5>Exam Templates</h5>
+                  <p>Access pre-designed templates for different subjects</p>
+                  <a href="#" class="resource-link">Browse Templates</a>
+                </div>
+              </div>
+              <div class="col-md-6 resource-item">
+                <div class="resource-icon">
+                  <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="resource-content">
+                  <h5>Exam Analytics</h5>
+                  <p>Get insights on student performance in exams</p>
+                  <a href="{% url 'analytics-dashboard' %}" class="resource-link">View Analytics</a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-  
-      <div class="col-md-4 col-xl-4">
-        <div class="card bg-c-green order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"><a href="teacher-view-exam" style="text-decoration: none;color:white;">View Exams</a> </h6>
-            <h2 class="text-right"><i class="fas fa-eye f-left"></i></h2>
-            
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-4 col-xl-4">
-        <div class="card bg-c-purple order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"><a href="teacher-ai-exam" style="text-decoration: none;color:white;">AI Exam Generation</a> </h6>
-            <h2 class="text-right"><i class="fas fa-robot f-left"></i></h2>
-            
-          </div>
-        </div>
-      </div>
-  
-     
     </div>
   </div>
+</div>
 
-
-<br><br><br><br><br><br><br><br><br><br>
-
-<script src="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
-
+<style>
+  .content-wrapper {
+    padding: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+  }
+  
+  .section-subtitle {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #444;
+  }
+  
+  .feature-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    height: 100%;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    color: white;
+    font-size: 1.5rem;
+  }
+  
+  .bg-primary {
+    background-color: #4C51BF;
+  }
+  
+  .bg-success {
+    background-color: #0DA678;
+  }
+  
+  .bg-info {
+    background-color: #2196F3;
+  }
+  
+  .feature-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #333;
+  }
+  
+  .feature-desc {
+    color: #6c757d;
+    margin-bottom: 0;
+  }
+  
+  .card-footer {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0.75rem 1.25rem;
+  }
+  
+  .btn-link {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+  
+  .resource-item {
+    display: flex;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .resource-item:last-child {
+    border-bottom: none;
+  }
+  
+  .resource-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: #444;
+    font-size: 1.25rem;
+  }
+  
+  .resource-content {
+    flex: 1;
+  }
+  
+  .resource-content h5 {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  
+  .resource-content p {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .resource-link {
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  
+  .resource-link:hover {
+    text-decoration: underline;
+  }
+  
+  @media (max-width: 768px) {
+    .resource-item {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
 
 {% endblock content %}

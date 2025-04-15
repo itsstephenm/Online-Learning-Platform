@@ -9,263 +9,377 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .card {
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      margin-bottom: 20px;
+    .content-wrapper {
+      padding: 1.5rem;
     }
+    
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .section-subtitle {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #444;
+    }
+    
+    .card {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
     .card-header {
-      background-color: #f8f9fa;
+      background-color: rgba(0, 0, 0, 0.02);
       font-weight: 600;
       padding: 15px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
+    
     .chart-container {
       position: relative;
       height: 300px;
       width: 100%;
       padding: 10px;
     }
+    
     .nav-pills .nav-link.active {
-      background-color: #4C51BF;
+      background-color: var(--primary-color);
+      color: white;
     }
+    
     .nav-pills .nav-link {
-      color: #333;
-    }
-    .stats-card {
-      border-left: 4px solid #4C51BF;
-      background-color: #f8f9fa;
-    }
-    .filter-section {
-      background-color: #f8f9fa;
-      padding: 15px;
+      color: #444;
       border-radius: 8px;
-      margin-bottom: 20px;
+      font-weight: 500;
+      padding: 0.6rem 1.2rem;
+      margin-right: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .nav-pills .nav-link:hover:not(.active) {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .stats-card {
+      border-left: 4px solid var(--primary-color);
+      background-color: #fff;
+      transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .stats-card .card-body {
+      padding: 1.25rem;
+    }
+    
+    .stats-card .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stats-card .display-6 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+    
+    .stats-card .text-muted {
+      font-size: 0.85rem;
+    }
+    
+    .filter-section {
+      background-color: rgba(0, 0, 0, 0.02);
+      padding: 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .form-label {
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+    
+    .form-select, .form-control {
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+    }
+    
+    .form-select:focus, .form-control:focus {
+      box-shadow: 0 0 0 0.25rem rgba(36, 176, 237, 0.15);
+      border-color: rgba(36, 176, 237, 0.5);
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      border: none;
+      font-weight: 500;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+      background-color: #1a8cbb;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .tab-content {
+      padding-top: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .stats-card {
+        margin-bottom: 1rem;
+      }
+      
+      .nav-pills .nav-link {
+        margin-bottom: 0.5rem;
+      }
     }
   </style>
 </head>
 
-<div class="container py-4">
-  <h2 class="mb-4">Analytics Dashboard</h2>
-  
-  <!-- Filters Section -->
-  <div class="filter-section">
-    <form method="get" class="row g-3">
+<div class="content-wrapper">
+  <div class="container-fluid">
+    <h2 class="section-title mb-1">Analytics Dashboard</h2>
+    <p class="text-muted mb-4">Comprehensive insights into student performance and exam effectiveness</p>
+    
+    <!-- Filters Section -->
+    <div class="filter-section">
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label for="course" class="form-label">Course</label>
+          <select class="form-select" id="course" name="course">
+            <option value="">All Courses</option>
+            {% for course in courses %}
+              <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>{{ course.course_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="date_range" class="form-label">Date Range</label>
+          <select class="form-select" id="date_range" name="date_range">
+            <option value="7" {% if date_range == 7 %}selected{% endif %}>Last 7 days</option>
+            <option value="30" {% if date_range == 30 %}selected{% endif %}>Last 30 days</option>
+            <option value="90" {% if date_range == 90 %}selected{% endif %}>Last 90 days</option>
+            <option value="365" {% if date_range == 365 %}selected{% endif %}>Last year</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
       <div class="col-md-3">
-        <label for="course" class="form-label">Course</label>
-        <select class="form-select" id="course" name="course">
-          <option value="">All Courses</option>
-          {% for course in courses %}
-            <option value="{{ course.id }}" {% if selected_course == course.id %}selected{% endif %}>{{ course.course_name }}</option>
-          {% endfor %}
-        </select>
+        <div class="card stats-card">
+          <div class="card-body">
+            <h5 class="card-title">Total Students</h5>
+            <p class="display-6">{{ total_students }}</p>
+            <p class="text-muted">Active: {{ active_students }}</p>
+          </div>
+        </div>
       </div>
       <div class="col-md-3">
-        <label for="date_range" class="form-label">Date Range</label>
-        <select class="form-select" id="date_range" name="date_range">
-          <option value="7" {% if date_range == 7 %}selected{% endif %}>Last 7 days</option>
-          <option value="30" {% if date_range == 30 %}selected{% endif %}>Last 30 days</option>
-          <option value="90" {% if date_range == 90 %}selected{% endif %}>Last 90 days</option>
-          <option value="365" {% if date_range == 365 %}selected{% endif %}>Last year</option>
-        </select>
-      </div>
-      <div class="col-md-3 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary">Apply Filters</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Summary Cards -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="card stats-card">
-        <div class="card-body">
-          <h5 class="card-title">Total Students</h5>
-          <p class="display-6">{{ total_students }}</p>
-          <p class="text-muted">Active: {{ active_students }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card stats-card">
-        <div class="card-body">
-          <h5 class="card-title">Total Exams</h5>
-          <p class="display-6">{{ total_exams }}</p>
-          <p class="text-muted">AI Generated: {{ ai_exams }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card stats-card">
-        <div class="card-body">
-          <h5 class="card-title">Average Score</h5>
-          <p class="display-6">{{ avg_score }}%</p>
-          <p class="text-muted">Exams taken: {{ exams_taken }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card stats-card">
-        <div class="card-body">
-          <h5 class="card-title">AI Queries</h5>
-          <p class="display-6">{{ total_ai_queries }}</p>
-          <p class="text-muted">Unique students: {{ students_using_ai }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Navigation Tabs -->
-  <ul class="nav nav-pills mb-4" id="analyticsTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="student-performance-tab" data-bs-toggle="pill" data-bs-target="#student-performance" type="button" role="tab">Student Performance</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="quiz-insights-tab" data-bs-toggle="pill" data-bs-target="#quiz-insights" type="button" role="tab">Quiz Insights</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="ai-usage-tab" data-bs-toggle="pill" data-bs-target="#ai-usage" type="button" role="tab">AI Usage</button>
-    </li>
-  </ul>
-
-  <!-- Tab Content -->
-  <div class="tab-content" id="analyticsTabContent">
-    <!-- Student Performance Tab -->
-    <div class="tab-pane fade show active" id="student-performance" role="tabpanel">
-      <div class="row">
-        <div class="col-md-8">
-          <div class="card">
-            <div class="card-header">Student Progress Over Time</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="studentProgressChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-header">Performance Distribution</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="performanceDistributionChart"></canvas>
-              </div>
-            </div>
+        <div class="card stats-card">
+          <div class="card-body">
+            <h5 class="card-title">Total Exams</h5>
+            <p class="display-6">{{ total_exams }}</p>
+            <p class="text-muted">AI Generated: {{ ai_exams }}</p>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Topics Mastery</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="topicsMasteryChart"></canvas>
-              </div>
-            </div>
+      <div class="col-md-3">
+        <div class="card stats-card">
+          <div class="card-body">
+            <h5 class="card-title">Average Score</h5>
+            <p class="display-6">{{ avg_score }}%</p>
+            <p class="text-muted">Exams taken: {{ exams_taken }}</p>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Struggle Areas</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="struggleAreasChart"></canvas>
-              </div>
-            </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stats-card">
+          <div class="card-body">
+            <h5 class="card-title">AI Queries</h5>
+            <p class="display-6">{{ total_ai_queries }}</p>
+            <p class="text-muted">Unique students: {{ students_using_ai }}</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Quiz Insights Tab -->
-    <div class="tab-pane fade" id="quiz-insights" role="tabpanel">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Question Difficulty Analysis</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="questionDifficultyChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Average Time Per Question</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="timePerQuestionChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Success Rates by Course</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="successRatesChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">AI vs Manual Questions Performance</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="aiVsManualChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills mb-4" id="analyticsTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="student-performance-tab" data-bs-toggle="pill" data-bs-target="#student-performance" type="button" role="tab">Student Performance</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="quiz-insights-tab" data-bs-toggle="pill" data-bs-target="#quiz-insights" type="button" role="tab">Quiz Insights</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="ai-usage-tab" data-bs-toggle="pill" data-bs-target="#ai-usage" type="button" role="tab">AI Usage</button>
+      </li>
+    </ul>
 
-    <!-- AI Usage Tab -->
-    <div class="tab-pane fade" id="ai-usage" role="tabpanel">
-      <div class="row">
-        <div class="col-md-8">
-          <div class="card">
-            <div class="card-header">AI Query Volume Trends</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="aiQueryVolumeChart"></canvas>
+    <!-- Tab Content -->
+    <div class="tab-content" id="analyticsTabContent">
+      <!-- Student Performance Tab -->
+      <div class="tab-pane fade show active" id="student-performance" role="tabpanel">
+        <div class="row">
+          <div class="col-md-8">
+            <div class="card">
+              <div class="card-header">Student Progress Over Time</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="studentProgressChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">Performance Distribution</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="performanceDistributionChart"></canvas>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-header">Popular AI Topics</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="popularTopicsChart"></canvas>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">Topics Mastery</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="topicsMasteryChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">Struggle Areas</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="struggleAreasChart"></canvas>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">AI Usage Patterns</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="aiUsagePatternsChart"></canvas>
+
+      <!-- Quiz Insights Tab -->
+      <div class="tab-pane fade" id="quiz-insights" role="tabpanel">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">Question Difficulty Analysis</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="questionDifficultyChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">Average Time Per Question</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="timePerQuestionChart"></canvas>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">AI Impact on Performance</div>
-            <div class="card-body">
-              <div class="chart-container">
-                <canvas id="aiImpactChart"></canvas>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">Success Rates by Course</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="successRatesChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">AI vs Manual Questions Performance</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="aiVsManualChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Usage Tab -->
+      <div class="tab-pane fade" id="ai-usage" role="tabpanel">
+        <div class="row">
+          <div class="col-md-8">
+            <div class="card">
+              <div class="card-header">AI Query Volume Trends</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="aiQueryVolumeChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">Popular AI Topics</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="popularTopicsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">AI Usage Patterns</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="aiUsagePatternsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">AI Impact on Performance</div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="aiImpactChart"></canvas>
+                </div>
               </div>
             </div>
           </div>
