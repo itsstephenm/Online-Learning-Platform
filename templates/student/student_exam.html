@@ -2,51 +2,171 @@
 {% block content %}
 {%load static%}
 
-<head>
-  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
-  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<style>
+  a:link {
+    text-decoration: none;
+  }
+  
+  .exam-card {
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    background-color: #1a1a27;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background-color: #1e1e2d;
+    color: white;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+  }
+  
+  .card-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .card-header i {
+    color: #24b0ed;
+    margin-right: 10px;
+    font-size: 1.1rem;
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .table {
+    color: rgba(255, 255, 255, 0.9);
+    background-color: transparent;
+    margin-bottom: 0;
+  }
+  
+  .table thead th {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    padding: 12px 15px;
+  }
+  
+  .table tbody tr {
+    transition: all 0.2s ease;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(36, 176, 237, 0.1);
+  }
+  
+  .table td {
+    padding: 12px 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    vertical-align: middle;
+  }
+  
+  .btn-take-exam {
+    background-color: #24b0ed;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-take-exam:hover {
+    background-color: #1a8cbb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(36, 176, 237, 0.3);
+    color: white;
+    text-decoration: none;
+  }
+  
+  .btn-take-exam i {
+    margin-right: 5px;
+  }
+  
+  .container {
+    padding-top: 30px;
+    padding-bottom: 30px;
+  }
+  
+  .page-header {
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+  }
+  
+  .page-header h2 {
+    margin: 0;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .page-header h2 i {
+    color: #24b0ed;
+    margin-right: 10px;
+  }
+  
+  .empty-state {
+    padding: 30px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+  }
+</style>
 
-  <style media="screen">
-    a:link {
-      text-decoration: none;
-    }
-
-    h6 {
-      text-align: center;
-    }
-
-    .row {
-      margin: 100px;
-    }
-  </style>
-</head>
-<br><br>
 <div class="container">
-  <div class="panel panel-primary">
-    <div class="panel-heading">
-      <h6 class="panel-title">Courses</h6>
+  <div class="page-header">
+    <h2><i class="fas fa-book"></i> Available Exams</h2>
+  </div>
+  
+  <div class="exam-card">
+    <div class="card-header">
+      <h4><i class="fas fa-list"></i> Course List</h4>
     </div>
-    <table class="table table-hover" id="dev-table">
-      <thead>
-        <tr>
-
-          <th>Exam Name</th>
-          
-          <th>Take Exam</th>
-        </tr>
-      </thead>
-      {% for t in courses %}
-      <tr>
-
-        <td> {{t.course_name}}</td>
-        
-        <td><a class="btn btn-danger btn-xs" href="{% url 'take-exam' t.id  %}"><span class="glyphicon glyphicon-circle-arrow-right"></span></a></td>
-      </tr>
-      {% endfor %}
-    </table>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Course Name</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in courses %}
+            <tr>
+              <td>{{t.course_name}}</td>
+              <td class="text-center">
+                <a class="btn-take-exam" href="{% url 'take-exam' t.id %}">
+                  <i class="fas fa-pen"></i> Take Exam
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2">
+                <div class="empty-state">
+                  <i class="fas fa-info-circle mb-3" style="font-size: 2rem; color: #24b0ed; display: block;"></i>
+                  <p>No exams available at the moment.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
-<br><br><br><br><br><br>
 {% endblock content %}
