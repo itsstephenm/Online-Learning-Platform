@@ -481,6 +481,15 @@
     
     // Save to cookie for backup
     setCookie(`question_${questionId}`, value, 1);
+    
+    // Update answered questions count
+    updateAnsweredCount();
+  }
+  
+  // Update the count of answered questions
+  function updateAnsweredCount() {
+    const answeredCount = Object.keys(answers).length;
+    document.getElementById('answered-count').textContent = answeredCount;
   }
   
   // Update the progress bar
@@ -491,6 +500,17 @@
   
   // Show the finish confirmation modal
   function finishExam() {
+    // Check for unanswered questions
+    const answeredCount = Object.keys(answers).length;
+    const unansweredCount = totalQuestions - answeredCount;
+    
+    if (unansweredCount > 0) {
+      document.getElementById('unanswered-warning').textContent = 
+        `Warning: You have ${unansweredCount} unanswered question(s).`;
+    } else {
+      document.getElementById('unanswered-warning').textContent = '';
+    }
+    
     $('#finish-confirmation').modal('show');
   }
   
