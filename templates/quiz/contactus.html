@@ -13,12 +13,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
+    :root {
+      --golden-ratio: 1.618;
+      --primary-color: #24b0ed;
+      --bg-color: #151521;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.8);
+      --text-tertiary: rgba(255, 255, 255, 0.6);
+      --spacing-xs: 0.5rem;
+      --spacing-sm: 0.809rem; /* 0.5 * 1.618 */
+      --spacing-md: 1.309rem; /* 0.809 * 1.618 */
+      --spacing-lg: 2.118rem; /* 1.309 * 1.618 */
+      --spacing-xl: 3.427rem; /* 2.118 * 1.618 */
+    }
+    
     body {
       margin: 0;
       padding: 0;
       font-family: 'Inter', sans-serif;
-      background-color: #151521;
-      color: #ffffff;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -35,66 +50,80 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      padding: 4rem 0;
+      padding: var(--spacing-xl) 0;
+    }
+    
+    .golden-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-lg);
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+    
+    @media (min-width: 992px) {
+      .golden-layout {
+        grid-template-columns: 1fr 0.618fr;
+      }
     }
     
     .contact-title {
-      font-size: 2.5rem;
+      font-size: calc(1.618rem * 1.618);
       font-weight: 700;
       text-align: center;
-      margin-bottom: 2.5rem;
-      color: #24b0ed;
+      margin-bottom: var(--spacing-lg);
+      color: var(--primary-color);
     }
     
     .contact-card {
-      background-color: rgba(255, 255, 255, 0.05);
+      background-color: var(--card-bg);
       border-radius: 16px;
-      padding: 3rem;
-      max-width: 700px;
+      padding: var(--spacing-lg);
       width: 100%;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(5px);
       border: 1px solid rgba(255, 255, 255, 0.1);
+      height: 100%;
     }
     
     .form-control {
       background-color: rgba(255, 255, 255, 0.1);
       border: 2px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
-      padding: 12px 20px;
+      padding: var(--spacing-sm) var(--spacing-md);
       height: auto;
-      color: #fff;
+      color: var(--text-primary);
       font-size: 1rem;
       transition: all 0.3s ease;
-      margin-bottom: 1.5rem;
+      margin-bottom: var(--spacing-md);
     }
     
     .form-control:focus {
       box-shadow: none;
-      border-color: #24b0ed;
+      border-color: var(--primary-color);
       background-color: rgba(255, 255, 255, 0.15);
     }
     
     .form-control::placeholder {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-tertiary);
     }
     
     textarea.form-control {
-      min-height: 120px;
+      min-height: calc(2.618rem * 2.618);
       resize: vertical;
     }
     
     .btn-submit {
-      background-color: #24b0ed;
+      background-color: var(--primary-color);
       border: none;
-      padding: 0.75rem 2.5rem;
+      padding: var(--spacing-sm) var(--spacing-lg);
       font-size: 1rem;
       font-weight: 600;
       border-radius: 50px;
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(36, 176, 237, 0.3);
-      margin-top: 1rem;
-      color: #fff;
+      margin-top: var(--spacing-md);
+      color: var(--text-primary);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -107,74 +136,83 @@
     }
     
     .btn-icon {
-      margin-right: 0.5rem;
-    }
-    
-    .contact-info {
-      text-align: center;
-      margin-top: 3rem;
+      margin-right: var(--spacing-xs);
     }
     
     .contact-info-title {
-      font-size: 1.5rem;
+      font-size: 1.618rem;
       font-weight: 600;
-      margin-bottom: 1.5rem;
-      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: var(--spacing-md);
+      color: var(--text-secondary);
+      text-align: center;
     }
     
     .contact-items {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 2rem;
+      flex-direction: column;
+      gap: var(--spacing-md);
     }
     
     .contact-item {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      padding: 1.5rem;
       background-color: rgba(255, 255, 255, 0.08);
       border-radius: 12px;
-      width: 200px;
+      padding: var(--spacing-md);
       transition: all 0.3s ease;
     }
     
     .contact-item:hover {
-      transform: translateY(-5px);
+      transform: translateY(-3px);
       background-color: rgba(36, 176, 237, 0.1);
     }
     
     .contact-item-icon {
-      font-size: 2rem;
-      color: #24b0ed;
-      margin-bottom: 1rem;
+      font-size: 1.618rem;
+      color: var(--primary-color);
+      margin-right: var(--spacing-md);
+      width: 2.618rem;
+      height: 2.618rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(36, 176, 237, 0.1);
+      border-radius: 50%;
+      flex-shrink: 0;
     }
     
     .contact-item-text {
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--text-secondary);
       font-size: 0.9rem;
     }
     
-    @media (max-width: 768px) {
+    @media (max-width: 991px) {
       .contact-card {
-        padding: 2rem;
-        margin: 0 1rem;
+        padding: var(--spacing-md);
       }
       
       .contact-title {
-        font-size: 2rem;
+        font-size: calc(1.618rem * 1.309);
       }
       
-      .contact-items {
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
+      .btn-submit {
+        width: 100%;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .contact-title {
+        font-size: 1.618rem;
       }
       
       .contact-item {
-        width: 100%;
-        max-width: 250px;
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .contact-item-icon {
+        margin-right: 0;
+        margin-bottom: var(--spacing-sm);
       }
     }
   </style>
@@ -185,43 +223,48 @@
 
   <div class="main-content">
     <section class="contact-section">
-     <center>
       <div class="container">
         <h1 class="contact-title">Send Us Your Feedback</h1>
         
-        <div class="contact-card">
-          <form method="POST" autocomplete="off">
-            {% csrf_token %}
-            
-            <div class="form-group">
-              {{ form.as_p }}
-              
-              <div class="text-center">
-                <button type="submit" class="btn-submit">
-                  <i class="fas fa-paper-plane btn-icon"></i> Send Message
-                </button>
-              </div>
+        <div class="golden-layout">
+          <div class="contact-form-container">
+            <div class="contact-card">
+              <form method="POST" autocomplete="off">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                  {{ form.as_p }}
+                  
+                  <div class="text-center">
+                    <button type="submit" class="btn-submit">
+                      <i class="fas fa-paper-plane btn-icon"></i> Send Message
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
-     </center>
-        <div class="contact-info">
-          <h2 class="contact-info-title">Other Ways to Reach Us</h2>
+          </div>
           
-          <div class="contact-items">
-            <div class="contact-item">
-              <i class="fas fa-map-marker-alt contact-item-icon"></i>
-              <span class="contact-item-text">Chinhoyi University of Technology, Chinhoyi, Zimbabwe</span>
-            </div>
-            
-            <div class="contact-item">
-              <i class="fas fa-envelope contact-item-icon"></i>
-              <span class="contact-item-text">support@cutonlinequiz.ac.zw</span>
-            </div>
-            
-            <div class="contact-item">
-              <i class="fas fa-phone-alt contact-item-icon"></i>
-              <span class="contact-item-text">+263 67 2122203-5</span>
+          <div class="contact-info-container">
+            <div class="contact-card">
+              <h2 class="contact-info-title">Ways to Reach Us</h2>
+              
+              <div class="contact-items">
+                <div class="contact-item">
+                  <i class="fas fa-map-marker-alt contact-item-icon"></i>
+                  <span class="contact-item-text">Chinhoyi University of Technology, Chinhoyi, Zimbabwe</span>
+                </div>
+                
+                <div class="contact-item">
+                  <i class="fas fa-envelope contact-item-icon"></i>
+                  <span class="contact-item-text">support@cutonlinequiz.ac.zw</span>
+                </div>
+                
+                <div class="contact-item">
+                  <i class="fas fa-phone-alt contact-item-icon"></i>
+                  <span class="contact-item-text">+263 67 2122203-5</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -236,3 +279,4 @@
 </body>
 
 </html>
+
