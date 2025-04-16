@@ -198,17 +198,19 @@ class AIModel(models.Model):
         super().delete(*args, **kwargs)
 
 class AIPrediction(models.Model):
-    """Model to store prediction results"""
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='predictions')
+    """Model for storing AI predictions"""
     model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name='predictions')
-    prediction_date = models.DateTimeField(auto_now_add=True)
-    input_data = models.JSONField()
-    prediction_result = models.BooleanField()  # True for adopted, False for not adopted
-    confidence_score = models.FloatField()
-    feature_importances = models.JSONField(default=dict)
+    prediction_class = models.IntegerField(default=0)  # 0 for risk, 1 for success
+    success_probability = models.FloatField(default=0.0)
+    risk_probability = models.FloatField(default=0.0)
+    input_data = models.TextField()  # JSON formatted input data
+    feature_importances = models.TextField(null=True, blank=True)  # JSON formatted feature importance
+    explanation = models.TextField(null=True, blank=True)  # AI-generated explanation
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Prediction for {self.user.username} on {self.prediction_date.strftime('%Y-%m-%d')}"
+        return f"Prediction {self.id} - {'Success' if self.prediction_class == 1 else 'At Risk'}"
 
 class AIInsight(models.Model):
     """Model to store AI-generated insights from data"""

@@ -789,4 +789,240 @@ def prepare_features(student_data):
         'year_level': student_data.get('year_level', 1)
     }
     
-    return features 
+    return features
+
+def generate_enhanced_explanation(prediction_data, feature_importance):
+    """Generate an enhanced explanation using OpenRouter AI"""
+    try:
+        # Import config here to avoid circular imports
+        from decouple import config
+        
+        # Get OpenRouter API configuration
+        OPENROUTER_API_KEY = config('OPENROUTER_API_KEY', default=None)
+        OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME', default="openai/gpt-3.5-turbo")
+        OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+        
+        if not OPENROUTER_API_KEY:
+            logger.info("No OpenRouter API key configured, using basic explanation")
+            return generate_basic_explanation(prediction_data, feature_importance)
+            
+        # Format the prediction data for the prompt
+        prediction_class = prediction_data.get('prediction_class', 0)
+        success_probability = prediction_data.get('success_probability', 0)
+        risk_probability = prediction_data.get('risk_probability', 0)
+        
+        # Sort feature importance by value
+        sorted_features = sorted(
+            feature_importance.items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )
+        
+        # Format feature importance for the prompt
+        feature_importance_text = "\n".join([
+            f"- {feature}: {importance:.4f}" 
+            for feature, importance in sorted_features[:5]
+        ])
+        
+        # Input data formatted as text
+        input_data_text = "\n".join([
+            f"- {key}: {value}" 
+            for key, value in prediction_data.get('input_data', {}).items()
+        ])
+        
+        # Create the prompt
+        prompt = f"""
+        As an AI education expert, analyze this student prediction:
+        
+        Prediction class: {'Success' if prediction_class == 1 else 'At Risk'}
+        Success probability: {success_probability:.2f}%
+        Risk probability: {risk_probability:.2f}%
+        
+        Top influencing factors:
+        {feature_importance_text}
+        
+        Student data:
+        {input_data_text}
+        
+        Provide a concise, helpful explanation of:
+        1. What this prediction means
+        2. Why the model made this prediction (based on the feature importance)
+        3. Specific actionable recommendations for educators
+        
+        Keep your response under 250 words.
+        """
+        
+        # Call the OpenRouter API
+        import requests
+        headers = {
+            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        
+        data = {
+            "model": OPENROUTER_MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": "You are an AI education expert specializing in analyzing student data."},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        # Make the API request
+        response = requests.post(OPENROUTER_API_URL, headers=headers, json=data, timeout=15)
+        response.raise_for_status()
+        
+        # Parse the response
+        result = response.json()
+        explanation = result['choices'][0]['message']['content'].strip()
+        
+        return explanation
+        
+    except Exception as e:
+        logger.error(f"Error generating enhanced explanation: {str(e)}")
+        return generate_basic_explanation(prediction_data, feature_importance)
+
+def generate_basic_explanation(prediction_data, feature_importance):
+    """Generate a basic explanation without using OpenRouter API"""
+    prediction_class = prediction_data.get('prediction_class', 0)
+    success_probability = prediction_data.get('success_probability', 0)
+    risk_probability = prediction_data.get('risk_probability', 0)
+    
+    # Sort feature importance by value
+    sorted_features = sorted(
+        feature_importance.items(), 
+        key=lambda x: x[1], 
+        reverse=True
+    )[:3]  # Top 3 features
+    
+    # Create basic explanation
+    if prediction_class == 1:
+        explanation = f"This student has a {success_probability:.1f}% probability of success. "
+        explanation += "Key factors contributing to this prediction are "
+        explanation += ", ".join([f"{feature.replace('_', ' ')}" for feature, _ in sorted_features])
+        explanation += ". Regular check-ins and advanced materials are recommended."
+    else:
+        explanation = f"This student has a {risk_probability:.1f}% probability of being at risk. "
+        explanation += "Key factors contributing to this prediction are "
+        explanation += ", ".join([f"{feature.replace('_', ' ')}" for feature, _ in sorted_features])
+        explanation += ". Early intervention with additional tutoring is recommended."
+    
+    return explanation
+
+def make_prediction(input_data, model_id=None):
+    """Make a prediction using the input data and specified model"""
+    try:
+        # Get the active model
+        if model_id:
+            model_obj = AIModel.objects.get(id=model_id)
+        else:
+            model_obj = AIModel.objects.filter(is_active=True).first()
+        
+        if not model_obj:
+            return {
+                'success': False,
+                'message': 'No active model found'
+            }
+        
+        # Load the model
+        model_path = os.path.join(settings.MEDIA_ROOT, str(model_obj.model_file))
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+        model = model_data['model']
+        scaler = model_data['scaler']
+        feature_cols = model_data['feature_cols']
+        
+        # Prepare input data
+        if model_id:
+            # If model_id is provided, get data from AIAdoptionData model
+            adoption_data = AIAdoptionData.objects.get(id=model_id)
+            
+            input_data = {
+                'level_of_study': adoption_data.level_of_study,
+                'faculty': adoption_data.faculty,
+                'ai_familiarity': adoption_data.ai_familiarity,
+                'uses_ai_tools': adoption_data.uses_ai_tools,
+                'tools_used': adoption_data.tools_used,
+                'usage_frequency': adoption_data.usage_frequency,
+                'challenges': adoption_data.challenges,
+                'improves_learning': adoption_data.improves_learning
+            }
+        else:
+            # Use provided data
+            input_data = input_data
+            
+            # Convert gender to numerical value if necessary
+            if 'gender' in input_data and isinstance(input_data['gender'], str):
+                gender_map = {'M': 0, 'F': 1, 'O': 2}
+                input_data['gender'] = gender_map.get(input_data['gender'], 0)
+        
+        # Create DataFrame with input data
+        input_df = pd.DataFrame([input_data])
+        
+        # Ensure all required columns are present
+        for col in feature_cols:
+            if col not in input_df.columns:
+                input_df[col] = 0
+        
+        # Scale the input data
+        input_scaled = scaler.transform(input_df[feature_cols])
+        
+        # Make prediction
+        prediction_class = model.predict(input_scaled)[0]
+        prediction_proba = model.predict_proba(input_scaled)[0]
+        
+        # Create prediction result
+        success_probability = prediction_proba[1] * 100
+        risk_probability = prediction_proba[0] * 100
+        
+        # Get feature importance for this prediction (if available)
+        feature_importance = {}
+        if hasattr(model, 'feature_importances_'):
+            # Multiply feature values by their importance
+            for i, col in enumerate(feature_cols):
+                scaled_value = input_scaled[0][i]
+                importance = model.feature_importances_[i]
+                feature_importance[col] = float(importance)  # Convert from numpy to Python native type
+        
+        # Generate enhanced explanation using OpenRouter
+        prediction_data = {
+            'prediction_class': prediction_class,
+            'success_probability': success_probability,
+            'risk_probability': risk_probability,
+            'input_data': input_data
+        }
+        
+        enhanced_explanation = generate_enhanced_explanation(prediction_data, feature_importance)
+        
+        # Save prediction to database
+        prediction = AIPrediction.objects.create(
+            model=model_obj,
+            input_data=json.dumps(input_data),
+            prediction_class=int(prediction_class),
+            success_probability=float(success_probability),
+            risk_probability=float(risk_probability),
+            feature_importances=json.dumps(feature_importance),
+            explanation=enhanced_explanation
+        )
+        
+        # Prepare the result
+        result = {
+            'prediction_id': prediction.id,
+            'model_name': model_obj.name,
+            'model_accuracy': model_obj.accuracy,
+            'last_trained': model_obj.last_trained,
+            'prediction_class': int(prediction_class),
+            'success_probability': float(success_probability),
+            'risk_probability': float(risk_probability),
+            'feature_importance': feature_importance,
+            'input_data': input_data,
+            'explanation': enhanced_explanation
+        }
+        
+        return result
+    
+    except Exception as e:
+        logger.error(f"Error in make_prediction: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e)
+        } 

@@ -26,7 +26,7 @@ from django.contrib import messages
 import tempfile
 from student.models import Student
 from django.conf import settings
-from django.conf import settings
+from decouple import config
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -517,9 +517,29 @@ def ai_dashboard(request):
     
     # Get most recent NL query
     try:
-        recent_query = NLQuery.objects.all().order_by('-created_at').first()
-    except:
+        # Check if NLQuery model exists in the app
+        if 'NLQuery' in globals() or 'NLQuery' in locals():
+            recent_query = NLQuery.objects.all().order_by('-created_at').first()
+        else:
+            recent_query = None
+    except Exception as e:
         recent_query = None
+        print(f"Error fetching NLQuery: {str(e)}")
+    
+    # Count insights
+    try:
+        insights_count = AIInsight.objects.count()
+    except:
+        insights_count = 0
+    
+    # Count queries
+    try:
+        if 'NLQuery' in globals() or 'NLQuery' in locals():
+            queries_count = NLQuery.objects.count()
+        else:
+            queries_count = 0
+    except:
+        queries_count = 0
     
     context = {
         'models': models,
@@ -531,8 +551,8 @@ def ai_dashboard(request):
         'prediction_risk_count': prediction_risk_count,
         'ai_insights': ai_insights,
         'recent_query': recent_query,
-        'insights_count': AIInsight.objects.count(),
-        'queries_count': NLQuery.objects.count() if 'NLQuery' in globals() else 0
+        'insights_count': insights_count,
+        'queries_count': queries_count
     }
     
     return render(request, 'quiz/ai_dashboard.html', context)
@@ -619,8 +639,21 @@ def make_prediction_view(request):
             student_id = request.POST.get('student_id')
             if not student_id:
                 return JsonResponse({'success': False, 'error': 'Student ID is required'})
-                
-            result = make_prediction(model_id, student_id=student_id)
+            
+            # Get student data
+            student = get_object_or_404(Student, id=student_id)
+            # Prepare student data for prediction
+            student_data = {
+                'prev_score': student.get_avg_score(),
+                'attendance_rate': student.get_attendance_rate(),
+                'quiz_completion': student.get_quiz_completion_rate(),
+                'time_spent': student.get_avg_study_time(),
+                'age': student.age if hasattr(student, 'age') else 20,
+                'gender': student.gender if hasattr(student, 'gender') else 'M'
+            }
+            
+            # Make prediction with student data
+            result = make_prediction(input_data=student_data, model_id=model_id)
         else:
             # Manual input
             input_data = {
@@ -632,6 +665,7 @@ def make_prediction_view(request):
                 'gender': request.POST.get('gender', 'M')
             }
             
+            # Make prediction with manual data
             result = make_prediction(input_data=input_data, model_id=model_id)
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
