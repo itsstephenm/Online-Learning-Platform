@@ -1,4 +1,4 @@
-{% extends 'quiz/base.html' %}
+{% extends 'teacher/teacherbase.html' %}
 {% load static %}
 
 {% block title %}AI Dashboard{% endblock %}
@@ -56,141 +56,428 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="mb-3">AI Dashboard</h1>
-            <p class="text-muted">Manage your AI models and predictions for student success</p>
-        </div>
-        <div class="col-auto">
-            <a href="{% url 'upload_training_data' %}" class="btn btn-primary action-button">
-                <i class="fas fa-upload mr-2"></i> Upload Training Data
-            </a>
-            <a href="{% url 'train_ai_model' %}" class="btn btn-success action-button ml-2">
-                <i class="fas fa-brain mr-2"></i> Train New Model
-            </a>
-            <a href="{% url 'make_prediction_view' %}" class="btn btn-info action-button ml-2">
-                <i class="fas fa-chart-line mr-2"></i> Make Prediction
-            </a>
-        </div>
-    </div>
+<div class="container-fluid px-4">
+    <h1 class="mt-4">AI Prediction Dashboard</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">AI Prediction</li>
+    </ol>
     
-    <div class="row mb-4">
-        <div class="col-md-6 col-lg-3">
-            <div class="stats-card bg-primary text-white">
-                <h3>{{ model_count }}</h3>
-                <p class="mb-0">AI Models</p>
-                <i class="fas fa-brain fa-2x position-absolute" style="top: 20px; right: 20px; opacity: 0.3;"></i>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-3">
-            <div class="stats-card bg-success text-white">
-                <h3>{{ prediction_count }}</h3>
-                <p class="mb-0">Predictions Made</p>
-                <i class="fas fa-chart-line fa-2x position-absolute" style="top: 20px; right: 20px; opacity: 0.3;"></i>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-3">
-            <div class="stats-card bg-info text-white">
-                <h3>{% if models %}{{ models.0.accuracy|floatformat:2 }}%{% else %}N/A{% endif %}</h3>
-                <p class="mb-0">Best Model Accuracy</p>
-                <i class="fas fa-check-circle fa-2x position-absolute" style="top: 20px; right: 20px; opacity: 0.3;"></i>
-            </div>
-        </div>
-        
-        <div class="col-md-6 col-lg-3">
-            <div class="stats-card bg-warning text-white">
-                <h3>{% if recent_predictions %}{{ recent_predictions.0.success_probability|floatformat:2 }}%{% else %}N/A{% endif %}</h3>
-                <p class="mb-0">Latest Prediction Score</p>
-                <i class="fas fa-star fa-2x position-absolute" style="top: 20px; right: 20px; opacity: 0.3;"></i>
+    <!-- OpenRouter AI Integration Banner -->
+    <div class="card mb-4 bg-primary text-white">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <i class="fas fa-robot fa-2x me-3"></i>
+                </div>
+                <div class="col">
+                    <h5 class="mb-1">OpenRouter AI Integration</h5>
+                    <p class="mb-0">Enhanced predictions and insights powered by OpenRouter's advanced AI models</p>
+                </div>
+                <div class="col-auto">
+                    <a href="{% url 'make_prediction' %}" class="btn btn-light">
+                        <i class="fas fa-magic me-1"></i>
+                        Try Enhanced Predictions
+                    </a>
+                </div>
             </div>
         </div>
     </div>
     
     <div class="row">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Available Models</h5>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">{{ model_count }}</h5>
+                            <div class="small">Trained AI Models</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-brain fa-2x"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body p-0">
-                    {% if models %}
-                        <div class="list-group list-group-flush">
-                            {% for model in models %}
-                                <div class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">{{ model.name }}</h6>
-                                            <small class="text-muted">{{ model.model_type }} | Accuracy: {{ model.accuracy|floatformat:2 }}%</small>
-                                        </div>
-                                        <div>
-                                            <a href="{% url 'make_prediction_view' %}?model_id={{ model.id }}" class="btn btn-sm btn-primary">
-                                                Use Model
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#">View Models</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">{{ prediction_count }}</h5>
+                            <div class="small">Total Predictions</div>
                         </div>
-                    {% else %}
-                        <div class="p-4 text-center">
-                            <i class="fas fa-robot fa-3x text-muted mb-3"></i>
-                            <p>No models available yet.</p>
-                            <a href="{% url 'train_ai_model' %}" class="btn btn-outline-primary">Train Your First Model</a>
+                        <div>
+                            <i class="fas fa-chart-line fa-2x"></i>
                         </div>
-                    {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'view_predictions' %}">View Predictions</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">{{ insights_count|default:"0" }}</h5>
+                            <div class="small">AI-Generated Insights</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-lightbulb fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#">View Insights</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">{{ queries_count|default:"0" }}</h5>
+                            <div class="small">Natural Language Queries</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-comment-dots fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#">View Queries</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    AI Model Performance
+                </div>
+                <div class="card-body">
+                    <canvas id="modelAccuracyChart" width="100%" height="40"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    Prediction Distribution
+                </div>
+                <div class="card-body">
+                    <canvas id="predictionDistributionChart" width="100%" height="40"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-history me-1"></i>
+                        Recent Predictions
+                    </div>
+                    <a href="{% url 'make_prediction' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>
+                        New Prediction
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Model</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prediction in recent_predictions %}
+                                <tr>
+                                    <td>{{ prediction.id }}</td>
+                                    <td>{{ prediction.created_at|date:"M d, Y H:i" }}</td>
+                                    <td>{{ prediction.model.name }}</td>
+                                    <td>
+                                        {% if prediction.prediction_class == 1 %}
+                                        <span class="badge bg-success">Success</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">At Risk</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prediction.prediction_class == 1 %}
+                                        {{ prediction.success_probability|floatformat:1 }}%
+                                        {% else %}
+                                        {{ prediction.risk_probability|floatformat:1 }}%
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'prediction_detail' prediction.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No predictions made yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer small text-muted">
+                    Updated {% now "F j, Y, g:i a" %}
                 </div>
             </div>
         </div>
         
-        <div class="col-lg-6 mt-4 mt-lg-0">
-            <div class="card">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Recent Predictions</h5>
-                    <a href="{% url 'view_predictions' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        <div class="col-xl-4">
+            <!-- AI Insights Section -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-lightbulb me-1"></i>
+                        AI-Enhanced Insights
+                    </div>
+                    <a href="#" class="btn btn-primary btn-sm">
+                        <i class="fas fa-sync-alt me-1"></i>
+                        Generate
+                    </a>
                 </div>
-                <div class="card-body p-0">
-                    {% if recent_predictions %}
-                        <div class="list-group list-group-flush">
-                            {% for prediction in recent_predictions %}
-                                <div class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">
-                                                {% if prediction.student %}
-                                                    {{ prediction.student.user.first_name }} {{ prediction.student.user.last_name }}
-                                                {% else %}
-                                                    Manual Prediction
-                                                {% endif %}
-                                            </h6>
-                                            <small class="text-muted">
-                                                {{ prediction.created_at|date:"M d, Y" }} | Success Probability: 
-                                                <span class="{% if prediction.success_probability > 70 %}text-success{% elif prediction.success_probability > 40 %}text-warning{% else %}text-danger{% endif %}">
-                                                    {{ prediction.success_probability|floatformat:2 }}%
-                                                </span>
-                                            </small>
-                                        </div>
-                                        <div>
-                                            <a href="{% url 'prediction_detail' prediction.id %}" class="btn btn-sm btn-outline-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
+                <div class="card-body">
+                    {% if ai_insights %}
+                    <div class="list-group">
+                        {% for insight in ai_insights %}
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ insight.title }}</h6>
+                                <small>{{ insight.created_at|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ insight.content|truncatechars:100 }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2">{{ insight.topic.name }}</span>
+                                {% if insight.is_generated %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-robot me-1"></i>
+                                    OpenRouter Enhanced
+                                </span>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                        <div class="p-4 text-center">
-                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
-                            <p>No predictions made yet.</p>
-                            <a href="{% url 'make_prediction_view' %}" class="btn btn-outline-primary">Make Your First Prediction</a>
-                        </div>
+                    <div class="text-center py-4">
+                        <i class="fas fa-lightbulb fa-3x mb-3 text-warning"></i>
+                        <p>No insights generated yet</p>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-magic me-1"></i>
+                            Generate Insights
+                        </button>
+                    </div>
                     {% endif %}
+                </div>
+            </div>
+            
+            <!-- Natural Language Query Interface -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-comment-dots me-1"></i>
+                    Ask AI Assistant
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        Ask questions about your data in plain English
+                    </p>
+                    <form id="nlQueryForm">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="e.g., Show me adoption trends by faculty" id="nlQuery">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div id="queryResults" class="mt-3">
+                        {% if recent_query %}
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="fw-bold">{{ recent_query.query }}</p>
+                                <p>{{ recent_query.response }}</p>
+                                {% if recent_query.chart_data %}
+                                <div class="query-chart" style="height: 200px;"></div>
+                                {% endif %}
+                                <div class="small text-muted mt-2">
+                                    Powered by OpenRouter AI
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Model Accuracy Chart
+    var modelCtx = document.getElementById('modelAccuracyChart');
+    var modelData = {
+        labels: [{% for model in models %}"{{ model.name }}",{% endfor %}],
+        datasets: [{
+            label: 'Model Accuracy (%)',
+            data: [{% for model in models %}{{ model.accuracy|floatformat:2 }},{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(modelCtx, {
+        type: 'bar',
+        data: modelData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Prediction Distribution Chart
+    var predictionCtx = document.getElementById('predictionDistributionChart');
+    var predictionData = {
+        labels: ['Success', 'At Risk'],
+        datasets: [{
+            data: [
+                {{ prediction_success_count|default:0 }}, 
+                {{ prediction_risk_count|default:0 }}
+            ],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(220, 53, 69, 0.8)'
+            ]
+        }]
+    };
+    
+    new Chart(predictionCtx, {
+        type: 'doughnut',
+        data: predictionData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // NL Query Form
+    const nlQueryForm = document.getElementById('nlQueryForm');
+    if (nlQueryForm) {
+        nlQueryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('nlQuery').value;
+            if (!query) return;
+            
+            // Show loading state
+            const queryResults = document.getElementById('queryResults');
+            queryResults.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Processing your query...</p></div>';
+            
+            // Send query to backend
+            fetch('/quiz/nl_query/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let resultHtml = `
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="fw-bold">${query}</p>
+                            <p>${data.response}</p>
+                `;
+                
+                if (data.chart_data) {
+                    resultHtml += `<div id="responseChart" style="height: 200px;"></div>`;
+                }
+                
+                resultHtml += `
+                            <div class="small text-muted mt-2">
+                                Powered by OpenRouter AI
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                queryResults.innerHTML = resultHtml;
+                
+                // If there's chart data, render the chart
+                if (data.chart_data && data.chart_type) {
+                    // Initialize chart based on data
+                }
+            })
+            .catch(error => {
+                queryResults.innerHTML = `<div class="alert alert-danger">Error processing query: ${error.message}</div>`;
+            });
+        });
+    }
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
 {% endblock %} 

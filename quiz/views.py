@@ -25,6 +25,8 @@ from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 import tempfile
 from student.models import Student
+from django.conf import settings
+from django.conf import settings
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -503,11 +505,34 @@ def ai_dashboard(request):
     models = AIModel.objects.all()
     recent_predictions = AIPrediction.objects.all().order_by('-created_at')[:5]
     
+    # Get OpenRouter integration status
+    openrouter_available = config('OPENROUTER_API_KEY', default=None) is not None
+    
+    # Get prediction success/risk counts
+    prediction_success_count = AIPrediction.objects.filter(prediction_class=1).count()
+    prediction_risk_count = AIPrediction.objects.filter(prediction_class=0).count()
+    
+    # Get AI insights
+    ai_insights = AIInsight.objects.all().order_by('-created_at')[:3]
+    
+    # Get most recent NL query
+    try:
+        recent_query = NLQuery.objects.all().order_by('-created_at').first()
+    except:
+        recent_query = None
+    
     context = {
         'models': models,
         'recent_predictions': recent_predictions,
         'prediction_count': AIPrediction.objects.count(),
-        'model_count': models.count()
+        'model_count': models.count(),
+        'openrouter_available': openrouter_available,
+        'prediction_success_count': prediction_success_count,
+        'prediction_risk_count': prediction_risk_count,
+        'ai_insights': ai_insights,
+        'recent_query': recent_query,
+        'insights_count': AIInsight.objects.count(),
+        'queries_count': NLQuery.objects.count() if 'NLQuery' in globals() else 0
     }
     
     return render(request, 'quiz/ai_dashboard.html', context)
@@ -607,18 +632,26 @@ def make_prediction_view(request):
                 'gender': request.POST.get('gender', 'M')
             }
             
-            result = make_prediction(model_id, student_data=input_data)
+            result = make_prediction(input_data=input_data, model_id=model_id)
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse(result)
         
         # Store prediction result in session for non-AJAX requests
         request.session['prediction_result'] = result
+        
+        # Add OpenRouter usage flag for templates
+        if 'explanation' in result and result['explanation']:
+            result['used_openrouter'] = True
+        
         return redirect('prediction_result')
     
+    # For GET requests
     context = {
         'models': models,
-        'students': students
+        'students': students,
+        'available_models': AIModel.objects.all(),
+        'openrouter_available': config('OPENROUTER_API_KEY', default=None) is not None
     }
     
     return render(request, 'quiz/make_prediction.html', context)
