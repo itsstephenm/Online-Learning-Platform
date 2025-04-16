@@ -27,4 +27,5 @@ urlpatterns = [
     path('api/ai/activate-model/<int:model_id>/', views.api_activate_model, name='api_activate_model'),
     path('api/ai/delete-model/<int:model_id>/', views.api_delete_model, name='api_delete_model'),
     path('api/ai/delete-training-data/<int:data_id>/', views.api_delete_training_data, name='api_delete_training_data'),
+    path('nl_query/', views.nl_query_view, name='nl_query'),
 ] 
