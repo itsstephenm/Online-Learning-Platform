@@ -267,9 +267,9 @@
       <i class="fas fa-question-circle"></i>
       <span>Questions</span>
     </a>
-    <a href="/adminclick" class="{% if request.path == '/adminclick' %}active{% endif %}">
-      <i class="fas fa-home"></i>
-      <span>Home</span>
+    <a href="/ai-prediction-dashboard" class="{% if request.path == '/ai-prediction-dashboard' %}active{% endif %}">
+      <i class="fas fa-brain"></i>
+      <span>AI Prediction</span>
     </a>
     <form action="{% url 'logout' %}" method="POST" style="display: block;">
       {% csrf_token %}
