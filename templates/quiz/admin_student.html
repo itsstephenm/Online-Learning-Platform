@@ -172,12 +172,14 @@
 <style>
   .content-wrapper {
     padding: 1.5rem;
+    background-color: #151521;
+    color: var(--text-primary, #ffffff);
   }
   
   .section-title {
     font-size: 1.8rem;
     font-weight: 600;
-    color: var(--primary-color, #24b0ed);
+    color: #24b0ed;
     margin-bottom: 0.5rem;
   }
   
@@ -185,16 +187,21 @@
     font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 1rem;
-    color: #444;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
   }
   
   .stat-card {
     border-radius: 12px;
     border: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     color: white;
     height: 100%;
     transition: transform 0.3s ease;
+    background-color: #1e1e2d;
   }
   
   .stat-card:hover {
@@ -230,8 +237,10 @@
   .card {
     border-radius: 12px;
     border: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
+    background-color: #1e1e2d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
   }
   
@@ -241,19 +250,23 @@
     font-weight: 500;
     transition: all 0.3s ease;
     text-align: left;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
   }
   
   .btn-action:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.15);
   }
   
   .performance-card {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     padding: 1.5rem;
     text-align: center;
     height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .performance-value {
@@ -264,22 +277,34 @@
   
   .performance-label {
     font-size: 0.9rem;
-    color: #6c757d;
+    color: rgba(255, 255, 255, 0.7);
   }
   
   .table {
     margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.9);
   }
   
   .table th {
     font-weight: 600;
     border-top: none;
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
-  .table td, .table th {
+  .table td {
     padding: 1rem;
     vertical-align: middle;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .table tbody tr {
+    transition: all 0.2s ease;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
   }
   
   .avatar-sm {
@@ -296,6 +321,12 @@
   @media (max-width: 768px) {
     .stat-card, .performance-card {
       margin-bottom: 1rem;
+    }
+    
+    .btn-action {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
     }
   }
 </style>
