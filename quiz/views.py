@@ -758,6 +758,107 @@ def get_student_data(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@csrf_exempt
+def nl_query_view(request):
+    """Process natural language queries about AI data"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are supported'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        query = data.get('query')
+        
+        if not query:
+            return JsonResponse({'error': 'No query provided'}, status=400)
+        
+        # Store the query
+        user = request.user if request.user.is_authenticated else None
+        nl_query = NLQuery(
+            user=user,
+            query=query,
+            processed_query=query,
+            response_type='text'
+        )
+        
+        # Process the query with OpenRouter if available
+        openrouter_api_key = config('OPENROUTER_API_KEY', default=None)
+        if openrouter_api_key:
+            try:
+                import requests
+                
+                # Get relevant data
+                stats = get_data_counts()
+                if not stats.get('success', False):
+                    stats = {'data': 'No statistics available'}
+                
+                # Create the prompt
+                prompt = f"""
+                As an AI education expert, analyze this data about AI adoption:
+                
+                {json.dumps(stats, indent=2)}
+                
+                User question: "{query}"
+                
+                Answer the question based on the data. If the data doesn't contain 
+                information to answer the question, say so.
+                Keep your response concise and focused on facts from the data.
+                """
+                
+                # Call OpenRouter API
+                headers = {
+                    'Authorization': f'Bearer {openrouter_api_key}',
+                    'Content-Type': 'application/json'
+                }
+                
+                data = {
+                    "model": config('OPENROUTER_MODEL_NAME', default="openai/gpt-3.5-turbo"),
+                    "messages": [
+                        {"role": "system", "content": "You are an AI education expert specializing in analyzing educational data."},
+                        {"role": "user", "content": prompt}
+                    ]
+                }
+                
+                # Make the API request
+                response = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions", 
+                    headers=headers, 
+                    json=data,
+                    timeout=15
+                )
+                response.raise_for_status()
+                
+                # Parse the response
+                result = response.json()
+                nl_response = result['choices'][0]['message']['content'].strip()
+                
+                # Save the response
+                nl_query.response = nl_response
+                nl_query.save()
+                
+                return JsonResponse({
+                    'response': nl_response,
+                    'enhanced': True
+                })
+                
+            except Exception as e:
+                print(f"Error calling OpenRouter API: {str(e)}")
+                nl_response = f"I couldn't process your question due to a technical issue: {str(e)}"
+        else:
+            # Basic response if OpenRouter is not available
+            nl_response = "I can't process natural language queries at the moment. Please try a more specific search."
+        
+        # Save the response
+        nl_query.response = nl_response
+        nl_query.save()
+        
+        return JsonResponse({
+            'response': nl_response,
+            'enhanced': False
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 
     
