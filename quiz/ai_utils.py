@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -13,10 +13,11 @@ import joblib
 import os
 from django.conf import settings
 import re
-from .models import AIAdoptionData, AIPrediction, InsightTopic, AIInsight, AIModel
+from .models import AIAdoptionData, AIPrediction, InsightTopic, AIInsight, AIModel, AIPredictionData
 import logging
 from datetime import datetime
 from django.db.models import Count
+import pickle
 
 logger = logging.getLogger(__name__)
 
@@ -1335,4 +1336,257 @@ def get_data_counts():
         return {
             'success': False,
             'error': str(e)
-        } 
+        }
+
+def process_training_data(file_path, training_data_obj):
+    """Process the uploaded CSV file and prepare it for training"""
+    try:
+        # Read the CSV file
+        df = pd.read_csv(file_path)
+        
+        # Store data info in the training data object
+        training_data_obj.row_count = len(df)
+        training_data_obj.column_names = ','.join(df.columns.tolist())
+        
+        # Basic data profiling
+        numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+        
+        # Calculate basic stats
+        stats = {
+            'numerical_features': len(numerical_cols),
+            'categorical_features': len(categorical_cols),
+            'missing_values': df.isnull().sum().sum(),
+            'target_distribution': df['target'].value_counts().to_dict() if 'target' in df.columns else {}
+        }
+        
+        # Save the stats
+        training_data_obj.data_profile = json.dumps(stats)
+        training_data_obj.save()
+        
+        return {
+            'success': True,
+            'message': 'Data processed successfully',
+            'training_data_id': training_data_obj.id
+        }
+    
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Error processing data: {str(e)}'
+        }
+
+def train_model(training_data_obj):
+    """Train a model using the uploaded training data"""
+    try:
+        # Read the CSV file
+        file_path = os.path.join(settings.MEDIA_ROOT, str(training_data_obj.file))
+        df = pd.read_csv(file_path)
+        
+        # Check if 'target' column exists
+        if 'target' not in df.columns:
+            return {
+                'success': False,
+                'message': 'CSV file must contain a "target" column'
+            }
+        
+        # Separate features and target
+        X = df.drop('target', axis=1)
+        y = df['target']
+        
+        # Identify numeric and categorical columns
+        numeric_features = X.select_dtypes(include=['int64', 'float64']).columns
+        categorical_features = X.select_dtypes(include=['object']).columns
+        
+        # Create preprocessor
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', StandardScaler(), numeric_features),
+                ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+            ])
+        
+        # Create and train the model
+        models = {
+            'random_forest': RandomForestClassifier(n_estimators=100, random_state=42),
+            'gradient_boosting': GradientBoostingClassifier(n_estimators=100, random_state=42)
+        }
+        
+        best_model = None
+        best_accuracy = 0
+        best_model_name = ''
+        model_reports = {}
+        
+        # Split the data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Train each model and find the best one
+        for name, model in models.items():
+            # Create pipeline
+            pipeline = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('classifier', model)
+            ])
+            
+            # Train the model
+            pipeline.fit(X_train, y_train)
+            
+            # Make predictions
+            y_pred = pipeline.predict(X_test)
+            
+            # Calculate accuracy
+            accuracy = accuracy_score(y_test, y_pred)
+            report = classification_report(y_test, y_pred, output_dict=True)
+            
+            model_reports[name] = {
+                'accuracy': accuracy,
+                'report': report
+            }
+            
+            # Update best model if this one is better
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                best_model = pipeline
+                best_model_name = name
+        
+        # Create a model object
+        model_file_path = f'models/model_{training_data_obj.id}.pkl'
+        full_model_path = os.path.join(settings.MEDIA_ROOT, model_file_path)
+        
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(full_model_path), exist_ok=True)
+        
+        # Save the model
+        with open(full_model_path, 'wb') as f:
+            pickle.dump(best_model, f)
+        
+        # Create insights
+        insights = []
+        if best_model_name == 'random_forest':
+            # Extract feature importance
+            feature_names = (
+                numeric_features.tolist() + 
+                list(best_model.named_steps['preprocessor']
+                    .transformers_[1][1]
+                    .get_feature_names_out(categorical_features))
+            )
+            
+            feature_importances = best_model.named_steps['classifier'].feature_importances_
+            
+            # Sort by importance
+            feature_importance_dict = dict(zip(feature_names, feature_importances))
+            sorted_importances = sorted(
+                feature_importance_dict.items(), 
+                key=lambda x: x[1], 
+                reverse=True
+            )
+            
+            # Create insights for top 5 features
+            for i, (feature, importance) in enumerate(sorted_importances[:5]):
+                insights.append({
+                    'title': f'Top Feature #{i+1}',
+                    'description': f'"{feature}" has an importance score of {importance:.4f}',
+                    'importance': importance
+                })
+        
+        # Create AIModel instance
+        model_obj = AIModel.objects.create(
+            training_data=training_data_obj,
+            model_type=best_model_name,
+            accuracy=best_accuracy,
+            model_file=model_file_path,
+            is_active=True,  # Set this model as active
+        )
+        
+        # Deactivate all other models
+        AIModel.objects.exclude(id=model_obj.id).update(is_active=False)
+        
+        # Add insights
+        for insight in insights:
+            AIInsight.objects.create(
+                model=model_obj,
+                title=insight['title'],
+                description=insight['description'],
+                importance=insight['importance']
+            )
+        
+        return {
+            'success': True,
+            'message': 'Model trained successfully',
+            'model_id': model_obj.id,
+            'accuracy': best_accuracy,
+            'insights': insights
+        }
+    
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Error training model: {str(e)}'
+        }
+
+def make_prediction(input_data, model_id=None):
+    """Make a prediction using the input data and specified model"""
+    try:
+        # Get the active model
+        if model_id:
+            model_obj = AIModel.objects.get(id=model_id)
+        else:
+            model_obj = AIModel.objects.filter(is_active=True).first()
+        
+        if not model_obj:
+            return {
+                'success': False,
+                'message': 'No active model found'
+            }
+        
+        # Load the model
+        model_path = os.path.join(settings.MEDIA_ROOT, str(model_obj.model_file))
+        with open(model_path, 'rb') as f:
+            model = pickle.load(f)
+        
+        # Convert input data to DataFrame
+        df = pd.DataFrame([input_data])
+        
+        # Make prediction
+        prediction = model.predict(df)[0]
+        probabilities = model.predict_proba(df)[0]
+        max_prob = max(probabilities)
+        
+        # Create prediction data object
+        prediction_data = AIPredictionData.objects.create(
+            model=model_obj,
+            input_data=json.dumps(input_data),
+            prediction_result=prediction,
+            confidence=float(max_prob)
+        )
+        
+        return {
+            'success': True,
+            'prediction': prediction,
+            'confidence': float(max_prob),
+            'prediction_id': prediction_data.id
+        }
+    
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Error making prediction: {str(e)}'
+        }
+
+def prepare_features(student_data):
+    """
+    Prepare features for prediction from student data
+    This assumes student_data contains information about the student
+    """
+    # Extract relevant features from student data
+    features = {
+        'quiz_score_avg': student_data.get('quiz_score_avg', 0),
+        'exam_score_avg': student_data.get('exam_score_avg', 0),
+        'attendance_rate': student_data.get('attendance_rate', 0),
+        'study_time_weekly': student_data.get('study_time_weekly', 0),
+        'participation_score': student_data.get('participation_score', 0),
+        'assignments_completed': student_data.get('assignments_completed', 0),
+        'major': student_data.get('major', 'Unknown'),
+        'year_level': student_data.get('year_level', 1)
+    }
+    
+    return features 

@@ -15,8 +15,8 @@ from teacher import forms as TFORM
 from student import forms as SFORM
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .ai_utils import import_from_csv, get_chart_data, process_nl_query, predict_adoption_level, process_csv_data, train_model, make_prediction, generate_insights_from_data, get_data_counts, get_prediction_details
-from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight, AIModel
+from .ai_utils import import_from_csv, get_chart_data, process_nl_query, predict_adoption_level, process_csv_data, train_model, make_prediction, generate_insights_from_data, get_data_counts, get_prediction_details, process_training_data, prepare_features
+from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight, AIModel, AIPredictionData
 from django.contrib.admin.views.decorators import staff_member_required
 import json
 import pandas as pd
@@ -498,136 +498,142 @@ def ai_data_explorer(request):
 
 @login_required
 def ai_dashboard(request):
-    """
-    Dashboard for AI prediction features
-    """
-    # Get stats
-    models = AIModel.objects.all().order_by('-created_date')
-    active_model = models.filter(is_active=True).first()
-    training_data = AIAdoptionData.objects.all().order_by('-upload_date')
-    recent_predictions = AIPrediction.objects.all().order_by('-prediction_date')[:10]
-    featured_insights = AIInsight.objects.filter(is_featured=True).order_by('-created_date')[:4]
+    """Dashboard for AI prediction functionality"""
+    # Get statistics
+    models = AIModel.objects.all().order_by('-created_at')
+    active_model = AIModel.objects.filter(is_active=True).first()
+    prediction_count = AIPredictionData.objects.count()
+    recent_predictions = AIPredictionData.objects.all().order_by('-created_at')[:5]
     
     context = {
         'models': models,
         'active_model': active_model,
-        'training_data': training_data,
+        'prediction_count': prediction_count,
         'recent_predictions': recent_predictions,
-        'featured_insights': featured_insights,
-        'total_models': models.count(),
-        'total_predictions': AIPrediction.objects.count(),
-        'total_training_files': training_data.count(),
     }
     
     return render(request, 'quiz/ai_dashboard.html', context)
 
 @login_required
 def upload_training_data(request):
-    """
-    Upload CSV file for model training
-    """
-    if request.method == 'POST' and request.FILES.get('training_file'):
-        file = request.FILES['training_file']
+    """View for uploading CSV training data"""
+    if request.method == 'POST' and request.FILES.get('data_file'):
+        file = request.FILES['data_file']
         
-        # Save the file
-        file_path = os.path.join(settings.MEDIA_ROOT, file.name)
-        with open(file_path, 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-        
-        # Create AIAdoptionData object
-        adoption_data = AIAdoptionData.objects.create(
-            file_name=file.name,
-            uploaded_by=request.user,
-            is_processed=False
+        # Create a new training data object
+        training_data = AIModel.objects.create(
+            name=request.POST.get('name', 'Training Data'),
+            description=request.POST.get('description', ''),
+            file=file
         )
         
         # Process the file
-        success, message = process_csv_data(file_path, adoption_data.pk)
+        file_path = os.path.join(settings.MEDIA_ROOT, str(training_data.file))
+        result = process_training_data(file_path, training_data)
         
-        if success:
-            return redirect('ai_data_detail', data_id=adoption_data.pk)
+        if result['success']:
+            # Train the model if auto-train is enabled
+            if request.POST.get('auto_train', False):
+                train_result = train_model(training_data)
+                if train_result['success']:
+                    messages.success(request, 'Data uploaded and model trained successfully!')
+                else:
+                    messages.error(request, train_result['message'])
+            else:
+                messages.success(request, 'Training data uploaded successfully!')
+                
+            return redirect('ai_data_detail', data_id=training_data.id)
         else:
-            return render(request, 'quiz/upload_training_data.html', {'error': message})
+            messages.error(request, result['message'])
+            return redirect('upload_training_data')
     
     return render(request, 'quiz/upload_training_data.html')
 
 @login_required
 def ai_data_detail(request, data_id):
-    """
-    View details of uploaded training data
-    """
-    data = get_object_or_404(AIAdoptionData, pk=data_id)
-    
-    if request.method == 'POST' and 'train_model' in request.POST:
-        # Train model
-        success, message = train_model(data_id)
+    """View training data details"""
+    try:
+        training_data = AIModel.objects.get(id=data_id)
         
-        if success:
-            return redirect('ai_model_detail', model_id=message)
-        else:
-            return render(request, 'quiz/ai_data_detail.html', {'data': data, 'error': message})
+        # If training is requested
+        if request.method == 'POST' and 'train_model' in request.POST:
+            result = train_model(training_data)
+            
+            if result['success']:
+                messages.success(request, 'Model trained successfully!')
+                return redirect('ai_model_detail', model_id=result['model_id'])
+            else:
+                messages.error(request, result['message'])
+        
+        context = {
+            'training_data': training_data,
+            'data_profile': json.loads(training_data.data_profile) if training_data.data_profile else {}
+        }
+        
+        return render(request, 'quiz/ai_data_detail.html', context)
     
-    context = {
-        'data': data,
-        'can_train': data.is_processed and not data.processing_errors
-    }
-    
-    return render(request, 'quiz/ai_data_detail.html', context)
+    except AIModel.DoesNotExist:
+        messages.error(request, 'Training data not found')
+        return redirect('ai_dashboard')
 
 @login_required
 def ai_model_detail(request, model_id):
-    """
-    View details of a trained model
-    """
-    model = get_object_or_404(AIModel, pk=model_id)
+    """View model details and insights"""
+    try:
+        model = AIModel.objects.get(id=model_id)
+        insights = AIInsight.objects.filter(model=model).order_by('-importance')
+        
+        context = {
+            'model': model,
+            'insights': insights
+        }
+        
+        return render(request, 'quiz/ai_model_detail.html', context)
     
-    # Get insights for this model
-    insights = AIInsight.objects.filter(source_model=model).order_by('-created_date')
-    
-    context = {
-        'model': model,
-        'insights': insights,
-        'training_data': model.training_data,
-        'predictions_count': AIPrediction.objects.filter(model=model).count()
-    }
-    
-    return render(request, 'quiz/ai_model_detail.html', context)
+    except AIModel.DoesNotExist:
+        messages.error(request, 'Model not found')
+        return redirect('ai_dashboard')
 
 @login_required
 def make_new_prediction(request):
-    """
-    Make a new prediction
-    """
-    # Get active model
+    """Make a new prediction"""
+    # Get available models
+    models = AIModel.objects.all()
     active_model = AIModel.objects.filter(is_active=True).first()
     
-    if not active_model:
-        return render(request, 'quiz/make_prediction.html', 
-                      {'error': 'No active model found. Please train a model first.'})
-    
     if request.method == 'POST':
-        # Get form data
-        input_data = {
-            'level_of_study': request.POST.get('level_of_study'),
-            'faculty': request.POST.get('faculty'),
-            'ai_familiarity': float(request.POST.get('ai_familiarity', 0)),
-            'uses_ai_tools': request.POST.get('uses_ai_tools'),
-            'tools_used': request.POST.get('tools_used', ''),
-            'usage_frequency': request.POST.get('usage_frequency'),
-            'improves_learning': request.POST.get('improves_learning'),
-            'challenges': request.POST.get('challenges', '')
-        }
+        try:
+            # Get form data
+            form_data = {
+                'quiz_score_avg': float(request.POST.get('quiz_score_avg', 0)),
+                'exam_score_avg': float(request.POST.get('exam_score_avg', 0)),
+                'attendance_rate': float(request.POST.get('attendance_rate', 0)),
+                'study_time_weekly': float(request.POST.get('study_time_weekly', 0)),
+                'participation_score': float(request.POST.get('participation_score', 0)),
+                'assignments_completed': int(request.POST.get('assignments_completed', 0)),
+                'major': request.POST.get('major', 'Unknown'),
+                'year_level': int(request.POST.get('year_level', 1))
+            }
+            
+            # Get selected model ID if provided
+            model_id = request.POST.get('model_id')
+            if model_id:
+                model_id = int(model_id)
+            
+            # Make prediction
+            result = make_prediction(form_data, model_id)
+            
+            if result['success']:
+                messages.success(request, 'Prediction made successfully!')
+                return redirect('prediction_result', prediction_id=result['prediction_id'])
+            else:
+                messages.error(request, result['message'])
         
-        # Make prediction
-        success, result = make_prediction(request.user.id, input_data)
-        
-        if success:
-            return redirect('prediction_result', prediction_id=result)
-        else:
-            return render(request, 'quiz/make_prediction.html', {'error': result})
+        except Exception as e:
+            messages.error(request, f'Error making prediction: {str(e)}')
     
     context = {
+        'models': models,
         'active_model': active_model
     }
     
@@ -635,22 +641,25 @@ def make_new_prediction(request):
 
 @login_required
 def prediction_result(request, prediction_id):
-    """
-    View prediction result
-    """
-    success, result = get_prediction_details(prediction_id)
+    """View prediction result"""
+    try:
+        prediction = AIPredictionData.objects.get(id=prediction_id)
+        
+        context = {
+            'prediction': prediction,
+            'input_data': json.loads(prediction.input_data)
+        }
+        
+        return render(request, 'quiz/prediction_result.html', context)
     
-    if not success:
-        return render(request, 'quiz/prediction_result.html', {'error': result})
-    
-    return render(request, 'quiz/prediction_result.html', {'prediction': result})
+    except AIPredictionData.DoesNotExist:
+        messages.error(request, 'Prediction not found')
+        return redirect('make_new_prediction')
 
 @login_required
 def all_predictions(request):
-    """
-    View all predictions
-    """
-    predictions = AIPrediction.objects.all().order_by('-prediction_date')
+    """View all predictions"""
+    predictions = AIPredictionData.objects.all().order_by('-created_at')
     
     context = {
         'predictions': predictions
@@ -660,10 +669,8 @@ def all_predictions(request):
 
 @login_required
 def all_insights(request):
-    """
-    View all insights
-    """
-    insights = AIInsight.objects.all().order_by('-created_date')
+    """View all insights from all models"""
+    insights = AIInsight.objects.all().order_by('-importance')
     
     context = {
         'insights': insights
@@ -671,17 +678,13 @@ def all_insights(request):
     
     return render(request, 'quiz/all_insights.html', context)
 
-# API endpoints for AJAX
-@csrf_exempt
+# API endpoints
 @login_required
 def api_activate_model(request, model_id):
-    """
-    Activate a model
-    """
+    """API to activate a model"""
     if request.method == 'POST':
         try:
-            # Get the model
-            model = AIModel.objects.get(pk=model_id)
+            model = AIModel.objects.get(id=model_id)
             
             # Deactivate all models
             AIModel.objects.all().update(is_active=False)
@@ -690,67 +693,85 @@ def api_activate_model(request, model_id):
             model.is_active = True
             model.save()
             
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({
+                'success': True,
+                'message': f'Model {model.name} activated successfully'
+            })
+        
+        except AIModel.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Model not found'
+            })
     
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method'
+    })
 
-@csrf_exempt
 @login_required
 def api_delete_model(request, model_id):
-    """
-    Delete a model
-    """
+    """API to delete a model"""
     if request.method == 'POST':
         try:
-            # Get the model
-            model = AIModel.objects.get(pk=model_id)
+            model = AIModel.objects.get(id=model_id)
             
-            # Delete model file
-            if os.path.exists(model.model_file_path):
-                os.remove(model.model_file_path)
+            # Delete the model file
+            if model.model_file:
+                file_path = os.path.join(settings.MEDIA_ROOT, str(model.model_file))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
             
-            # Delete model object
+            # Delete the model
             model.delete()
             
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({
+                'success': True,
+                'message': 'Model deleted successfully'
+            })
+        
+        except AIModel.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Model not found'
+            })
     
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method'
+    })
 
-@csrf_exempt
 @login_required
 def api_delete_training_data(request, data_id):
-    """
-    Delete training data
-    """
+    """API to delete training data"""
     if request.method == 'POST':
         try:
-            # Get the data
-            data = AIAdoptionData.objects.get(pk=data_id)
+            training_data = AIModel.objects.get(id=data_id)
             
-            # Check if there are models using this data
-            if AIModel.objects.filter(training_data=data).exists():
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'Cannot delete training data that is being used by models'
-                })
+            # Delete the file
+            if training_data.file:
+                file_path = os.path.join(settings.MEDIA_ROOT, str(training_data.file))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
             
-            # Delete file
-            file_path = os.path.join(settings.MEDIA_ROOT, data.file_name)
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            # Delete the training data
+            training_data.delete()
             
-            # Delete data object
-            data.delete()
-            
-            return JsonResponse({'success': True})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({
+                'success': True,
+                'message': 'Training data deleted successfully'
+            })
+        
+        except AIModel.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Training data not found'
+            })
     
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request method'
+    })
 
 @csrf_exempt
 @login_required
