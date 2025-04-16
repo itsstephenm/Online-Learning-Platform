@@ -1,0 +1,193 @@
+{% extends 'teacher/teacherbase.html' %}
+{% load static %}
+
+{% block title %}Prediction Result{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Prediction Result</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'ai_dashboard' %}">AI Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'make_prediction' %}">Make Prediction</a></li>
+        <li class="breadcrumb-item active">Result</li>
+    </ol>
+    
+    {% if result %}
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Prediction Result
+                </div>
+                <div class="card-body">
+                    <h4 class="mb-3">
+                        {% if result.prediction_class == 1 %}
+                        <span class="text-success">Success Probability: {{ result.success_probability|floatformat:1 }}%</span>
+                        {% else %}
+                        <span class="text-danger">Risk Probability: {{ result.risk_probability|floatformat:1 }}%</span>
+                        {% endif %}
+                    </h4>
+                    
+                    <div class="progress mb-4" style="height: 30px;">
+                        <div class="progress-bar bg-success" 
+                             role="progressbar" 
+                             style="width: {{ result.success_probability }}%;" 
+                             aria-valuenow="{{ result.success_probability }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ result.success_probability|floatformat:1 }}%
+                        </div>
+                        <div class="progress-bar bg-danger" 
+                             role="progressbar" 
+                             style="width: {{ result.risk_probability }}%;" 
+                             aria-valuenow="{{ result.risk_probability }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ result.risk_probability|floatformat:1 }}%
+                        </div>
+                    </div>
+                    
+                    <!-- AI-Enhanced Analysis Section -->
+                    {% if result.explanation %}
+                    <div class="card mb-4 border-left-primary">
+                        <div class="card-header bg-light">
+                            <i class="fas fa-robot me-1"></i>
+                            AI-Enhanced Analysis
+                        </div>
+                        <div class="card-body">
+                            <div class="ai-explanation">
+                                {{ result.explanation|linebreaks }}
+                            </div>
+                            <div class="text-muted small mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                This analysis was generated using OpenRouter AI
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <h5>Feature Importance</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Importance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature, importance in result.feature_importance.items %}
+                                <tr>
+                                    <td>{{ feature }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-info" 
+                                                 role="progressbar" 
+                                                 style="width: {{ importance|floatformat:4|stringformat:'s'|slice:'2:' }}%;" 
+                                                 aria-valuenow="{{ importance }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="1">
+                                                {{ importance|floatformat:4 }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Rest of your content -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Prediction Details
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="fw-bold">Model Used</label>
+                        <p>{{ result.model_name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Model Accuracy</label>
+                        <p>{{ result.model_accuracy|floatformat:2 }}%</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Prediction ID</label>
+                        <p>{{ result.prediction_id }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Input Data</label>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tbody>
+                                    {% for key, value in result.input_data.items %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommended Actions Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb me-1"></i>
+                    Recommended Actions
+                </div>
+                <div class="card-body">
+                    {% if result.prediction_class == 1 %}
+                    <div class="alert alert-success">
+                        <strong>High Success Probability</strong>
+                    </div>
+                    <ul>
+                        <li>Encourage collaborative projects</li>
+                        <li>Provide advanced material</li>
+                        <li>Consider peer tutoring opportunities</li>
+                    </ul>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <strong>Intervention Recommended</strong>
+                    </div>
+                    <ul>
+                        <li>Schedule additional tutoring sessions</li>
+                        <li>Create a personalized learning plan</li>
+                        <li>Set up weekly progress tracking</li>
+                        <li>Consider alternative teaching methods</li>
+                    </ul>
+                    {% endif %}
+                    
+                    <a href="#" class="btn btn-primary btn-sm d-block mt-3">
+                        <i class="fas fa-file-download me-1"></i>
+                        Export Detailed Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        No prediction result found. Please <a href="{% url 'make_prediction' %}">make a prediction</a> first.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Any JavaScript specific to this page
+    });
+</script>
+{% endblock %} 

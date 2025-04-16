@@ -18,8 +18,15 @@ import logging
 from datetime import datetime
 from django.db.models import Count
 import pickle
+import requests
+from decouple import config
 
 logger = logging.getLogger(__name__)
+
+# OpenRouter API configuration
+OPENROUTER_API_KEY = config('OPENROUTER_API_KEY', default=None)
+OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME', default="openai/gpt-3.5-turbo")
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # Path to save and load models
 MODEL_DIR = os.path.join(settings.BASE_DIR, 'ai_models')
@@ -1081,206 +1088,322 @@ def train_model():
             'error': str(e)
         }
 
-def make_prediction(input_data):
-    """
-    Make a prediction using the trained model
-    
-    Args:
-        input_data (dict): Dictionary containing input features
-        
-    Returns:
-        dict: Prediction results
-    """
+def generate_enhanced_explanation(prediction_data, feature_importance):
+    """Generate an enhanced explanation using OpenRouter AI"""
     try:
-        # Load the model
-        if not os.path.exists(CURRENT_MODEL_PATH):
+        if not OPENROUTER_API_KEY:
+            logger.info("No OpenRouter API key configured, using basic explanation")
+            return None
+            
+        # Format the prediction data for the prompt
+        prediction_class = prediction_data.get('prediction_class', 0)
+        success_probability = prediction_data.get('success_probability', 0)
+        risk_probability = prediction_data.get('risk_probability', 0)
+        
+        # Sort feature importance by value
+        sorted_features = sorted(
+            feature_importance.items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )
+        
+        # Format feature importance for the prompt
+        feature_importance_text = "\n".join([
+            f"- {feature}: {importance:.4f}" 
+            for feature, importance in sorted_features[:5]
+        ])
+        
+        # Input data formatted as text
+        input_data_text = "\n".join([
+            f"- {key}: {value}" 
+            for key, value in prediction_data.get('input_data', {}).items()
+        ])
+        
+        # Create the prompt
+        prompt = f"""
+        As an AI education expert, analyze this student prediction:
+        
+        Prediction class: {'Success' if prediction_class == 1 else 'At Risk'}
+        Success probability: {success_probability:.2f}%
+        Risk probability: {risk_probability:.2f}%
+        
+        Top influencing factors:
+        {feature_importance_text}
+        
+        Student data:
+        {input_data_text}
+        
+        Provide a concise, helpful explanation of:
+        1. What this prediction means
+        2. Why the model made this prediction (based on the feature importance)
+        3. Specific actionable recommendations for educators
+        
+        Keep your response under 250 words.
+        """
+        
+        # Call the OpenRouter API
+        headers = {
+            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'Content-Type': 'application/json'
+        }
+        
+        data = {
+            "model": OPENROUTER_MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": "You are an AI education expert specializing in analyzing student data."},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        # Make the API request
+        response = requests.post(OPENROUTER_API_URL, headers=headers, json=data)
+        response.raise_for_status()
+        
+        # Parse the response
+        result = response.json()
+        explanation = result['choices'][0]['message']['content'].strip()
+        
+        return explanation
+        
+    except Exception as e:
+        logger.error(f"Error generating enhanced explanation: {str(e)}")
+        return None
+
+def make_prediction(input_data, model_id=None):
+    """Make a prediction using the input data and specified model"""
+    try:
+        # Get the active model
+        if model_id:
+            model_obj = AIModel.objects.get(id=model_id)
+        else:
+            model_obj = AIModel.objects.filter(is_active=True).first()
+        
+        if not model_obj:
             return {
                 'success': False,
-                'error': "No trained model found. Please train a model first."
+                'message': 'No active model found'
             }
         
-        model = joblib.load(CURRENT_MODEL_PATH)
+        # Load the model
+        model_path = os.path.join(settings.MEDIA_ROOT, str(model_obj.model_file))
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+        model = model_data['model']
+        scaler = model_data['scaler']
+        feature_cols = model_data['feature_cols']
         
-        # Convert input data to DataFrame
-        df = pd.DataFrame([input_data])
+        # Prepare input data
+        if model_id:
+            # If model_id is provided, get data from AIAdoptionData model
+            adoption_data = AIAdoptionData.objects.get(id=model_id)
+            
+            input_data = {
+                'level_of_study': adoption_data.level_of_study,
+                'faculty': adoption_data.faculty,
+                'ai_familiarity': adoption_data.ai_familiarity,
+                'uses_ai_tools': adoption_data.uses_ai_tools,
+                'tools_used': adoption_data.tools_used,
+                'usage_frequency': adoption_data.usage_frequency,
+                'challenges': adoption_data.challenges,
+                'improves_learning': adoption_data.improves_learning
+            }
+        else:
+            # Use provided data
+            input_data = input_data
+            
+            # Convert gender to numerical value if necessary
+            if 'gender' in input_data and isinstance(input_data['gender'], str):
+                gender_map = {'M': 0, 'F': 1, 'O': 2}
+                input_data['gender'] = gender_map.get(input_data['gender'], 0)
         
-        # Prepare features
-        X = prepare_features(df)
+        # Create DataFrame with input data
+        input_df = pd.DataFrame([input_data])
+        
+        # Ensure all required columns are present
+        for col in feature_cols:
+            if col not in input_df.columns:
+                input_df[col] = 0
+        
+        # Scale the input data
+        input_scaled = scaler.transform(input_df[feature_cols])
         
         # Make prediction
-        prediction = model.predict(X)[0]
+        prediction_class = model.predict(input_scaled)[0]
+        prediction_proba = model.predict_proba(input_scaled)[0]
         
-        # Get prediction probabilities
-        probabilities = model.predict_proba(X)[0]
-        max_prob_index = np.argmax(probabilities)
-        confidence = probabilities[max_prob_index]
+        # Create prediction result
+        success_probability = prediction_proba[1] * 100
+        risk_probability = prediction_proba[0] * 100
         
-        # Collect feature importances if available
-        feature_importances = {}
-        if hasattr(model, 'steps') and hasattr(model.steps[-1][1], 'feature_importances_'):
-            # For models like RandomForest that have feature_importances_
-            classifier = model.steps[-1][1]
-            importances = classifier.feature_importances_
-            
-            # Get feature names
-            preprocessor = model.steps[0][1]
-            feature_names = numeric_features = ['ai_familiarity', 'tools_count', 'challenges_count', 
-                                               'usage_frequency_value', 'improves_learning_binary', 
-                                               'uses_ai_tools_binary', 'level_of_study', 'faculty']
-            
-            for i, importance in enumerate(importances):
-                if i < len(feature_names):
-                    feature_importances[feature_names[i]] = float(importance)
+        # Get feature importance for this prediction (if available)
+        feature_importance = {}
+        if hasattr(model, 'feature_importances_'):
+            # Multiply feature values by their importance
+            for i, col in enumerate(feature_cols):
+                scaled_value = input_scaled[0][i]
+                importance = model.feature_importances_[i]
+                feature_importance[col] = float(importance)  # Convert from numpy to Python native type
         
-        return {
-            'success': True,
-            'prediction': prediction,
-            'confidence': float(confidence),
-            'feature_importances': feature_importances,
-            'model_version': MODEL_VERSION
+        # Generate enhanced explanation using OpenRouter
+        enhanced_explanation = generate_enhanced_explanation({
+            'prediction_class': prediction_class,
+            'success_probability': success_probability,
+            'risk_probability': risk_probability,
+            'input_data': input_data
+        }, feature_importance)
+        
+        # Save prediction to database
+        prediction = AIPrediction.objects.create(
+            model=model_obj,
+            input_data=json.dumps(input_data),
+            prediction_class=int(prediction_class),
+            success_probability=float(success_probability),
+            risk_probability=float(risk_probability),
+            feature_importances=json.dumps(feature_importance),
+            explanation=enhanced_explanation
+        )
+        
+        # Prepare the result
+        result = {
+            'prediction_id': prediction.id,
+            'model_name': model_obj.name,
+            'model_accuracy': model_obj.accuracy,
+            'last_trained': model_obj.last_trained,
+            'prediction_class': int(prediction_class),
+            'success_probability': float(success_probability),
+            'risk_probability': float(risk_probability),
+            'feature_importance': feature_importance,
+            'input_data': input_data,
+            'explanation': enhanced_explanation
         }
+        
+        return result
     
     except Exception as e:
-        logger.error(f"Error making prediction: {str(e)}")
         return {
             'success': False,
             'error': str(e)
         }
 
 def generate_insights_from_data():
-    """
-    Generate insights from the AI adoption data
-    
-    Returns:
-        dict: Results of insight generation
-    """
+    """Generate insights from the AI adoption data using OpenRouter AI"""
     try:
-        # Get all data from the database
+        insights_generated = 0
+        
+        # Get all adoption data
         adoption_data = AIAdoptionData.objects.all()
         
-        if len(adoption_data) < 5:
+        if not adoption_data.exists():
             return {
                 'success': False,
-                'error': "Not enough data for insight generation. Need at least 5 records."
+                'message': 'No adoption data available for insight generation'
             }
         
         # Convert to DataFrame
         data_list = []
-        for record in adoption_data:
+        for item in adoption_data:
             data_list.append({
-                'level_of_study': record.level_of_study,
-                'faculty': record.faculty,
-                'ai_familiarity': record.ai_familiarity,
-                'uses_ai_tools': record.uses_ai_tools,
-                'tools_used': record.tools_used,
-                'usage_frequency': record.usage_frequency,
-                'challenges': record.challenges,
-                'improves_learning': record.improves_learning,
-                'tools_count': record.tools_count,
-                'challenges_count': record.challenges_count,
-                'adoption_level': record.adoption_level
+                'level_of_study': item.level_of_study,
+                'faculty': item.faculty,
+                'ai_familiarity': item.ai_familiarity,
+                'uses_ai_tools': item.uses_ai_tools,
+                'tools_used': item.tools_used,
+                'usage_frequency': item.usage_frequency,
+                'challenges': item.challenges,
+                'improves_learning': item.improves_learning,
+                'adoption_level': item.adoption_level
             })
         
         df = pd.DataFrame(data_list)
         
-        # Generate insights by topic
-        insights_generated = 0
+        # Create summary statistics for OpenRouter AI
+        summary = {
+            'total_records': len(df),
+            'adoption_level_counts': df['adoption_level'].value_counts().to_dict(),
+            'faculty_distribution': df['faculty'].value_counts().to_dict(),
+            'study_level_distribution': df['level_of_study'].value_counts().to_dict(),
+            'ai_familiarity_avg': df['ai_familiarity'].mean(),
+            'uses_ai_tools_percent': (df['uses_ai_tools'] == 'yes').mean() * 100,
+            'top_tools': df['tools_used'].str.split(',').explode().value_counts().to_dict(),
+            'top_challenges': df['challenges'].str.split('.').explode().value_counts().to_dict()
+        }
         
-        # 1. Adoption Patterns by Faculty
-        faculty_adoption = df.groupby(['faculty', 'adoption_level']).size().reset_index()
-        faculty_adoption.columns = ['faculty', 'adoption_level', 'count']
-        
-        if len(faculty_adoption) > 0:
-            topic, created = InsightTopic.objects.get_or_create(
-                name="Adoption by Faculty",
-                defaults={'description': "Analysis of AI adoption patterns across different faculties"}
-            )
+        if OPENROUTER_API_KEY:
+            # Use OpenRouter to generate enhanced insights
+            headers = {
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json'
+            }
             
-            chart_data = faculty_adoption.to_dict('records')
+            prompt = f"""
+            As an AI education expert, analyze this data on student AI adoption:
             
-            insight = AIInsight(
-                topic=topic,
-                title="AI Adoption Patterns Across Faculties",
-                content="Analysis of adoption levels across different faculties shows variations in how students from different academic backgrounds are adopting AI technologies.",
-                source_data={"table": "faculty_adoption", "record_count": len(faculty_adoption)},
-                chart_data=chart_data,
-                chart_type="bar",
-                relevance_score=0.9
-            )
-            insight.save()
-            insights_generated += 1
-        
-        # 2. Familiarity vs Adoption
-        familiarity_adoption = df.groupby(['ai_familiarity', 'adoption_level']).size().reset_index()
-        familiarity_adoption.columns = ['ai_familiarity', 'adoption_level', 'count']
-        
-        if len(familiarity_adoption) > 0:
-            topic, created = InsightTopic.objects.get_or_create(
-                name="Familiarity vs Adoption",
-                defaults={'description': "Analysis of how AI familiarity correlates with adoption levels"}
-            )
+            {json.dumps(summary, indent=2)}
             
-            chart_data = familiarity_adoption.to_dict('records')
+            Generate 4 key insights about:
+            1. Faculty-based adoption patterns
+            2. Correlation between AI familiarity and adoption
+            3. Study level impact on adoption
+            4. Main challenges affecting adoption
             
-            insight = AIInsight(
-                topic=topic,
-                title="Correlation Between AI Familiarity and Adoption Levels",
-                content="There appears to be a correlation between students' familiarity with AI and their adoption levels. Higher familiarity tends to lead to more advanced adoption patterns.",
-                source_data={"table": "familiarity_adoption", "record_count": len(familiarity_adoption)},
-                chart_data=chart_data,
-                chart_type="heatmap",
-                relevance_score=0.85
-            )
-            insight.save()
-            insights_generated += 1
-        
-        # 3. Study Level Impact
-        study_level_adoption = df.groupby(['level_of_study', 'adoption_level']).size().reset_index()
-        study_level_adoption.columns = ['level_of_study', 'adoption_level', 'count']
-        
-        if len(study_level_adoption) > 0:
-            topic, created = InsightTopic.objects.get_or_create(
-                name="Study Level Impact",
-                defaults={'description': "Analysis of how study level affects AI adoption"}
-            )
+            For each insight, provide:
+            - A concise title
+            - A brief explanation of the pattern/trend
+            - The educational significance
+            - 1-2 actionable recommendations
             
-            chart_data = study_level_adoption.to_dict('records')
+            Format each insight as a JSON object with keys: "topic", "title", "content", "significance", "recommendations".
+            Return all 4 insights in a JSON array.
+            """
             
-            insight = AIInsight(
-                topic=topic,
-                title="Impact of Study Level on AI Adoption",
-                content="Analysis shows differences in AI adoption patterns across different levels of study, with postgraduate students generally showing higher adoption rates.",
-                source_data={"table": "study_level_adoption", "record_count": len(study_level_adoption)},
-                chart_data=chart_data,
-                chart_type="bar",
-                relevance_score=0.8
-            )
-            insight.save()
-            insights_generated += 1
-        
-        # 4. Learning Improvement Perception
-        learning_impact = df.groupby(['improves_learning', 'adoption_level']).size().reset_index()
-        learning_impact.columns = ['improves_learning', 'adoption_level', 'count']
-        
-        if len(learning_impact) > 0:
-            topic, created = InsightTopic.objects.get_or_create(
-                name="Learning Impact",
-                defaults={'description': "Analysis of perceived learning improvements from AI use"}
-            )
+            data = {
+                "model": OPENROUTER_MODEL_NAME,
+                "messages": [
+                    {"role": "system", "content": "You are an AI education expert specializing in analyzing educational technology adoption data."},
+                    {"role": "user", "content": prompt}
+                ]
+            }
             
-            chart_data = learning_impact.to_dict('records')
+            response = requests.post(OPENROUTER_API_URL, headers=headers, json=data)
+            response.raise_for_status()
             
-            insight = AIInsight(
-                topic=topic,
-                title="Perception of AI's Impact on Learning",
-                content="Students who believe AI improves their learning tend to have higher adoption levels, suggesting a correlation between perceived usefulness and adoption.",
-                source_data={"table": "learning_impact", "record_count": len(learning_impact)},
-                chart_data=chart_data,
-                chart_type="bar",
-                relevance_score=0.75
-            )
-            insight.save()
-            insights_generated += 1
+            insights = response.json()['choices'][0]['message']['content']
+            
+            # Parse the JSON from the response text
+            try:
+                insights_data = json.loads(insights)
+                
+                for insight_data in insights_data:
+                    # Create or get topic
+                    topic, created = InsightTopic.objects.get_or_create(
+                        name=insight_data.get('topic'),
+                        defaults={'description': f"Analysis of {insight_data.get('topic').lower()}"}
+                    )
+                    
+                    # Create content with significance and recommendations
+                    content = f"{insight_data.get('content')}\n\n"
+                    content += f"Significance: {insight_data.get('significance')}\n\n"
+                    content += f"Recommendations: {insight_data.get('recommendations')}"
+                    
+                    # Create the insight
+                    insight = AIInsight(
+                        topic=topic,
+                        title=insight_data.get('title'),
+                        content=content,
+                        source_data={"summary": summary},
+                        relevance_score=0.9,
+                        is_generated=True
+                    )
+                    insight.save()
+                    insights_generated += 1
+                
+            except json.JSONDecodeError:
+                # Fallback to basic insight generation
+                logger.error("Failed to parse OpenRouter response as JSON, using basic insight generation")
+                insights_generated = generate_basic_insights(df)
+        else:
+            # Fallback to basic insight generation
+            insights_generated = generate_basic_insights(df)
         
         return {
             'success': True,
@@ -1293,6 +1416,55 @@ def generate_insights_from_data():
             'success': False,
             'error': str(e)
         }
+
+def generate_basic_insights(df):
+    """Generate basic insights without using OpenRouter AI"""
+    insights_generated = 0
+    
+    # 1. Faculty Adoption Insights
+    faculty_adoption = df.groupby('faculty')['adoption_level'].value_counts().unstack().fillna(0)
+    
+    if not faculty_adoption.empty:
+        topic, created = InsightTopic.objects.get_or_create(
+            name="Faculty Adoption",
+            defaults={'description': "Analysis of AI adoption across different faculties"}
+        )
+        
+        insight = AIInsight(
+            topic=topic,
+            title="AI Adoption Patterns Across Faculties",
+            content="Analysis of adoption levels across different faculties shows variations in how students from different academic backgrounds are adopting AI technologies.",
+            source_data={"faculty_adoption": faculty_adoption.to_dict()},
+            chart_type="bar",
+            relevance_score=0.9
+        )
+        insight.save()
+        insights_generated += 1
+    
+    # 2. Familiarity vs Adoption
+    familiarity_adoption = df.groupby(['ai_familiarity', 'adoption_level']).size().reset_index()
+    familiarity_adoption.columns = ['ai_familiarity', 'adoption_level', 'count']
+    
+    if not familiarity_adoption.empty:
+        topic, created = InsightTopic.objects.get_or_create(
+            name="Familiarity vs Adoption",
+            defaults={'description': "Analysis of how AI familiarity correlates with adoption levels"}
+        )
+        
+        insight = AIInsight(
+            topic=topic,
+            title="Correlation Between AI Familiarity and Adoption Levels",
+            content="There appears to be a correlation between students' familiarity with AI and their adoption levels. Higher familiarity tends to lead to more advanced adoption patterns.",
+            source_data={"familiarity_adoption": familiarity_adoption.to_dict('records')},
+            chart_type="heatmap",
+            relevance_score=0.85
+        )
+        insight.save()
+        insights_generated += 1
+    
+    # Add more basic insights as needed...
+    
+    return insights_generated
 
 def get_data_counts():
     """
@@ -1521,111 +1693,6 @@ def train_model(training_data_obj):
         return {
             'success': False,
             'message': f'Error training model: {str(e)}'
-        }
-
-def make_prediction(input_data, model_id=None):
-    """Make a prediction using the input data and specified model"""
-    try:
-        # Get the active model
-        if model_id:
-            model_obj = AIModel.objects.get(id=model_id)
-        else:
-            model_obj = AIModel.objects.filter(is_active=True).first()
-        
-        if not model_obj:
-            return {
-                'success': False,
-                'message': 'No active model found'
-            }
-        
-        # Load the model
-        model_path = os.path.join(settings.MEDIA_ROOT, str(model_obj.model_file))
-        with open(model_path, 'rb') as f:
-            model_data = pickle.load(f)
-        model = model_data['model']
-        scaler = model_data['scaler']
-        feature_cols = model_data['feature_cols']
-        
-        # Prepare input data
-        if model_id:
-            # If model_id is provided, get data from AIAdoptionData model
-            adoption_data = AIAdoptionData.objects.get(id=model_id)
-            
-            input_data = {
-                'level_of_study': adoption_data.level_of_study,
-                'faculty': adoption_data.faculty,
-                'ai_familiarity': adoption_data.ai_familiarity,
-                'uses_ai_tools': adoption_data.uses_ai_tools,
-                'tools_used': adoption_data.tools_used,
-                'usage_frequency': adoption_data.usage_frequency,
-                'challenges': adoption_data.challenges,
-                'improves_learning': adoption_data.improves_learning
-            }
-        else:
-            # Use provided data
-            input_data = input_data
-            
-            # Convert gender to numerical value if necessary
-            if 'gender' in input_data and isinstance(input_data['gender'], str):
-                gender_map = {'M': 0, 'F': 1, 'O': 2}
-                input_data['gender'] = gender_map.get(input_data['gender'], 0)
-        
-        # Create DataFrame with input data
-        input_df = pd.DataFrame([input_data])
-        
-        # Ensure all required columns are present
-        for col in feature_cols:
-            if col not in input_df.columns:
-                input_df[col] = 0
-        
-        # Scale the input data
-        input_scaled = scaler.transform(input_df[feature_cols])
-        
-        # Make prediction
-        prediction_class = model.predict(input_scaled)[0]
-        prediction_proba = model.predict_proba(input_scaled)[0]
-        
-        # Create prediction result
-        success_probability = prediction_proba[1] * 100
-        risk_probability = prediction_proba[0] * 100
-        
-        # Get feature importance for this prediction (if available)
-        feature_importance = {}
-        if hasattr(model, 'feature_importances_'):
-            # Multiply feature values by their importance
-            for i, col in enumerate(feature_cols):
-                scaled_value = input_scaled[0][i]
-                importance = model.feature_importances_[i]
-                feature_importance[col] = float(importance)  # Convert from numpy to Python native type
-        
-        # Save prediction to database
-        prediction = AIPrediction.objects.create(
-            model=model_obj,
-            input_data=json.dumps(input_data),
-            prediction_class=int(prediction_class),
-            success_probability=float(success_probability),
-            risk_probability=float(risk_probability)
-        )
-        
-        # Prepare the result
-        result = {
-            'prediction_id': prediction.id,
-            'model_name': model_obj.name,
-            'model_accuracy': model_obj.accuracy,
-            'last_trained': model_obj.last_trained,
-            'prediction_class': int(prediction_class),
-            'success_probability': float(success_probability),
-            'risk_probability': float(risk_probability),
-            'feature_importance': feature_importance,
-            'input_data': input_data
-        }
-        
-        return result
-    
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e)
         }
 
 def prepare_features(student_data):
