@@ -5,29 +5,40 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <h1 class="mt-4">AI Prediction Dashboard</h1>
+    <h1 class="mt-4">AI Dashboard</h1>
     <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active">AI Prediction</li>
+        <li class="breadcrumb-item active">AI Dashboard</li>
     </ol>
-    
-    <!-- Stats Cards -->
-    <div class="row">
+
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="card bg-primary text-white mb-4">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title">Total Models</h5>
-                            <h2 class="display-4">{{ models_count }}</h2>
+                            <div class="small text-white-50">Total Models</div>
+                            <div class="display-6">{{ models_count }}</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-brain fa-3x"></i>
+                        <div>
+                            <i class="fas fa-brain fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{% url 'all_insights' %}">View Details</a>
+                    <a class="small text-white stretched-link" href="#modelSection">View Details</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -35,18 +46,18 @@
         <div class="col-xl-3 col-md-6">
             <div class="card bg-success text-white mb-4">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title">Training Datasets</h5>
-                            <h2 class="display-4">{{ datasets_count }}</h2>
+                            <div class="small text-white-50">Average Accuracy</div>
+                            <div class="display-6">{{ avg_accuracy|floatformat:1 }}%</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-database fa-3x"></i>
+                        <div>
+                            <i class="fas fa-chart-line fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{% url 'upload_training_data' %}">Upload Data</a>
+                    <a class="small text-white stretched-link" href="#modelSection">View Models</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -54,18 +65,18 @@
         <div class="col-xl-3 col-md-6">
             <div class="card bg-warning text-white mb-4">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title">Predictions Made</h5>
-                            <h2 class="display-4">{{ predictions_count }}</h2>
+                            <div class="small text-white-50">Total Predictions</div>
+                            <div class="display-6">{{ predictions_count }}</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-chart-line fa-3x"></i>
+                        <div>
+                            <i class="fas fa-search fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{% url 'all_predictions' %}">View All</a>
+                    <a class="small text-white stretched-link" href="#predictionSection">View Predictions</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -73,123 +84,300 @@
         <div class="col-xl-3 col-md-6">
             <div class="card bg-info text-white mb-4">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title">Make Prediction</h5>
-                            <p>Start a new prediction</p>
+                            <div class="small text-white-50">Training Datasets</div>
+                            <div class="display-6">{{ datasets_count }}</div>
                         </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-magic fa-3x"></i>
+                        <div>
+                            <i class="fas fa-database fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{% url 'make_new_prediction' %}">Start Now</a>
+                    <a class="small text-white stretched-link" href="#datasetSection">View Datasets</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Active Models -->
-    <div class="row">
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-robot me-1"></i>
-                    Active AI Models
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-rocket me-1"></i>
+                        Quick Actions
+                    </div>
                 </div>
                 <div class="card-body">
-                    {% if active_models %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Model Name</th>
-                                        <th>Accuracy</th>
-                                        <th>Created</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for model in active_models %}
-                                    <tr>
-                                        <td>{{ model.name }}</td>
-                                        <td>
-                                            <div class="progress">
-                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ model.accuracy|floatformat:0 }}%;" 
-                                                    aria-valuenow="{{ model.accuracy|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
-                                                    {{ model.accuracy|floatformat:1 }}%
+                    <div class="row">
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <a href="{% url 'make_prediction' %}" class="btn btn-primary d-block py-3">
+                                <i class="fas fa-robot me-2"></i>Make Prediction
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <a href="{% url 'upload_training_data' %}" class="btn btn-success d-block py-3">
+                                <i class="fas fa-upload me-2"></i>Upload Training Data
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <a href="{% url 'train_model' %}" class="btn btn-warning d-block py-3">
+                                <i class="fas fa-cogs me-2"></i>Train New Model
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'view_predictions' %}" class="btn btn-info d-block py-3">
+                                <i class="fas fa-history me-2"></i>View All Predictions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card mb-4" id="modelSection">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-brain me-1"></i>
+                        AI Models
+                    </div>
+                    <a href="{% url 'train_model' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i>Train New Model
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if ai_models %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Model Name</th>
+                                    <th>Type</th>
+                                    <th>Accuracy</th>
+                                    <th>Created</th>
+                                    <th>Predictions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in ai_models %}
+                                <tr>
+                                    <td>{{ model.name }}</td>
+                                    <td>{{ model.model_type }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar {% if model.accuracy >= 80 %}bg-success{% elif model.accuracy >= 60 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ model.accuracy }}%;" 
+                                                     aria-valuenow="{{ model.accuracy }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td>{{ model.created_at|date:"M d, Y" }}</td>
-                                        <td>
-                                            <a href="{% url 'ai_model_detail' model.id %}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
+                                            <span class="small">{{ model.accuracy|floatformat:1 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ model.created_at|date:"M d, Y" }}</td>
+                                    <td>{{ model.predictions_count }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'make_prediction' %}?model_id={{ model.id }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-play"></i>
                                             </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                                            <a href="{% url 'model_details' model.id %}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-info-circle"></i>
+                                            </a>
+                                            {% if model.is_default %}
+                                            <button class="btn btn-sm btn-outline-success" disabled>
+                                                <i class="fas fa-star"></i>
+                                            </button>
+                                            {% else %}
+                                            <a href="{% url 'set_default_model' model.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="far fa-star"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                     {% else %}
-                        <div class="alert alert-info">
-                            No active AI models. <a href="{% url 'upload_training_data' %}">Upload training data</a> to create a model.
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="fas fa-brain fa-4x text-muted"></i>
                         </div>
+                        <h5>No AI Models Available</h5>
+                        <p class="text-muted">You haven't trained any AI models yet. Upload training data and train your first model.</p>
+                        <a href="{% url 'upload_training_data' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-upload me-2"></i>Upload Training Data
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4" id="predictionSection">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-history me-1"></i>
+                        Recent Predictions
+                    </div>
+                    <a href="{% url 'view_predictions' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-search me-1"></i>View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_predictions %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Model</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pred in recent_predictions %}
+                                <tr>
+                                    <td>{{ pred.student_id }}</td>
+                                    <td>{{ pred.model.name }}</td>
+                                    <td>
+                                        {% if pred.success %}
+                                        <span class="badge bg-success">Success</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">At Risk</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar {% if pred.success %}bg-success{% else %}bg-danger{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ pred.confidence }}%;" 
+                                                     aria-valuenow="{{ pred.confidence }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <span class="small">{{ pred.confidence|floatformat:1 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ pred.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="fas fa-search fa-4x text-muted"></i>
+                        </div>
+                        <h5>No Predictions Yet</h5>
+                        <p class="text-muted">Once you start making predictions, they will appear here.</p>
+                        <a href="{% url 'make_prediction' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-robot me-2"></i>Make Prediction
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
         </div>
         
-        <!-- Recent Predictions -->
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-chart-area me-1"></i>
-                    Recent Predictions
+        <div class="col-xl-4 col-lg-5">
+            <div class="card mb-4" id="datasetSection">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-database me-1"></i>
+                        Training Datasets
+                    </div>
+                    <a href="{% url 'upload_training_data' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-upload me-1"></i>Upload
+                    </a>
                 </div>
                 <div class="card-body">
-                    {% if recent_predictions %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Model</th>
-                                        <th>Prediction</th>
-                                        <th>Date</th>
-                                        <th>Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for prediction in recent_predictions %}
-                                    <tr>
-                                        <td>#{{ prediction.id }}</td>
-                                        <td>{{ prediction.model.name }}</td>
-                                        <td>
-                                            {% if prediction.prediction_result == 1 %}
-                                                <span class="badge bg-success">Positive</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Negative</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ prediction.created_at|date:"M d, Y" }}</td>
-                                        <td>
-                                            <a href="{% url 'prediction_result' prediction.id %}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    {% if datasets %}
+                    <div class="list-group">
+                        {% for dataset in datasets %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ dataset.name }}</h6>
+                                <small>{{ dataset.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-1 small text-muted">{{ dataset.description|truncatechars:80 }}</p>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small>{{ dataset.rows_count }} rows</small>
+                                <div>
+                                    <a href="{% url 'dataset_details' dataset.id %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-info-circle"></i>
+                                    </a>
+                                    <a href="{% url 'train_model' %}?dataset_id={{ dataset.id }}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-cogs"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                        <div class="alert alert-info">
-                            No predictions have been made yet. <a href="{% url 'make_new_prediction' %}">Make a prediction</a>.
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="fas fa-database fa-4x text-muted"></i>
                         </div>
+                        <h5>No Datasets Available</h5>
+                        <p class="text-muted">Upload training data to start building AI models.</p>
+                        <a href="{% url 'upload_training_data' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-upload me-2"></i>Upload Training Data
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    Prediction Distribution
+                </div>
+                <div class="card-body">
+                    {% if prediction_stats %}
+                    <div class="text-center mb-4">
+                        <canvas id="predictionChart" width="100%" height="230"></canvas>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-start border-success border-5 rounded p-3 bg-light">
+                                <h4 class="mb-0">{{ prediction_stats.success_percent|floatformat:1 }}%</h4>
+                                <div class="small text-muted">Predicted Success</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border-start border-danger border-5 rounded p-3 bg-light">
+                                <h4 class="mb-0">{{ prediction_stats.risk_percent|floatformat:1 }}%</h4>
+                                <div class="small text-muted">Predicted At Risk</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="fas fa-chart-pie fa-4x text-muted"></i>
+                        </div>
+                        <h5>No Data to Display</h5>
+                        <p class="text-muted">Make predictions to see statistics.</p>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -199,11 +387,40 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Any additional JavaScript for the AI dashboard
     $(document).ready(function() {
         // Highlight the AI Dashboard nav item
         $("#aiDashboardNav").addClass("active");
+        
+        {% if prediction_stats %}
+        // Render prediction distribution chart
+        var ctx = document.getElementById("predictionChart");
+        var myPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ["Success", "At Risk"],
+                datasets: [{
+                    data: [{{ prediction_stats.success_count }}, {{ prediction_stats.risk_count }}],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    hoverBackgroundColor: ['#218838', '#c82333'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12
+                        }
+                    }
+                },
+                cutout: '70%',
+            },
+        });
+        {% endif %}
     });
 </script>
 {% endblock %} 
