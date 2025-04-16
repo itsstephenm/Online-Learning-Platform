@@ -1,173 +1,187 @@
-{% extends 'teacher/teacherbase.html' %}
+{% extends 'quiz/base.html' %}
 {% load static %}
 
 {% block title %}Upload Training Data{% endblock %}
 
-{% block content %}
-<div class="container-fluid px-4">
-    <h1 class="mt-4">Upload Training Data</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{% url 'ai_dashboard' %}">AI Dashboard</a></li>
-        <li class="breadcrumb-item active">Upload Training Data</li>
-    </ol>
+{% block custom_css %}
+<style>
+    .file-upload-container {
+        border: 2px dashed #ddd;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        background-color: #f9f9f9;
+        position: relative;
+    }
+    
+    .file-upload-container:hover {
+        border-color: #80bdff;
+        background-color: #f0f7ff;
+    }
+    
+    .file-upload-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    .dataset-card {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    
+    .dataset-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .dataset-info {
+        padding: 20px;
+    }
+    
+    .dataset-header {
+        background-color: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+</style>
+{% endblock %}
 
-    {% if messages %}
+{% block content %}
+<div class="container py-5">
     <div class="row mb-4">
-        <div class="col-12">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
+        <div class="col">
+            <h1 class="mb-3">Upload Training Data</h1>
+            <p class="text-muted">Upload CSV files with student data to train AI prediction models</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'ai_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
         </div>
     </div>
-    {% endif %}
-
+    
     <div class="row">
-        <div class="col-xl-8">
+        <div class="col-lg-7">
             <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-upload me-1"></i>
-                        Upload Dataset
-                    </div>
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Upload New Dataset</h5>
                 </div>
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" id="uploadForm">
-                        {% csrf_token %}
-                        
-                        <div class="mb-4">
-                            <label for="dataset_name" class="form-label">Dataset Name</label>
-                            <input type="text" class="form-control" id="dataset_name" name="dataset_name" required 
-                                   placeholder="e.g., Student Performance Spring 2023">
-                            <div class="form-text">Give your dataset a descriptive name to easily identify it later.</div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="description" class="form-label">Description (Optional)</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"
-                                     placeholder="Brief description of this dataset and what it contains"></textarea>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="file_upload" class="form-label">CSV File</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="file_upload" name="dataset_file" 
-                                       accept=".csv" required>
-                                <button class="btn btn-outline-secondary" type="button" id="file_info_btn">
-                                    <i class="fas fa-info-circle"></i>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
-                            <div class="form-text">Upload a CSV file with student data for training. Maximum size: 10MB.</div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group mb-4">
+                            <label for="datasetName">Dataset Name</label>
+                            <input type="text" class="form-control" id="datasetName" name="name" placeholder="Enter a descriptive name" required>
                         </div>
                         
-                        <div class="mb-4">
-                            <label class="form-label">Target Column</label>
-                            <select class="form-select" id="target_column" name="target_column" disabled required>
-                                <option value="">Select the outcome/target column after uploading CSV</option>
-                            </select>
-                            <div class="form-text">This is the column that contains the outcome you want to predict (e.g., "passed", "final_grade").</div>
+                        <div class="form-group mb-4">
+                            <label for="datasetDescription">Description (optional)</label>
+                            <textarea class="form-control" id="datasetDescription" name="description" rows="3" placeholder="Describe the data (e.g., source, time period, features)"></textarea>
                         </div>
-
-                        <div class="mb-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="auto_preprocess" name="auto_preprocess" checked>
-                                <label class="form-check-label" for="auto_preprocess">Auto-preprocess data</label>
+                        
+                        <div class="file-upload-container mb-4">
+                            <input type="file" name="dataset_file" class="file-upload-input" id="datasetFile" accept=".csv" required>
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-                            <div class="form-text">Automatically handle missing values, encode categorical variables, and scale numerical features.</div>
+                            <h5>Drop CSV file here or click to browse</h5>
+                            <p class="text-muted mb-0">Maximum file size: 10MB</p>
+                            <p class="text-muted" id="selectedFileName"></p>
                         </div>
                         
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary" id="uploadBtn">
-                                <i class="fas fa-upload me-2"></i>Upload Dataset
-                            </button>
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">Expected Data Format</h6>
+                            <p class="mb-0">
+                                Your CSV file should contain student performance data with columns for:
+                                <strong>student_id</strong>, <strong>attendance_rate</strong>, <strong>assignment_completion</strong>, 
+                                <strong>quiz_avg_score</strong>, <strong>engagement_level</strong>, <strong>prev_gpa</strong>, 
+                                <strong>study_hours_per_week</strong>, and <strong>success_outcome</strong> (target variable).
+                            </p>
                         </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+                            <i class="fas fa-upload mr-2"></i> Upload Dataset
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Data Requirements
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Data Requirements</h5>
                 </div>
                 <div class="card-body">
-                    <h5 class="card-title">CSV Format Guidelines</h5>
-                    <p>To ensure your data works correctly with our AI system, please follow these guidelines:</p>
-                    
-                    <div class="mb-3">
-                        <h6 class="fw-bold"><i class="fas fa-check text-success me-2"></i>Required Columns</h6>
-                        <ul class="list-group list-group-flush small">
-                            <li class="list-group-item px-0">
-                                <strong>student_id</strong> - Unique identifier for each student
+                    <div class="mb-4">
+                        <h6>Required Columns</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                student_id
+                                <span class="badge badge-primary badge-pill">Unique identifier</span>
                             </li>
-                            <li class="list-group-item px-0">
-                                <strong>course_id</strong> - Course identifier (if applicable)
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                attendance_rate
+                                <span class="badge badge-primary badge-pill">0-100</span>
                             </li>
-                            <li class="list-group-item px-0">
-                                <strong>A target/outcome column</strong> (e.g., passed, final_grade, completed)
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                assignment_completion
+                                <span class="badge badge-primary badge-pill">0-100</span>
                             </li>
-                        </ul>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <h6 class="fw-bold"><i class="fas fa-star text-warning me-2"></i>Recommended Features</h6>
-                        <ul class="list-group list-group-flush small">
-                            <li class="list-group-item px-0">
-                                <strong>prev_score</strong> - Previous academic performance
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                quiz_avg_score
+                                <span class="badge badge-primary badge-pill">0-100</span>
                             </li>
-                            <li class="list-group-item px-0">
-                                <strong>attendance_rate</strong> - Percentage of classes attended
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                engagement_level
+                                <span class="badge badge-primary badge-pill">1-5</span>
                             </li>
-                            <li class="list-group-item px-0">
-                                <strong>quiz_completion</strong> - Percentage of quizzes completed
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                prev_gpa
+                                <span class="badge badge-primary badge-pill">0-4</span>
                             </li>
-                            <li class="list-group-item px-0">
-                                <strong>time_spent</strong> - Time spent on learning platform
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                study_hours_per_week
+                                <span class="badge badge-primary badge-pill">Numeric</span>
                             </li>
-                            <li class="list-group-item px-0">
-                                <strong>age</strong> - Student age
-                            </li>
-                            <li class="list-group-item px-0">
-                                <strong>gender</strong> - Student gender
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                success_outcome
+                                <span class="badge badge-success badge-pill">Target (0 or 1)</span>
                             </li>
                         </ul>
                     </div>
                     
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Tip:</strong> The more student data you provide, the more accurate your AI model will be.
+                    <div>
+                        <h6>Sample Format</h6>
+                        <pre class="bg-light p-3 rounded"><code>student_id,attendance_rate,assignment_completion,quiz_avg_score,engagement_level,prev_gpa,study_hours_per_week,success_outcome
+1001,85,92,78,4,3.2,12,1
+1002,62,75,68,2,2.8,6,0
+1003,95,98,91,5,3.9,15,1</code></pre>
                     </div>
-                    
-                    <a href="{% static 'samples/sample_training_data.csv' %}" class="btn btn-outline-primary d-block">
-                        <i class="fas fa-download me-2"></i>Download Sample CSV
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Preview Modal -->
-    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="previewModalLabel">CSV Preview</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm" id="previewTable">
-                            <thead id="previewTableHead"></thead>
-                            <tbody id="previewTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -176,136 +190,52 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Highlight the AI Dashboard nav item
-        $("#aiDashboardNav").addClass("active");
-        
-        const fileInput = document.getElementById('file_upload');
-        const targetColumnSelect = document.getElementById('target_column');
-        const fileInfoBtn = document.getElementById('file_info_btn');
-        const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
-        
-        // Handle file selection
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                processCSV(file);
-            } else {
-                targetColumnSelect.disabled = true;
-                targetColumnSelect.innerHTML = '<option value="">Select the outcome/target column after uploading CSV</option>';
-            }
-        });
-        
-        // Show preview when info button is clicked
-        fileInfoBtn.addEventListener('click', function() {
-            const file = fileInput.files[0];
-            if (file) {
-                showPreview(file);
-            } else {
-                alert('Please select a CSV file first.');
-            }
-        });
-        
-        // Parse CSV and populate target column dropdown
-        function processCSV(file) {
-            Papa.parse(file, {
-                header: true,
-                preview: 5,
-                complete: function(results) {
-                    if (results.data && results.data.length > 0 && results.meta.fields) {
-                        populateTargetColumnDropdown(results.meta.fields);
-                    }
-                },
-                error: function(error) {
-                    console.error('Error parsing CSV:', error);
-                    alert('Error parsing the CSV file. Please check the file format.');
-                }
-            });
-        }
-        
-        // Show CSV preview in modal
-        function showPreview(file) {
-            Papa.parse(file, {
-                header: true,
-                preview: 10,
-                complete: function(results) {
-                    if (results.data && results.data.length > 0 && results.meta.fields) {
-                        const fields = results.meta.fields;
-                        
-                        // Generate table header
-                        let headerHtml = '<tr>';
-                        fields.forEach(field => {
-                            headerHtml += `<th>${field}</th>`;
-                        });
-                        headerHtml += '</tr>';
-                        document.getElementById('previewTableHead').innerHTML = headerHtml;
-                        
-                        // Generate table body
-                        let bodyHtml = '';
-                        results.data.forEach(row => {
-                            let rowHtml = '<tr>';
-                            fields.forEach(field => {
-                                rowHtml += `<td>${row[field] || ''}</td>`;
-                            });
-                            rowHtml += '</tr>';
-                            bodyHtml += rowHtml;
-                        });
-                        document.getElementById('previewTableBody').innerHTML = bodyHtml;
-                        
-                        // Show modal
-                        previewModal.show();
-                    }
-                },
-                error: function(error) {
-                    console.error('Error previewing CSV:', error);
-                    alert('Error previewing the CSV file. Please check the file format.');
-                }
-            });
-        }
-        
-        // Populate target column dropdown
-        function populateTargetColumnDropdown(fields) {
-            targetColumnSelect.disabled = false;
-            targetColumnSelect.innerHTML = '<option value="">Select target column</option>';
-            
-            fields.forEach(field => {
-                const option = document.createElement('option');
-                option.value = field;
-                option.textContent = field;
-                
-                // Pre-select common target columns
-                if (['target', 'outcome', 'passed', 'completed', 'success', 'final_grade', 'grade', 'result'].includes(field.toLowerCase())) {
-                    option.selected = true;
-                }
-                
-                targetColumnSelect.appendChild(option);
-            });
-        }
-        
-        // Form submission validation
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            const file = fileInput.files[0];
-            const targetColumn = targetColumnSelect.value;
-            
-            if (!file) {
-                e.preventDefault();
-                alert('Please select a CSV file to upload.');
-                return;
-            }
-            
-            if (!targetColumn) {
-                e.preventDefault();
-                alert('Please select a target column.');
-                return;
-            }
-            
-            // Show loading state
-            const uploadBtn = document.getElementById('uploadBtn');
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
-        });
+    document.getElementById('datasetFile').addEventListener('change', function(e) {
+        var fileName = e.target.files[0].name;
+        document.getElementById('selectedFileName').textContent = 'Selected: ' + fileName;
     });
+    
+    // Visual feedback for drag and drop
+    const dropArea = document.querySelector('.file-upload-container');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        dropArea.classList.add('border-primary');
+        dropArea.style.backgroundColor = '#e8f4ff';
+    }
+    
+    function unhighlight() {
+        dropArea.classList.remove('border-primary');
+        dropArea.style.backgroundColor = '#f9f9f9';
+    }
+    
+    dropArea.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length) {
+            document.getElementById('datasetFile').files = files;
+            document.getElementById('selectedFileName').textContent = 'Selected: ' + files[0].name;
+        }
+    }
 </script>
 {% endblock %} 
