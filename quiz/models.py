@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import JSONField
 from student.models import Student
 from django.contrib.auth.models import User
+import os
+from django.utils import timezone
 
 class Course(models.Model):
    course_name = models.CharField(max_length=50)
@@ -164,112 +166,70 @@ class ReferenceDocument(models.Model):
 
 # AI Adoption Prediction Models
 class AIAdoptionData(models.Model):
-    """Model to store AI adoption data from students"""
-    STUDY_LEVEL_CHOICES = [
-        ('undergraduate', 'Undergraduate'),
-        ('postgraduate', 'Postgraduate'),
-        ('doctorate', 'Doctorate'),
-        ('other', 'Other')
-    ]
-    
-    FACULTY_CHOICES = [
-        ('engineering', 'Engineering'),
-        ('science', 'Science'),
-        ('arts', 'Arts'),
-        ('business', 'Business'),
-        ('law', 'Law'),
-        ('medicine', 'Medicine'),
-        ('other', 'Other')
-    ]
-    
-    FREQUENCY_CHOICES = [
-        ('never', 'Never'),
-        ('rarely', 'Rarely'),
-        ('sometimes', 'Sometimes'),
-        ('often', 'Often'),
-        ('daily', 'Daily')
-    ]
-    
-    ADOPTION_LEVEL_CHOICES = [
-        ('non_adopter', 'Non-Adopter'),
-        ('potential_adopter', 'Potential Adopter'),
-        ('early_adopter', 'Early Adopter'),
-        ('regular_adopter', 'Regular Adopter'),
-        ('advanced_adopter', 'Advanced Adopter')
-    ]
-    
-    YES_NO_CHOICES = [
-        ('yes', 'Yes'),
-        ('no', 'No'),
-        ('maybe', 'Maybe')
-    ]
-    
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_adoption_data', null=True, blank=True)
-    
-    # Basic information
-    level_of_study = models.CharField(max_length=20, choices=STUDY_LEVEL_CHOICES)
-    faculty = models.CharField(max_length=20, choices=FACULTY_CHOICES)
-    
-    # AI familiarity and usage
-    ai_familiarity = models.IntegerField(default=0, help_text="Scale of 1-5")
-    uses_ai_tools = models.CharField(max_length=10, choices=YES_NO_CHOICES, default='no')
-    tools_used = models.TextField(blank=True, null=True, help_text="Comma-separated list of tools")
-    usage_frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='never')
-    
-    # Feedback
-    challenges = models.TextField(blank=True, null=True)
-    suggestions = models.TextField(blank=True, null=True)
-    improves_learning = models.CharField(max_length=10, choices=YES_NO_CHOICES, default='no')
-    
-    # Derived fields
-    tools_count = models.IntegerField(default=0)
-    challenges_count = models.IntegerField(default=0)
-    
-    # Target variable - adoption level
-    adoption_level = models.CharField(max_length=20, choices=ADOPTION_LEVEL_CHOICES)
-    
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    source = models.CharField(max_length=50, default='manual', help_text="Source of the data: csv, form, etc.")
+    """Model to store uploaded CSV data for AI model training"""
+    file_name = models.CharField(max_length=255)
+    upload_date = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey('User', on_delete=models.CASCADE, related_name='uploaded_datasets')
+    rows_processed = models.IntegerField(default=0)
+    is_processed = models.BooleanField(default=False)
+    processing_errors = models.TextField(blank=True, null=True)
     
     def __str__(self):
-        student_name = self.student.username if self.student else "Anonymous"
-        return f"{student_name} - {self.get_adoption_level_display()}"
+        return f"{self.file_name} - {self.upload_date.strftime('%Y-%m-%d')}"
+
+class AIModel(models.Model):
+    """Model to track trained AI models"""
+    name = models.CharField(max_length=100)
+    created_date = models.DateTimeField(auto_now_add=True)
+    training_data = models.ForeignKey(AIAdoptionData, on_delete=models.CASCADE, related_name='models')
+    algorithm = models.CharField(max_length=100)
+    accuracy = models.FloatField()
+    parameters = models.JSONField(default=dict)
+    model_file_path = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=False)
     
-    class Meta:
-        verbose_name = "AI Adoption Data"
-        verbose_name_plural = "AI Adoption Data"
-        ordering = ['-created_at']
+    def __str__(self):
+        return f"{self.name} ({self.accuracy:.2f})"
+    
+    def delete(self, *args, **kwargs):
+        # Delete the model file when deleting the model object
+        if os.path.exists(self.model_file_path):
+            os.remove(self.model_file_path)
+        super().delete(*args, **kwargs)
 
 class AIPrediction(models.Model):
-    """Model to store predictions made by the AI model"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_predictions')
-    
-    # Input data (only storing what's needed for later reference)
-    level_of_study = models.CharField(max_length=20)
-    faculty = models.CharField(max_length=20)
-    ai_familiarity = models.IntegerField()
-    uses_ai_tools = models.CharField(max_length=10)
-    tools_count = models.IntegerField()
-    challenges_count = models.IntegerField()
-    
-    # Prediction results
-    predicted_adoption_level = models.CharField(max_length=20)
-    confidence = models.FloatField()
-    features_used = models.JSONField(default=dict)
-    
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    model_version = models.CharField(max_length=50)
+    """Model to store prediction results"""
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='predictions')
+    model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name='predictions')
+    prediction_date = models.DateTimeField(auto_now_add=True)
+    input_data = models.JSONField()
+    prediction_result = models.BooleanField()  # True for adopted, False for not adopted
+    confidence_score = models.FloatField()
+    feature_importances = models.JSONField(default=dict)
     
     def __str__(self):
-        return f"{self.user.username} - {self.predicted_adoption_level} ({self.confidence:.2f})"
+        return f"Prediction for {self.user.username} on {self.prediction_date.strftime('%Y-%m-%d')}"
+
+class AIInsight(models.Model):
+    """Model to store AI-generated insights from data"""
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    created_date = models.DateTimeField(auto_now_add=True)
+    source_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name='insights')
+    topic = models.ForeignKey('AIInsightTopic', on_delete=models.CASCADE, related_name='insights')
+    visualization_data = models.JSONField(default=dict, null=True, blank=True)
+    is_featured = models.BooleanField(default=False)
     
-    class Meta:
-        verbose_name = "AI Prediction"
-        verbose_name_plural = "AI Predictions"
-        ordering = ['-created_at']
+    def __str__(self):
+        return self.title
+
+class AIInsightTopic(models.Model):
+    """Model to categorize insights into topics"""
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    
+    def __str__(self):
+        return self.name
 
 class InsightTopic(models.Model):
     """Model to store insight topics"""
@@ -282,25 +242,6 @@ class InsightTopic(models.Model):
     class Meta:
         verbose_name = "Insight Topic"
         verbose_name_plural = "Insight Topics"
-
-class AIInsight(models.Model):
-    """Model to store AI-generated insights from the data"""
-    topic = models.ForeignKey(InsightTopic, on_delete=models.CASCADE, related_name='insights')
-    title = models.CharField(max_length=200)
-    content = models.TextField()
-    source_data = models.JSONField(default=dict, help_text="Source data for the insight")
-    chart_data = models.JSONField(null=True, blank=True, help_text="Data for chart rendering")
-    chart_type = models.CharField(max_length=50, null=True, blank=True, help_text="Type of chart: bar, pie, etc.")
-    relevance_score = models.FloatField(default=0.0, help_text="How relevant this insight is")
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return self.title
-    
-    class Meta:
-        verbose_name = "AI Insight"
-        verbose_name_plural = "AI Insights"
-        ordering = ['-relevance_score', '-created_at']
 
 class NLQuery(models.Model):
     """Model to store natural language queries and their responses"""
