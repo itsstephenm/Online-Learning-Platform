@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import JSONField
 from student.models import Student
+from django.contrib.auth.models import User
 
 class Course(models.Model):
    course_name = models.CharField(max_length=50)
@@ -160,4 +161,96 @@ class ReferenceDocument(models.Model):
     
     def __str__(self):
         return f"{self.title} ({self.course})"
+
+# AI Adoption Prediction Models
+class AIAdoptionData(models.Model):
+    FAMILIARITY_CHOICES = [
+        (1, 'Very Low'),
+        (2, 'Low'),
+        (3, 'Medium'),
+        (4, 'High'),
+        (5, 'Very High'),
+    ]
+    
+    FREQUENCY_CHOICES = [
+        ('never', 'Never'),
+        ('rarely', 'Rarely'),
+        ('monthly', 'Monthly'),
+        ('weekly', 'Weekly'),
+        ('daily', 'Daily'),
+    ]
+    
+    YES_NO_CHOICES = [
+        ('yes', 'Yes'),
+        ('no', 'No'),
+        ('maybe', 'Maybe'),
+    ]
+    
+    student = models.ForeignKey('student.Student', on_delete=models.CASCADE, null=True, blank=True)
+    email_domain = models.CharField(max_length=100)
+    faculty = models.CharField(max_length=100)
+    level_of_study = models.CharField(max_length=50)
+    ai_familiarity = models.IntegerField(choices=FAMILIARITY_CHOICES)
+    uses_ai_tools = models.CharField(max_length=5, choices=YES_NO_CHOICES)
+    tools_used = models.TextField(blank=True, null=True)
+    usage_frequency = models.CharField(max_length=10, choices=FREQUENCY_CHOICES)
+    challenges = models.TextField(blank=True, null=True)
+    suggestions = models.TextField(blank=True, null=True)
+    improves_learning = models.CharField(max_length=5, choices=YES_NO_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.email_domain} - {self.faculty} - {self.level_of_study}"
+
+class AIPrediction(models.Model):
+    PREDICTION_CHOICES = [
+        ('very_low', 'Very Low'),
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('very_high', 'Very High'),
+    ]
+    
+    adoption_data = models.ForeignKey(AIAdoptionData, on_delete=models.CASCADE, related_name='predictions')
+    prediction = models.CharField(max_length=10, choices=PREDICTION_CHOICES)
+    confidence = models.FloatField()
+    model_version = models.CharField(max_length=50)
+    features_used = models.JSONField()
+    prediction_date = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.adoption_data} - {self.prediction} ({self.confidence:.2f})"
+
+class InsightTopic(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    keywords = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+
+class AIInsight(models.Model):
+    topic = models.ForeignKey(InsightTopic, on_delete=models.CASCADE, related_name='insights')
+    content = models.TextField()
+    data_points = models.IntegerField()
+    confidence = models.FloatField()
+    generated_by = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.topic.name} - {self.created_at.strftime('%Y-%m-%d')}"
+
+class NLQuery(models.Model):
+    query = models.TextField()
+    processed_query = models.TextField()
+    response = models.TextField()
+    response_type = models.CharField(max_length=50)
+    chart_data = models.JSONField(null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.query[:50]
 
