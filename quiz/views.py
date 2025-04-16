@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponseRedirect
 from django.contrib.auth import logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.conf import settings
@@ -278,12 +278,24 @@ def contactus_view(request):
 def logout_view(request):
     logout(request)
     return redirect('home')  # Redirect to a home or landing page
+
 @csrf_exempt
 def calculate_marks_view(request):
     if request.method == "POST":
         # Process exam marks calculation
         return JsonResponse({"message": "Marks calculated successfully"})
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+@login_required(login_url='adminlogin')
+@user_passes_test(is_admin)
+def ai_prediction_dashboard_view(request):
+    dict = {
+        'total_student': SMODEL.Student.objects.all().count(),
+        'total_teacher': TMODEL.Teacher.objects.all().count(),
+        'total_course': models.Course.objects.all().count(),
+        'total_question': models.Question.objects.all().count(),
+    }
+    return render(request, 'quiz/ai_prediction_dashboard.html', context=dict)
 
 
 
