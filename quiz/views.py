@@ -27,6 +27,10 @@ def is_teacher(user):
 def is_student(user):
     return user.groups.filter(name='STUDENT').exists()
 
+# Check if user is admin
+def is_admin(user):
+    return user.groups.filter(name='ADMIN').exists()
+
 def afterlogin_view(request):
     if is_student(request.user):
         return redirect('student/student-dashboard')
@@ -296,10 +300,6 @@ def ai_prediction_dashboard_view(request):
         'total_question': models.Question.objects.all().count(),
     }
     return render(request, 'quiz/ai_prediction_dashboard.html', context=dict)
-
-# Check if user is admin
-def is_admin(user):
-    return user.groups.filter(name='ADMIN').exists()
 
 
 
