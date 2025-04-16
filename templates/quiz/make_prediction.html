@@ -1,0 +1,214 @@
+{% extends 'teacher/teacherbase.html' %}
+{% load static %}
+
+{% block title %}Make Prediction | AI Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Make Prediction</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'ai_dashboard' %}">AI Dashboard</a></li>
+        <li class="breadcrumb-item active">Make Prediction</li>
+    </ol>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-robot me-1"></i>
+                    Student Success Prediction
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="messages mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="model" class="form-label">Select AI Model</label>
+                            <select class="form-select" id="model" name="model_id" required>
+                                <option value="" selected disabled>Choose a model...</option>
+                                {% for model in ai_models %}
+                                <option value="{{ model.id }}">{{ model.name }} (Accuracy: {{ model.accuracy|floatformat:2 }}%)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="student_id" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="student_id" name="student_id" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="course_id" class="form-label">Course ID</label>
+                                <input type="text" class="form-control" id="course_id" name="course_id" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="age" class="form-label">Age</label>
+                                <input type="number" class="form-control" id="age" name="age" min="10" max="100" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="" selected disabled>Select gender...</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                    <option value="O">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="quiz_completion_rate" class="form-label">Quiz Completion Rate (%)</label>
+                                <input type="number" class="form-control" id="quiz_completion_rate" name="quiz_completion_rate" min="0" max="100" step="0.01" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="attendance_rate" class="form-label">Attendance Rate (%)</label>
+                                <input type="number" class="form-control" id="attendance_rate" name="attendance_rate" min="0" max="100" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="prev_score" class="form-label">Previous Score</label>
+                                <input type="number" class="form-control" id="prev_score" name="prev_score" min="0" max="100" step="0.01" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="time_spent" class="form-label">Time Spent (hours)</label>
+                                <input type="number" class="form-control" id="time_spent" name="time_spent" min="0" max="1000" step="0.1" required>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'ai_dashboard' %}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Make Prediction</button>
+                        </div>
+                    </form>
+                    
+                    {% if prediction_result %}
+                    <div class="mt-4 p-4 bg-light rounded">
+                        <h4 class="mb-3">Prediction Result</h4>
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="card bg-{% if prediction_result.success %}success{% else %}danger{% endif %} text-white">
+                                    <div class="card-body py-4">
+                                        <h5 class="card-title">Prediction</h5>
+                                        <h3 class="card-text">
+                                            {% if prediction_result.success %}
+                                            <i class="fas fa-check-circle me-2"></i>Success
+                                            {% else %}
+                                            <i class="fas fa-times-circle me-2"></i>At Risk
+                                            {% endif %}
+                                        </h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Confidence: {{ prediction_result.confidence|floatformat:2 }}%</h5>
+                                        <p class="card-text">
+                                            <strong>Model: </strong>{{ prediction_result.model_name }}<br>
+                                            <strong>Date: </strong>{{ prediction_result.created_at }}<br>
+                                            <strong>Student ID: </strong>{{ prediction_result.student_id }}
+                                        </p>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if prediction_result.success %}bg-success{% else %}bg-danger{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ prediction_result.confidence }}%;" 
+                                                 aria-valuenow="{{ prediction_result.confidence }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ prediction_result.confidence|floatformat:2 }}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Help Information
+                </div>
+                <div class="card-body">
+                    <h5>What is this tool?</h5>
+                    <p>This tool predicts whether a student is likely to be successful in their course based on various factors and historical data.</p>
+                    
+                    <h5>How to use it?</h5>
+                    <ol>
+                        <li>Select an AI model from the dropdown list</li>
+                        <li>Fill in all student information fields</li>
+                        <li>Click "Make Prediction" to generate a result</li>
+                    </ol>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Tips</h6>
+                        <ul class="mb-0">
+                            <li>Higher quiz completion and attendance rates generally predict better outcomes</li>
+                            <li>Models with higher accuracy provide more reliable predictions</li>
+                            <li>If a student is predicted to be at risk, consider early intervention</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        <a href="{% url 'upload_training_data' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-upload me-2"></i>Upload New Training Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Highlight the AI Dashboard nav item
+        $("#aiDashboardNav").addClass("active");
+        
+        // Input validation
+        $("form").on("submit", function(e) {
+            const quizRate = parseFloat($("#quiz_completion_rate").val());
+            const attendanceRate = parseFloat($("#attendance_rate").val());
+            const prevScore = parseFloat($("#prev_score").val());
+            
+            if (quizRate > 100 || quizRate < 0) {
+                alert("Quiz completion rate must be between 0 and 100");
+                e.preventDefault();
+            }
+            
+            if (attendanceRate > 100 || attendanceRate < 0) {
+                alert("Attendance rate must be between 0 and 100");
+                e.preventDefault();
+            }
+            
+            if (prevScore > 100 || prevScore < 0) {
+                alert("Previous score must be between 0 and 100");
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %} 
