@@ -2,115 +2,252 @@
 {% load widget_tweaks %}
 {% block content %}
 
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-    <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-    <style type="text/css">
-      a:link {
-        text-decoration: none;
-      }
-  
-      .order-card {
-        color: rgb(255, 255, 255);
-      }
-  
-      .bg-c-blue {
-        background: #04868f;
-      }
-  
-      .bg-c-green {
-        background:#4C51BF;
-      }
-  
-      .bg-c-yellow {
-        background: #F56565;
-      }
-  
-      .bg-c-pink {
-        background: #663a30;
-      }
-  
-  
-      .card {
-        
-        -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        border: 1px solid black;
-        margin-bottom: 30px;
-        -webkit-transition: all 0.3s ease-in-out;
-        transition: all 0.3s ease-in-out;
-      }
-  
-      .card .card-block {
-        padding: 25px;
-      }
-  
-      .order-card i {
-        font-size: 26px;
-      }
-  
-      .f-left {
-        float: left;
-      }
-  
-      .f-right {
-        float: right;
-      }
-      header {
-      left: 0px;
-      right: 0px;
-    }
-    </style>
-  </head>
-<br><br>
-
-  <div class="container">
+<div class="content-wrapper">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="section-title">Teacher Management</h2>
+        <p class="text-muted">Manage teachers and their information</p>
+      </div>
+    </div>
+    
+    <!-- Teacher Stats -->
     <div class="row">
-      <div class="col-md-4 col-xl-4">
-        <div class="card bg-c-blue order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"> <a href="admin-view-teacher" style="text-decoration: none;color:white;">Total Teacher</a> </h6>
-            <h2 class="text-right"><i class="fas fa-chalkboard-teacher f-left"></i><span>{{total_teacher}}</span></h2>
-            
+      <div class="col-md-4 mb-4">
+        <a href="admin-view-teacher" class="text-decoration-none">
+          <div class="card stat-card bg-gradient-primary">
+            <div class="card-body">
+              <div class="stat-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+              </div>
+              <h3 class="stat-count">{{total_teacher}}</h3>
+              <p class="stat-label">Total Teachers</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-4 mb-4">
+        <a href="admin-view-pending-teacher" class="text-decoration-none">
+          <div class="card stat-card bg-gradient-warning">
+            <div class="card-body">
+              <div class="stat-icon">
+                <i class="fas fa-spinner"></i>
+              </div>
+              <h3 class="stat-count">{{pending_teacher}}</h3>
+              <p class="stat-label">Pending Approvals</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-4 mb-4">
+        <a href="admin-view-teacher-salary" class="text-decoration-none">
+          <div class="card stat-card bg-gradient-success">
+            <div class="card-body">
+              <div class="stat-icon">
+                <i class="fas fa-rupee-sign"></i>
+              </div>
+              <h3 class="stat-count">{{salary}}</h3>
+              <p class="stat-label">Total Salary</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Teacher Actions -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Quick Actions</h3>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <a href="admin-view-teacher" class="btn btn-primary btn-action w-100">
+                  <i class="fas fa-list me-2"></i> View All Teachers
+                </a>
+              </div>
+              <div class="col-md-4 mb-3">
+                <a href="admin-view-pending-teacher" class="btn btn-warning btn-action w-100">
+                  <i class="fas fa-user-clock me-2"></i> Review Pending Teachers
+                </a>
+              </div>
+              <div class="col-md-4 mb-3">
+                <a href="admin-view-teacher-salary" class="btn btn-success btn-action w-100">
+                  <i class="fas fa-money-bill-wave me-2"></i> Manage Salaries
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-  
-      <div class="col-md-4 col-xl-4">
-        <div class="card bg-c-green order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"><a href="admin-view-pending-teacher" style="text-decoration: none;color:white;">Total Pending Teacher</a> </h6>
-            <h2 class="text-right"><i class="fas fa-spinner f-left"></i><span>{{pending_teacher}}</span></h2>
-            
+    </div>
+    
+    <!-- Teacher Information -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Teacher Information</h3>
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">Department</th>
+                  <th scope="col">Teachers</th>
+                  <th scope="col">Avg. Salary</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Computer Science</td>
+                  <td><span class="badge bg-primary rounded-pill">12</span></td>
+                  <td>₹45,000</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Mathematics</td>
+                  <td><span class="badge bg-primary rounded-pill">8</span></td>
+                  <td>₹42,000</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Physics</td>
+                  <td><span class="badge bg-primary rounded-pill">6</span></td>
+                  <td>₹40,000</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>Chemistry</td>
+                  <td><span class="badge bg-primary rounded-pill">5</span></td>
+                  <td>₹38,000</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-  
-      <div class="col-md-4 col-xl-4">
-        <div class="card bg-c-yellow order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"><a href="admin-view-teacher-salary" style="text-decoration: none;color:white;">Total Teacher Salary</a></h6>
-            <h2 class="text-right"><i class="fas fa-rupee-sign f-left"></i><span>{{salary}}</span></h2>
-            
-          </div>
-        </div>
-      </div>
-  
-     
     </div>
   </div>
+</div>
 
-
-<br><br><br><br><br><br><br><br><br><br>
-
-<script src="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
-
+<style>
+  .content-wrapper {
+    padding: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary-color, #24b0ed);
+    margin-bottom: 0.5rem;
+  }
+  
+  .section-subtitle {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #444;
+  }
+  
+  .stat-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    color: white;
+    height: 100%;
+    transition: transform 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .bg-gradient-primary {
+    background: linear-gradient(45deg, #4C51BF, #6979F8);
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(45deg, #0DA678, #15E8BA);
+  }
+  
+  .bg-gradient-warning {
+    background: linear-gradient(45deg, #F3A34B, #FFC107);
+  }
+  
+  .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.8;
+  }
+  
+  .stat-count {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0;
+  }
+  
+  .card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .btn-action {
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-align: left;
+  }
+  
+  .btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn-warning {
+    background-color: #F3A34B;
+    border-color: #F3A34B;
+    color: white;
+  }
+  
+  .btn-warning:hover {
+    background-color: #e0963d;
+    border-color: #e0963d;
+    color: white;
+  }
+  
+  .table {
+    margin-bottom: 0;
+  }
+  
+  .table th {
+    font-weight: 600;
+    border-top: none;
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  .table td, .table th {
+    padding: 1rem;
+    vertical-align: middle;
+  }
+  
+  @media (max-width: 768px) {
+    .stat-card {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
 
 {% endblock content %}
