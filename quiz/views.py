@@ -291,8 +291,8 @@ def calculate_marks_view(request):
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 @login_required(login_url='adminlogin')
-@user_passes_test(is_admin)
 def ai_prediction_dashboard_view(request):
+    # Temporary remove the user_passes_test for debugging
     dict = {
         'total_student': SMODEL.Student.objects.all().count(),
         'total_teacher': TMODEL.Teacher.objects.all().count(),

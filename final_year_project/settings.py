@@ -213,3 +213,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Add logging configuration for production
+
+# Authentication settings
+LOGIN_URL = 'adminlogin'
