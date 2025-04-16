@@ -110,6 +110,32 @@
       border-left: 5px solid white;
     }
     
+    .sidebar-logout-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 15px 25px;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: transparent;
+      color: white;
+      font-size: 16px;
+      position: relative;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .sidebar-logout-btn:hover {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-left: 5px solid white;
+    }
+    
+    .sidebar-logout-btn i {
+      margin-right: 15px;
+      min-width: 20px;
+    }
+    
     #check {
       display: none;
     }
@@ -245,10 +271,13 @@
       <i class="fas fa-home"></i>
       <span>Home</span>
     </a>
-    <a href="{% url 'logout' %}" class="logout-link">
-      <i class="fas fa-sign-out-alt"></i>
-      <span>Logout</span>
-    </a>
+    <form action="{% url 'logout' %}" method="POST" style="display: block;">
+      {% csrf_token %}
+      <button type="submit" class="sidebar-logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+      </button>
+    </form>
   </div>
 
   <div class="content">
