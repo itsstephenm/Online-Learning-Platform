@@ -15,6 +15,14 @@ from teacher import forms as TFORM
 from student import forms as SFORM
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from .ai_utils import import_from_csv, get_chart_data, process_nl_query, predict_adoption_level
+from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight
+from django.contrib.admin.views.decorators import staff_member_required
+import json
+import pandas as pd
+import os
+from django.core.files.storage import FileSystemStorage
+from django.contrib import messages
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -300,6 +308,192 @@ def ai_prediction_dashboard_view(request):
         'total_question': models.Question.objects.all().count(),
     }
     return render(request, 'quiz/ai_prediction_dashboard.html', context=dict)
+
+@staff_member_required
+def ai_prediction_dashboard(request):
+    # Get stats for dashboard
+    adoption_data_count = AIAdoptionData.objects.count()
+    predictions_count = AIPrediction.objects.count()
+    
+    # Get latest insights
+    insights = AIInsight.objects.all().order_by('-created_at')[:5]
+    
+    # Get default chart data
+    faculty_chart = get_chart_data('adoption_by_faculty')
+    prediction_chart = get_chart_data('prediction_distribution')
+    level_chart = get_chart_data('adoption_by_study_level')
+    
+    # Process form submission for NL query
+    if request.method == 'POST' and 'query' in request.POST:
+        form = NLQueryForm(request.POST)
+        if form.is_valid():
+            query_text = form.cleaned_data['query']
+            
+            # Process the query
+            result = process_nl_query(query_text)
+            
+            # Save query to database
+            nl_query = NLQuery(
+                query=query_text,
+                processed_query=query_text,
+                response=result['response'],
+                response_type=result['response_type'],
+                chart_data=json.dumps(result.get('chart_data', {})) if result.get('chart_data') else None,
+                user=request.user
+            )
+            nl_query.save()
+            
+            # If this is an Ajax request, return JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse(result)
+    else:
+        form = NLQueryForm()
+    
+    # Get recent queries
+    recent_queries = NLQuery.objects.filter(user=request.user).order_by('-created_at')[:5]
+    
+    context = {
+        'form': form,
+        'adoption_data_count': adoption_data_count,
+        'predictions_count': predictions_count,
+        'insights': insights,
+        'faculty_chart': json.dumps(faculty_chart),
+        'prediction_chart': json.dumps(prediction_chart),
+        'level_chart': json.dumps(level_chart),
+        'recent_queries': recent_queries
+    }
+    
+    return render(request, 'quiz/ai_dashboard.html', context)
+
+@staff_member_required
+def upload_csv(request):
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        
+        # Check if file is CSV
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Please upload a CSV file')
+            return redirect('ai_prediction_dashboard')
+        
+        # Save file temporarily
+        fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'csv_uploads'))
+        filename = fs.save(csv_file.name, csv_file)
+        file_path = fs.path(filename)
+        
+        try:
+            # Process CSV file
+            data, model, accuracy, insights = import_from_csv(file_path, save_to_db=True)
+            
+            # Success message
+            messages.success(
+                request, 
+                f'Successfully uploaded and processed {len(data)} records. Model accuracy: {accuracy:.2f}'
+            )
+            
+            # Clean up
+            fs.delete(filename)
+            
+            # If this is an Ajax request, return JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'records': len(data),
+                    'accuracy': float(accuracy)
+                })
+                
+        except Exception as e:
+            messages.error(request, f'Error processing CSV: {str(e)}')
+            
+            # If this is an Ajax request, return JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'error',
+                    'message': str(e)
+                })
+            
+            # Clean up
+            fs.delete(filename)
+    
+    return redirect('ai_prediction_dashboard')
+
+@csrf_exempt
+def get_adoption_prediction(request):
+    if request.method == 'POST':
+        try:
+            # Get data from form
+            data = {
+                'level_of_study': request.POST.get('level_of_study', ''),
+                'faculty': request.POST.get('faculty', ''),
+                'ai_familiarity': int(request.POST.get('ai_familiarity', 3)),
+                'uses_ai_tools': request.POST.get('uses_ai_tools', 'no'),
+                'tools_used': request.POST.get('tools_used', ''),
+                'usage_frequency': request.POST.get('usage_frequency', 'never'),
+                'challenges': request.POST.get('challenges', ''),
+                'suggestions': request.POST.get('suggestions', ''),
+                'improves_learning': request.POST.get('improves_learning', 'no')
+            }
+            
+            # Count tools and challenges
+            data['tools_count'] = len(data['tools_used'].split(',')) if data['tools_used'] else 0
+            data['challenges_count'] = len(data['challenges'].split('.')) if data['challenges'] else 0
+            
+            # Make prediction
+            prediction, confidence, features_used = predict_adoption_level(data)
+            
+            # Format response
+            response = {
+                'status': 'success',
+                'prediction': prediction,
+                'prediction_label': prediction.replace('_', ' ').title(),
+                'confidence': float(confidence),
+                'features_used': features_used
+            }
+            
+            return JsonResponse(response)
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            })
+    
+    return JsonResponse({'status': 'error', 'message': 'Only POST requests are supported'})
+
+@staff_member_required
+def ai_insights(request):
+    # Get all insights grouped by topic
+    topics = InsightTopic.objects.all()
+    
+    insights_by_topic = {}
+    for topic in topics:
+        insights_by_topic[topic.name] = AIInsight.objects.filter(topic=topic).order_by('-created_at')[:3]
+    
+    context = {
+        'insights_by_topic': insights_by_topic,
+    }
+    
+    return render(request, 'quiz/ai_insights.html', context)
+
+@staff_member_required
+def ai_data_explorer(request):
+    # Get count of records
+    adoption_data_count = AIAdoptionData.objects.count()
+    
+    # Get chart data
+    faculty_chart = get_chart_data('adoption_by_faculty')
+    tools_chart = get_chart_data('tools_usage')
+    study_level_chart = get_chart_data('adoption_by_study_level')
+    familiarity_chart = get_chart_data('familiarity_distribution')
+    
+    context = {
+        'adoption_data_count': adoption_data_count,
+        'faculty_chart': json.dumps(faculty_chart),
+        'tools_chart': json.dumps(tools_chart),
+        'study_level_chart': json.dumps(study_level_chart),
+        'familiarity_chart': json.dumps(familiarity_chart)
+    }
+    
+    return render(request, 'quiz/ai_data_explorer.html', context)
 
 
 
