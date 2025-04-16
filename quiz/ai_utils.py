@@ -13,7 +13,7 @@ import joblib
 import os
 from django.conf import settings
 import re
-from .models import AIAdoptionData, AIPrediction, InsightTopic, AIInsight
+from .models import AIAdoptionData, AIPrediction, InsightTopic, AIInsight, AIModel
 import logging
 from datetime import datetime
 from django.db.models import Count
