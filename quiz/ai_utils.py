@@ -13,7 +13,7 @@ import joblib
 import os
 from django.conf import settings
 import re
-from .models import AIAdoptionData, AIPrediction, InsightTopic, AIInsight, AIModel, AIPredictionData
+from .models import AIAdoptionData, AIPrediction, InsightTopic, AIInsight, AIModel
 import logging
 from datetime import datetime
 from django.db.models import Count
@@ -38,6 +38,283 @@ MODEL_VERSION = datetime.now().strftime("%Y%m%d")
 MODEL_PATH = os.path.join(MODEL_DIR, 'ai_adoption_model.joblib')
 ENCODER_PATH = os.path.join(MODEL_DIR, 'target_encoder.joblib')
 PREPROCESSOR_PATH = os.path.join(MODEL_DIR, 'preprocessor.joblib')
+
+def get_chart_data(chart_type):
+    """
+    Generate chart data for various analytics visualizations
+    
+    Args:
+        chart_type (str): Type of chart data to generate
+        
+    Returns:
+        dict: Chart data in format suitable for frontend visualization
+    """
+    try:
+        if chart_type == 'adoption_by_faculty':
+            # Get faculty adoption data
+            faculty_data = AIAdoptionData.objects.values('faculty').annotate(
+                count=Count('id')
+            ).order_by('-count')[:5]
+            
+            return {
+                'labels': [item['faculty'] for item in faculty_data],
+                'datasets': [{
+                    'label': 'AI Adoption by Faculty',
+                    'data': [item['count'] for item in faculty_data],
+                    'backgroundColor': [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+                    ]
+                }]
+            }
+        
+        elif chart_type == 'adoption_by_study_level':
+            # Get study level adoption data
+            level_data = AIAdoptionData.objects.values('level_of_study').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            return {
+                'labels': [item['level_of_study'] for item in level_data],
+                'datasets': [{
+                    'label': 'AI Adoption by Study Level',
+                    'data': [item['count'] for item in level_data],
+                    'backgroundColor': [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+                    ]
+                }]
+            }
+        
+        elif chart_type == 'prediction_distribution':
+            # Get prediction distribution
+            predictions = AIPrediction.objects.all()
+            positive_count = sum(1 for p in predictions if p.prediction_class == 1)
+            negative_count = len(predictions) - positive_count
+            
+            return {
+                'labels': ['Positive Adoption', 'Negative Adoption'],
+                'datasets': [{
+                    'label': 'AI Adoption Predictions',
+                    'data': [positive_count, negative_count],
+                    'backgroundColor': ['#1cc88a', '#e74a3b']
+                }]
+            }
+        
+        elif chart_type == 'tools_usage':
+            # Get tools usage data
+            all_tools = []
+            for data in AIAdoptionData.objects.all():
+                if data.tools_used:
+                    tools = [t.strip() for t in data.tools_used.split(',')]
+                    all_tools.extend(tools)
+            
+            tool_counts = {}
+            for tool in all_tools:
+                if tool:
+                    tool_counts[tool] = tool_counts.get(tool, 0) + 1
+            
+            # Sort and get top 5
+            top_tools = sorted(tool_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+            
+            return {
+                'labels': [tool for tool, count in top_tools],
+                'datasets': [{
+                    'label': 'Popular AI Tools',
+                    'data': [count for tool, count in top_tools],
+                    'backgroundColor': [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+                    ]
+                }]
+            }
+        
+        elif chart_type == 'familiarity_distribution':
+            # Get familiarity distribution
+            familiarity_counts = {
+                1: 0, 2: 0, 3: 0, 4: 0, 5: 0
+            }
+            
+            for data in AIAdoptionData.objects.all():
+                familiarity_counts[data.ai_familiarity] = familiarity_counts.get(data.ai_familiarity, 0) + 1
+            
+            labels = ['Very Low', 'Low', 'Medium', 'High', 'Very High']
+            
+            return {
+                'labels': labels,
+                'datasets': [{
+                    'label': 'AI Familiarity Distribution',
+                    'data': [familiarity_counts.get(i, 0) for i in range(1, 6)],
+                    'backgroundColor': [
+                        '#e74a3b', '#f6c23e', '#1cc88a', '#36b9cc', '#4e73df'
+                    ]
+                }]
+            }
+        
+        else:
+            logger.warning(f"Unknown chart type requested: {chart_type}")
+            return {
+                'error': f"Unknown chart type: {chart_type}"
+            }
+    
+    except Exception as e:
+        logger.error(f"Error generating chart data: {str(e)}")
+        return {
+            'error': f"Could not generate chart data: {str(e)}"
+        }
+
+def process_nl_query(query_text):
+    """
+    Process a natural language query and generate a response using AI
+    
+    Args:
+        query_text (str): The user's natural language query
+        
+    Returns:
+        dict: Response containing text and/or visualization data
+    """
+    try:
+        # Create a record of the query
+        from django.contrib.auth.models import User
+        query_obj = NLQuery(
+            user=User.objects.get(username='admin'),  # Default to admin for now
+            query=query_text,
+            processed_query=query_text,  # No preprocessing for now
+            response="Processing...",
+        )
+        query_obj.save()
+        
+        # Determine what type of query it is
+        query_lower = query_text.lower()
+        
+        # Check if this is an analytics/visualization request
+        viz_keywords = ['show', 'chart', 'graph', 'plot', 'visualize', 'display', 'distribution']
+        data_keywords = ['adoption', 'faculty', 'study level', 'tools', 'familiarity', 'prediction']
+        
+        is_viz_request = any(keyword in query_lower for keyword in viz_keywords)
+        
+        # If it looks like a visualization request, determine the chart type
+        if is_viz_request:
+            if 'faculty' in query_lower:
+                chart_data = get_chart_data('adoption_by_faculty')
+                response = "Here's the AI adoption distribution by faculty."
+                chart_type = 'bar'
+                
+            elif 'study level' in query_lower:
+                chart_data = get_chart_data('adoption_by_study_level')
+                response = "Here's the AI adoption distribution by study level."
+                chart_type = 'bar'
+                
+            elif 'prediction' in query_lower:
+                chart_data = get_chart_data('prediction_distribution')
+                response = "Here's the distribution of AI adoption predictions."
+                chart_type = 'pie'
+                
+            elif 'tools' in query_lower:
+                chart_data = get_chart_data('tools_usage')
+                response = "Here are the most popular AI tools used."
+                chart_type = 'bar'
+                
+            elif 'familiar' in query_lower:
+                chart_data = get_chart_data('familiarity_distribution')
+                response = "Here's the distribution of AI familiarity levels."
+                chart_type = 'bar'
+                
+            else:
+                # Default to faculty chart if we can't determine
+                chart_data = get_chart_data('adoption_by_faculty')
+                response = "I'm showing you AI adoption by faculty, but you can ask for other visualizations like study level, predictions, tools usage, or familiarity levels."
+                chart_type = 'bar'
+            
+            # Update the query record
+            query_obj.response = response
+            query_obj.response_type = 'chart'
+            query_obj.chart_data = chart_data
+            query_obj.save()
+            
+            return {
+                'text': response,
+                'chart': chart_data,
+                'chart_type': chart_type
+            }
+            
+        # If it's not a visualization request, use OpenRouter (if available)
+        elif OPENROUTER_API_KEY:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": OPENROUTER_MODEL_NAME,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are an AI assistant specializing in educational technology and AI adoption in education. You have access to data about AI adoption patterns among students. Answer questions in a helpful, concise, and accurate manner."
+                        },
+                        {
+                            "role": "user",
+                            "content": query_text
+                        }
+                    ]
+                }
+                
+                response = requests.post(
+                    OPENROUTER_API_URL,
+                    headers=headers,
+                    json=payload,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    ai_response = response_data['choices'][0]['message']['content']
+                    
+                    # Update the query record
+                    query_obj.response = ai_response
+                    query_obj.response_type = 'text'
+                    query_obj.save()
+                    
+                    return {
+                        'text': ai_response
+                    }
+                else:
+                    raise Exception(f"API returned status code {response.status_code}")
+                    
+            except Exception as e:
+                logger.error(f"Error calling OpenRouter API: {str(e)}")
+                fallback_response = "I'm sorry, I couldn't process your query through our AI service. Please try again later or ask a different question."
+                
+                # Update the query record with the error
+                query_obj.response = f"Error: {str(e)}"
+                query_obj.response_type = 'text'
+                query_obj.save()
+                
+                return {
+                    'text': fallback_response
+                }
+        
+        # Fallback response if no OpenRouter API key
+        else:
+            fallback_response = (
+                "I can show you visualizations about AI adoption data. Try asking something like: "
+                "Show me AI adoption by faculty, "
+                "Display AI familiarity distribution, or "
+                "What tools are most popular?"
+            )
+            
+            # Update the query record
+            query_obj.response = fallback_response
+            query_obj.response_type = 'text'
+            query_obj.save()
+            
+            return {
+                'text': fallback_response
+            }
+            
+    except Exception as e:
+        logger.error(f"Error processing natural language query: {str(e)}")
+        return {
+            'text': f"I'm sorry, an error occurred: {str(e)}"
+        }
 
 def clean_dataframe(df):
     """
@@ -587,42 +864,51 @@ def get_data_counts():
             'error': str(e)
         }
 
-def process_training_data(file_path, training_data_obj):
-    """Process the uploaded CSV file and prepare it for training"""
+def process_training_data(file_path, target_column='success'):
+    """
+    Process a CSV file containing training data
+    
+    Args:
+        file_path (str): Path to the CSV file
+        target_column (str): Name of the target column
+        
+    Returns:
+        dict: Dictionary containing processing results
+    """
     try:
         # Read the CSV file
         df = pd.read_csv(file_path)
         
-        # Store data info in the training data object
-        training_data_obj.row_count = len(df)
-        training_data_obj.column_names = ','.join(df.columns.tolist())
+        # Get basic stats
+        rows = len(df)
+        columns = len(df.columns)
         
-        # Basic data profiling
-        numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
-        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+        # Check if target column exists
+        if target_column not in df.columns:
+            return {
+                'success': False,
+                'error': f"Target column '{target_column}' not found in the data"
+            }
+            
+        # Get class distribution
+        class_distribution = df[target_column].value_counts().to_dict()
         
-        # Calculate basic stats
-        stats = {
-            'numerical_features': len(numerical_cols),
-            'categorical_features': len(categorical_cols),
-            'missing_values': df.isnull().sum().sum(),
-            'target_distribution': df['target'].value_counts().to_dict() if 'target' in df.columns else {}
-        }
+        # Calculate missing values
+        missing_values = df.isnull().sum().to_dict()
         
-        # Save the stats
-        training_data_obj.data_profile = json.dumps(stats)
-        training_data_obj.save()
-        
+        # Return processing results
         return {
             'success': True,
-            'message': 'Data processed successfully',
-            'training_data_id': training_data_obj.id
+            'rows': rows,
+            'columns': columns,
+            'columns_list': list(df.columns),
+            'class_distribution': class_distribution,
+            'missing_values': missing_values
         }
-    
     except Exception as e:
         return {
             'success': False,
-            'message': f'Error processing data: {str(e)}'
+            'error': str(e)
         }
 
 def train_model(training_data_obj):

@@ -7,7 +7,7 @@
 <div class="container-fluid px-4">
     <h1 class="mt-4">Make AI Prediction</h1>
     <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{% url 'ai_dashboard' %}">AI Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'quiz:ai_dashboard' %}">AI Dashboard</a></li>
         <li class="breadcrumb-item active">Make Prediction</li>
     </ol>
 
@@ -31,7 +31,7 @@
             <div class="card border-0 shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="m-0">Prediction Result</h5>
-                    <a href="{% url 'make_prediction' %}" class="btn btn-sm btn-light">
+                    <a href="{% url 'quiz:make_new_prediction' %}" class="btn btn-sm btn-light">
                         <i class="fas fa-redo me-1"></i>New Prediction
                     </a>
                 </div>
@@ -220,7 +220,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="post" id="predictionForm">
+                    <form id="predictionForm" method="post" action="{% url 'quiz:make_new_prediction' %}">
                         {% csrf_token %}
 
                         <div class="mb-4">
@@ -343,7 +343,7 @@
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="{% url 'upload_training_data' %}" class="btn btn-outline-primary">
+                        <a href="{% url 'quiz:upload_training_data' %}" class="btn btn-outline-primary">
                             <i class="fas fa-upload me-1"></i>
                             Upload Training Data
                         </a>

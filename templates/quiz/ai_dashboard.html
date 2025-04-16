@@ -59,7 +59,7 @@
 <div class="container-fluid px-4">
     <h1 class="mt-4">AI Prediction Dashboard</h1>
     <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'teacher-dashboard' %}">Dashboard</a></li>
         <li class="breadcrumb-item active">AI Prediction</li>
     </ol>
     
@@ -75,7 +75,7 @@
                     <p class="mb-0">Enhanced predictions and insights powered by OpenRouter's advanced AI models</p>
                 </div>
                 <div class="col-auto">
-                    <a href="{% url 'make_prediction' %}" class="btn btn-light">
+                    <a href="{% url 'quiz:make_new_prediction' %}" class="btn btn-light">
                         <i class="fas fa-magic me-1"></i>
                         Try Enhanced Predictions
                     </a>
@@ -118,7 +118,7 @@
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="{% url 'view_predictions' %}">View Predictions</a>
+                    <a href="{% url 'quiz:all_predictions' %}" class="small text-white stretched-link">View Predictions</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -196,7 +196,7 @@
                         <i class="fas fa-history me-1"></i>
                         Recent Predictions
                     </div>
-                    <a href="{% url 'make_prediction' %}" class="btn btn-primary btn-sm">
+                    <a href="{% url 'quiz:make_new_prediction' %}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-1"></i>
                         New Prediction
                     </a>
@@ -235,7 +235,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'prediction_detail' prediction.id %}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{% url 'quiz:prediction_result' prediction.id %}" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>

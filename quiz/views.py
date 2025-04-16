@@ -15,8 +15,8 @@ from teacher import forms as TFORM
 from student import forms as SFORM
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .ai_utils import import_from_csv, get_chart_data, process_nl_query, predict_adoption_level, process_csv_data, train_model, make_prediction, generate_insights_from_data, get_data_counts, get_prediction_details, process_training_data, prepare_features
-from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight, AIModel, AIPredictionData
+from .ai_utils import predict_adoption_level, train_model, make_prediction, generate_insights_from_data, get_data_counts, prepare_features, get_chart_data, process_nl_query, process_training_data
+from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight, AIModel
 from django.contrib.admin.views.decorators import staff_member_required
 import json
 import pandas as pd
@@ -561,24 +561,50 @@ def ai_dashboard(request):
 def upload_training_data(request):
     """View for uploading training data"""
     if request.method == 'POST':
-        if 'training_file' not in request.FILES:
-            return JsonResponse({'success': False, 'error': 'No file uploaded'})
+        try:
+            # Get the file from the request
+            file = request.FILES.get('training_file')
+            target_column = request.POST.get('target_column', 'success')
             
-        training_file = request.FILES['training_file']
-        target_column = request.POST.get('target_column', 'success')
-        
-        # Save the file
-        file_path = os.path.join(settings.MEDIA_ROOT, 'training', training_file.name)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
-        with open(file_path, 'wb+') as destination:
-            for chunk in training_file.chunks():
-                destination.write(chunk)
-        
-        # Process the file
-        result = process_training_data(file_path, target_column)
-        
-        return JsonResponse(result)
+            if not file:
+                return JsonResponse({'success': False, 'error': 'No file uploaded'})
+            
+            # Create a temporary file to save the uploaded file
+            import tempfile
+            import os
+            
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.csv')
+            temp_file.write(file.read())
+            temp_file.close()
+            
+            # Process the file
+            result = process_training_data(temp_file.name, target_column)
+            
+            # Create a new AIAdoptionData object
+            if result['success']:
+                data = AIAdoptionData.objects.create(
+                    file_name=file.name,
+                    uploaded_by=request.user,
+                    rows_processed=result['rows'],
+                    is_processed=True
+                )
+                
+                # Add the result to the response
+                result['data_id'] = data.id
+                result['records'] = result['rows']
+                result['fields'] = result['columns']
+                
+                # Clean up the temporary file
+                os.unlink(temp_file.name)
+                
+                return JsonResponse(result)
+            else:
+                # Clean up the temporary file
+                os.unlink(temp_file.name)
+                
+                return JsonResponse(result)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
     
     return render(request, 'quiz/upload_training_data.html')
 
@@ -858,6 +884,106 @@ def nl_query_view(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def insights_view(request):
+    """View for displaying AI insights"""
+    try:
+        # Try with created_date first
+        insights = AIInsight.objects.all().order_by('-created_date')
+    except:
+        try:
+            # If that fails, try with created_at
+            insights = AIInsight.objects.all().order_by('-created_at')
+        except:
+            # If both fail, just get all insights without ordering
+            insights = AIInsight.objects.all()
+    
+    return render(request, 'quiz/insights.html', {
+        'insights': insights
+    })
+
+@login_required
+def query_ai(request):
+    """View for handling AI queries"""
+    if request.method == 'POST':
+        query = request.POST.get('query')
+        try:
+            response = process_nl_query(query)
+            return JsonResponse({'success': True, 'response': response})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return render(request, 'quiz/query.html')
+
+@login_required
+def ai_data_detail(request, data_id):
+    """View for displaying details of uploaded AI training data"""
+    data = get_object_or_404(AIAdoptionData, id=data_id)
+    return render(request, 'quiz/ai_data_detail.html', {
+        'data': data
+    })
+
+@login_required
+def ai_model_detail(request, model_id):
+    """View for displaying AI model details"""
+    model = get_object_or_404(AIModel, id=model_id)
+    return render(request, 'quiz/ai_model_detail.html', {
+        'model': model
+    })
+
+@login_required
+def make_new_prediction(request):
+    """View for making new AI predictions"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.POST.get('data'))
+            prediction = make_prediction(data)
+            return JsonResponse({'success': True, 'prediction': prediction})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return render(request, 'quiz/make_prediction.html')
+
+@login_required
+def all_predictions(request):
+    """View for displaying all predictions"""
+    predictions = AIPrediction.objects.all().order_by('-created_at')
+    return render(request, 'quiz/all_predictions.html', {
+        'predictions': predictions
+    })
+
+@login_required
+def api_activate_model(request, model_id):
+    """API endpoint for activating an AI model"""
+    try:
+        model = get_object_or_404(AIModel, id=model_id)
+        # Deactivate all other models
+        AIModel.objects.all().update(is_active=False)
+        # Activate the selected model
+        model.is_active = True
+        model.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def api_delete_model(request, model_id):
+    """API endpoint for deleting an AI model"""
+    try:
+        model = get_object_or_404(AIModel, id=model_id)
+        model.delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def api_delete_training_data(request, data_id):
+    """API endpoint for deleting training data"""
+    try:
+        data = get_object_or_404(AIAdoptionData, id=data_id)
+        data.delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 
