@@ -297,6 +297,10 @@ def ai_prediction_dashboard_view(request):
     }
     return render(request, 'quiz/ai_prediction_dashboard.html', context=dict)
 
+# Check if user is admin
+def is_admin(user):
+    return user.groups.filter(name='ADMIN').exists()
+
 
 
     
