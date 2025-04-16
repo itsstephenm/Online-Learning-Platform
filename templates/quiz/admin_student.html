@@ -2,107 +2,302 @@
 {% load widget_tweaks %}
 {% block content %}
 
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-    <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-    <style type="text/css">
-      a:link {
-        text-decoration: none;
-      }
-  
-      .order-card {
-        color: rgb(255, 255, 255);
-      }
-  
-      .bg-c-blue {
-        background: #04868f;
-      }
-  
-      .bg-c-green {
-        background:#4C51BF;
-      }
-  
-      .bg-c-yellow {
-        background: #F56565;
-      }
-  
-      .bg-c-pink {
-        background: #663a30;
-      }
-  
-  
-      .card {
-        
-        -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-        border: 1px solid black;
-        margin-bottom: 30px;
-        -webkit-transition: all 0.3s ease-in-out;
-        transition: all 0.3s ease-in-out;
-      }
-  
-      .card .card-block {
-        padding: 25px;
-      }
-  
-      .order-card i {
-        font-size: 26px;
-      }
-  
-      .f-left {
-        float: left;
-      }
-  
-      .f-right {
-        float: right;
-      }
-      header {
-      left: 0px;
-      right: 0px;
-    }
-    </style>
-  </head>
-<br><br>
-
-  <div class="container">
+<div class="content-wrapper">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="section-title">Student Management</h2>
+        <p class="text-muted">Manage students and their performance</p>
+      </div>
+    </div>
+    
+    <!-- Student Stats -->
     <div class="row">
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-blue order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"> <a href="admin-view-student" style="text-decoration: none;color:white;">Total Student</a> </h6>
-            <h2 class="text-right"><i class="fas fa-user-graduate f-left"></i><span>{{total_student}}</span></h2>
-            
+      <div class="col-md-6 mb-4">
+        <a href="admin-view-student" class="text-decoration-none">
+          <div class="card stat-card bg-gradient-primary">
+            <div class="card-body">
+              <div class="stat-icon">
+                <i class="fas fa-user-graduate"></i>
+              </div>
+              <h3 class="stat-count">{{total_student}}</h3>
+              <p class="stat-label">Total Students</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      
+      <div class="col-md-6 mb-4">
+        <a href="admin-view-student-marks" class="text-decoration-none">
+          <div class="card stat-card bg-gradient-success">
+            <div class="card-body">
+              <div class="stat-icon">
+                <i class="fas fa-sort-numeric-up"></i>
+              </div>
+              <h3 class="stat-count"><i class="far fa-smile"></i></h3>
+              <p class="stat-label">Student Marks</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    
+    <!-- Student Actions -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Quick Actions</h3>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <a href="admin-view-student" class="btn btn-primary btn-action w-100">
+                  <i class="fas fa-list me-2"></i> View All Students
+                </a>
+              </div>
+              <div class="col-md-4 mb-3">
+                <a href="admin-view-student-marks" class="btn btn-success btn-action w-100">
+                  <i class="fas fa-chart-bar me-2"></i> View Student Marks
+                </a>
+              </div>
+              <div class="col-md-4 mb-3">
+                <a href="admin-check-marks" class="btn btn-info btn-action w-100">
+                  <i class="fas fa-search me-2"></i> Search Student Performance
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-  
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-green order-card">
-          <div class="card-block">
-            <h6 class="m-b-20"><a href="admin-view-student-marks" style="text-decoration: none;color:white;">Student Marks</a> </h6>
-            <h2 class="text-right"><i class="fas fa-sort-numeric-up f-left"></i><span>:)</span></h2>
-            
+    </div>
+    
+    <!-- Student Performance Overview -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Performance Overview</h3>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3 mb-4 mb-md-0">
+                <div class="performance-card">
+                  <div class="performance-value text-primary">85%</div>
+                  <div class="performance-label">Average Score</div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-4 mb-md-0">
+                <div class="performance-card">
+                  <div class="performance-value text-success">92%</div>
+                  <div class="performance-label">Attendance Rate</div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-4 mb-md-0">
+                <div class="performance-card">
+                  <div class="performance-value text-info">78%</div>
+                  <div class="performance-label">Course Completion</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="performance-card">
+                  <div class="performance-value text-warning">65%</div>
+                  <div class="performance-label">Participation Rate</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-  
-     
-  
-     
+    </div>
+    
+    <!-- Recent Students -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Recent Students</h3>
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Course</th>
+                  <th scope="col">Marks</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#STU001</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-primary text-white me-3">JS</div>
+                      <div>John Smith</div>
+                    </div>
+                  </td>
+                  <td>Computer Science</td>
+                  <td>88/100</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>#STU002</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-info text-white me-3">MP</div>
+                      <div>Mary Parker</div>
+                    </div>
+                  </td>
+                  <td>Mathematics</td>
+                  <td>92/100</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+                <tr>
+                  <td>#STU003</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-success text-white me-3">RJ</div>
+                      <div>Robert Johnson</div>
+                    </div>
+                  </td>
+                  <td>Physics</td>
+                  <td>78/100</td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-
-<br><br><br><br><br><br><br><br><br><br>
-
-<script src="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
-
+<style>
+  .content-wrapper {
+    padding: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary-color, #24b0ed);
+    margin-bottom: 0.5rem;
+  }
+  
+  .section-subtitle {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #444;
+  }
+  
+  .stat-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    color: white;
+    height: 100%;
+    transition: transform 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .bg-gradient-primary {
+    background: linear-gradient(45deg, #4C51BF, #6979F8);
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(45deg, #0DA678, #15E8BA);
+  }
+  
+  .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.8;
+  }
+  
+  .stat-count {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0;
+  }
+  
+  .card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .btn-action {
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-align: left;
+  }
+  
+  .btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .performance-card {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    height: 100%;
+  }
+  
+  .performance-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .performance-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+  
+  .table {
+    margin-bottom: 0;
+  }
+  
+  .table th {
+    font-weight: 600;
+    border-top: none;
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  .table td, .table th {
+    padding: 1rem;
+    vertical-align: middle;
+  }
+  
+  .avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  @media (max-width: 768px) {
+    .stat-card, .performance-card {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
 
 {% endblock content %}
