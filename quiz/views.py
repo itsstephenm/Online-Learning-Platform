@@ -15,7 +15,7 @@ from teacher import forms as TFORM
 from student import forms as SFORM
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .ai_utils import import_from_csv, get_chart_data, process_nl_query, predict_adoption_level
+from .ai_utils import import_from_csv, get_chart_data, process_nl_query, predict_adoption_level, process_csv_data, train_model, make_prediction, generate_insights_from_data, get_data_counts
 from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight
 from django.contrib.admin.views.decorators import staff_member_required
 import json
@@ -23,6 +23,7 @@ import pandas as pd
 import os
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
+import tempfile
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -494,6 +495,274 @@ def ai_data_explorer(request):
     }
     
     return render(request, 'quiz/ai_data_explorer.html', context)
+
+@login_required
+def ai_dashboard(request):
+    """
+    Dashboard view for AI prediction system
+    """
+    # Get counts and distributions for the dashboard
+    counts_data = get_data_counts()
+    
+    if not counts_data['success']:
+        messages.error(request, f"Error loading dashboard data: {counts_data.get('error', 'Unknown error')}")
+        counts_data = {
+            'records_count': 0,
+            'insights_count': 0,
+            'topics_count': 0,
+            'adoption_levels': [],
+            'faculty_distribution': [],
+            'study_level_distribution': []
+        }
+    
+    # Get recent insights
+    recent_insights = AIInsight.objects.all().order_by('-created_at')[:5]
+    
+    context = {
+        'counts_data': counts_data,
+        'recent_insights': recent_insights,
+        'page_title': 'AI Prediction Dashboard'
+    }
+    
+    return render(request, 'quiz/ai_dashboard.html', context)
+
+@login_required
+def upload_csv(request):
+    """
+    View to handle CSV file uploads for AI training data
+    """
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        
+        # Validate file extension
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'File must be a CSV file')
+            return redirect('ai_dashboard')
+        
+        # Save file to temporary location
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            for chunk in csv_file.chunks():
+                temp_file.write(chunk)
+            temp_file.close()
+            
+            # Process the CSV file
+            result = process_csv_data(temp_file.name)
+            
+            if result['success']:
+                messages.success(request, f"Successfully added {result['records_added']} records from CSV file")
+                
+                # Check for errors
+                if result.get('errors'):
+                    messages.warning(request, f"There were {len(result['errors'])} errors during processing")
+            else:
+                messages.error(request, f"Error processing CSV file: {result.get('error', 'Unknown error')}")
+        
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+        
+        return redirect('ai_dashboard')
+    
+    return render(request, 'quiz/upload_csv.html', {'page_title': 'Upload AI Data'})
+
+@login_required
+def train_ai_model(request):
+    """
+    View to handle training the AI model
+    """
+    if request.method == 'POST':
+        # Train the model
+        result = train_model()
+        
+        if result['success']:
+            messages.success(request, f"Model trained successfully with accuracy: {result['accuracy']:.2f}")
+            
+            # Add details to the response
+            result_details = f"Best parameters: {result['best_params']}"
+            messages.info(request, result_details)
+        else:
+            messages.error(request, f"Error training model: {result.get('error', 'Unknown error')}")
+        
+        return redirect('ai_dashboard')
+    
+    # Get training data stats
+    data_count = AIAdoptionData.objects.count()
+    
+    context = {
+        'data_count': data_count,
+        'page_title': 'Train AI Model'
+    }
+    
+    return render(request, 'quiz/train_model.html', context)
+
+@login_required
+def predict_adoption(request):
+    """
+    View to make predictions with the AI model
+    """
+    if request.method == 'POST':
+        # Get input data from form
+        input_data = {
+            'level_of_study': request.POST.get('level_of_study'),
+            'faculty': request.POST.get('faculty'),
+            'ai_familiarity': int(request.POST.get('ai_familiarity')),
+            'uses_ai_tools': request.POST.get('uses_ai_tools'),
+            'tools_used': request.POST.get('tools_used'),
+            'usage_frequency': request.POST.get('usage_frequency'),
+            'challenges': request.POST.get('challenges'),
+            'improves_learning': request.POST.get('improves_learning')
+        }
+        
+        # Make prediction
+        result = make_prediction(input_data)
+        
+        if result['success']:
+            # Save prediction to database
+            prediction = AIPrediction(
+                student=request.user,
+                level_of_study=input_data['level_of_study'],
+                faculty=input_data['faculty'],
+                ai_familiarity=input_data['ai_familiarity'],
+                uses_ai_tools=input_data['uses_ai_tools'],
+                tools_used=input_data['tools_used'] if input_data['tools_used'] else None,
+                usage_frequency=input_data['usage_frequency'],
+                challenges=input_data['challenges'] if input_data['challenges'] else None,
+                improves_learning=input_data['improves_learning'],
+                predicted_adoption_level=result['prediction'],
+                confidence_score=result['confidence'],
+                features_used=json.dumps(result.get('feature_importances', {}))
+            )
+            prediction.save()
+            
+            messages.success(request, f"Prediction made: {result['prediction']} with {result['confidence']*100:.1f}% confidence")
+            
+            # Redirect to prediction result
+            return redirect('prediction_result', prediction_id=prediction.id)
+        else:
+            messages.error(request, f"Error making prediction: {result.get('error', 'Unknown error')}")
+    
+    # Context for rendering the form
+    context = {
+        'level_choices': AIAdoptionData.STUDY_LEVEL_CHOICES,
+        'faculty_choices': AIAdoptionData.FACULTY_CHOICES,
+        'frequency_choices': AIAdoptionData.FREQUENCY_CHOICES,
+        'yes_no_choices': AIAdoptionData.YES_NO_CHOICES,
+        'page_title': 'Make AI Prediction'
+    }
+    
+    return render(request, 'quiz/predict_form.html', context)
+
+@login_required
+def prediction_result(request, prediction_id):
+    """
+    View to display prediction result
+    """
+    try:
+        prediction = AIPrediction.objects.get(id=prediction_id)
+        
+        # Check if this is the user's prediction or if they're an admin
+        if prediction.student != request.user and not request.user.is_staff:
+            messages.error(request, "You don't have permission to view this prediction")
+            return redirect('ai_dashboard')
+        
+        # Parse feature importances
+        feature_importances = json.loads(prediction.features_used) if prediction.features_used else {}
+        
+        context = {
+            'prediction': prediction,
+            'feature_importances': feature_importances,
+            'page_title': 'Prediction Result'
+        }
+        
+        return render(request, 'quiz/prediction_result.html', context)
+    
+    except AIPrediction.DoesNotExist:
+        messages.error(request, "Prediction not found")
+        return redirect('ai_dashboard')
+
+@login_required
+def insights_view(request, topic_id=None):
+    """
+    View to display AI-generated insights
+    """
+    topics = InsightTopic.objects.all()
+    
+    if topic_id:
+        # Show insights for specific topic
+        try:
+            topic = InsightTopic.objects.get(id=topic_id)
+            insights = AIInsight.objects.filter(topic=topic).order_by('-relevance_score')
+            
+            context = {
+                'topic': topic,
+                'insights': insights,
+                'topics': topics,
+                'page_title': f'Insights: {topic.name}'
+            }
+            
+            return render(request, 'quiz/insights_topic.html', context)
+        
+        except InsightTopic.DoesNotExist:
+            messages.error(request, "Topic not found")
+            return redirect('insights_view')
+    else:
+        # Show all topics and recent insights
+        insights = AIInsight.objects.all().order_by('-created_at')[:10]
+        
+        context = {
+            'topics': topics,
+            'insights': insights,
+            'page_title': 'AI Insights'
+        }
+        
+        return render(request, 'quiz/insights.html', context)
+
+@csrf_exempt
+@login_required
+def query_ai(request):
+    """
+    API endpoint to handle natural language queries about the AI data
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            query_text = data.get('query', '')
+            
+            if not query_text:
+                return JsonResponse({'error': 'Query is required'}, status=400)
+            
+            # Process the query
+            result = process_nl_query(query_text, request.user)
+            
+            # Save the query to the database
+            nl_query = NLQuery(
+                user=request.user,
+                query=query_text,
+                processed_query=query_text,  # In a real system, this might be different
+                response=result.get('response', ''),
+                response_type=result.get('response_type', 'text'),
+                chart_data=json.dumps(result.get('chart_data', [])) if result.get('chart_data') else None
+            )
+            nl_query.save()
+            
+            # Return the result
+            return JsonResponse({
+                'success': True,
+                'response': result.get('response', ''),
+                'response_type': result.get('response_type', 'text'),
+                'chart_data': result.get('chart_data'),
+                'chart_type': result.get('chart_type'),
+                'chart_title': result.get('chart_title')
+            })
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 
