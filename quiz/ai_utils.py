@@ -1541,35 +1541,91 @@ def make_prediction(input_data, model_id=None):
         # Load the model
         model_path = os.path.join(settings.MEDIA_ROOT, str(model_obj.model_file))
         with open(model_path, 'rb') as f:
-            model = pickle.load(f)
+            model_data = pickle.load(f)
+        model = model_data['model']
+        scaler = model_data['scaler']
+        feature_cols = model_data['feature_cols']
         
-        # Convert input data to DataFrame
-        df = pd.DataFrame([input_data])
+        # Prepare input data
+        if model_id:
+            # If model_id is provided, get data from AIAdoptionData model
+            adoption_data = AIAdoptionData.objects.get(id=model_id)
+            
+            input_data = {
+                'level_of_study': adoption_data.level_of_study,
+                'faculty': adoption_data.faculty,
+                'ai_familiarity': adoption_data.ai_familiarity,
+                'uses_ai_tools': adoption_data.uses_ai_tools,
+                'tools_used': adoption_data.tools_used,
+                'usage_frequency': adoption_data.usage_frequency,
+                'challenges': adoption_data.challenges,
+                'improves_learning': adoption_data.improves_learning
+            }
+        else:
+            # Use provided data
+            input_data = input_data
+            
+            # Convert gender to numerical value if necessary
+            if 'gender' in input_data and isinstance(input_data['gender'], str):
+                gender_map = {'M': 0, 'F': 1, 'O': 2}
+                input_data['gender'] = gender_map.get(input_data['gender'], 0)
+        
+        # Create DataFrame with input data
+        input_df = pd.DataFrame([input_data])
+        
+        # Ensure all required columns are present
+        for col in feature_cols:
+            if col not in input_df.columns:
+                input_df[col] = 0
+        
+        # Scale the input data
+        input_scaled = scaler.transform(input_df[feature_cols])
         
         # Make prediction
-        prediction = model.predict(df)[0]
-        probabilities = model.predict_proba(df)[0]
-        max_prob = max(probabilities)
+        prediction_class = model.predict(input_scaled)[0]
+        prediction_proba = model.predict_proba(input_scaled)[0]
         
-        # Create prediction data object
-        prediction_data = AIPredictionData.objects.create(
+        # Create prediction result
+        success_probability = prediction_proba[1] * 100
+        risk_probability = prediction_proba[0] * 100
+        
+        # Get feature importance for this prediction (if available)
+        feature_importance = {}
+        if hasattr(model, 'feature_importances_'):
+            # Multiply feature values by their importance
+            for i, col in enumerate(feature_cols):
+                scaled_value = input_scaled[0][i]
+                importance = model.feature_importances_[i]
+                feature_importance[col] = float(importance)  # Convert from numpy to Python native type
+        
+        # Save prediction to database
+        prediction = AIPrediction.objects.create(
             model=model_obj,
             input_data=json.dumps(input_data),
-            prediction_result=prediction,
-            confidence=float(max_prob)
+            prediction_class=int(prediction_class),
+            success_probability=float(success_probability),
+            risk_probability=float(risk_probability)
         )
         
-        return {
-            'success': True,
-            'prediction': prediction,
-            'confidence': float(max_prob),
-            'prediction_id': prediction_data.id
+        # Prepare the result
+        result = {
+            'prediction_id': prediction.id,
+            'model_name': model_obj.name,
+            'model_accuracy': model_obj.accuracy,
+            'last_trained': model_obj.last_trained,
+            'prediction_class': int(prediction_class),
+            'success_probability': float(success_probability),
+            'risk_probability': float(risk_probability),
+            'feature_importance': feature_importance,
+            'input_data': input_data
         }
+        
+        return result
     
     except Exception as e:
         return {
             'success': False,
-            'message': f'Error making prediction: {str(e)}'
+            'error': str(e)
         }
 
 def prepare_features(student_data):
