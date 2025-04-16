@@ -1,0 +1,209 @@
+{% extends 'teacher/teacherbase.html' %}
+{% load static %}
+
+{% block title %}AI Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">AI Prediction Dashboard</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">AI Prediction</li>
+    </ol>
+    
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Models</h5>
+                            <h2 class="display-4">{{ models_count }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-brain fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'all_insights' %}">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Training Datasets</h5>
+                            <h2 class="display-4">{{ datasets_count }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'upload_training_data' %}">Upload Data</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Predictions Made</h5>
+                            <h2 class="display-4">{{ predictions_count }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'all_predictions' %}">View All</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Make Prediction</h5>
+                            <p>Start a new prediction</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-magic fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'make_new_prediction' %}">Start Now</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Models -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-robot me-1"></i>
+                    Active AI Models
+                </div>
+                <div class="card-body">
+                    {% if active_models %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Model Name</th>
+                                        <th>Accuracy</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for model in active_models %}
+                                    <tr>
+                                        <td>{{ model.name }}</td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ model.accuracy|floatformat:0 }}%;" 
+                                                    aria-valuenow="{{ model.accuracy|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                                                    {{ model.accuracy|floatformat:1 }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ model.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'ai_model_detail' model.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No active AI models. <a href="{% url 'upload_training_data' %}">Upload training data</a> to create a model.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Predictions -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-area me-1"></i>
+                    Recent Predictions
+                </div>
+                <div class="card-body">
+                    {% if recent_predictions %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Model</th>
+                                        <th>Prediction</th>
+                                        <th>Date</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prediction in recent_predictions %}
+                                    <tr>
+                                        <td>#{{ prediction.id }}</td>
+                                        <td>{{ prediction.model.name }}</td>
+                                        <td>
+                                            {% if prediction.prediction_result == 1 %}
+                                                <span class="badge bg-success">Positive</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Negative</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ prediction.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'prediction_result' prediction.id %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No predictions have been made yet. <a href="{% url 'make_new_prediction' %}">Make a prediction</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any additional JavaScript for the AI dashboard
+    $(document).ready(function() {
+        // Highlight the AI Dashboard nav item
+        $("#aiDashboardNav").addClass("active");
+    });
+</script>
+{% endblock %} 
