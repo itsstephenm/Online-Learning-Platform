@@ -24,6 +24,7 @@ import os
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 import tempfile
+from student.models import Student
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -498,325 +499,197 @@ def ai_data_explorer(request):
 
 @login_required
 def ai_dashboard(request):
-    """Dashboard for AI prediction functionality"""
-    # Get statistics
-    models = AIModel.objects.all().order_by('-created_at')
-    active_model = AIModel.objects.filter(is_active=True).first()
-    prediction_count = AIPredictionData.objects.count()
-    recent_predictions = AIPredictionData.objects.all().order_by('-created_at')[:5]
+    """Dashboard view for AI prediction functionality"""
+    models = AIModel.objects.all()
+    recent_predictions = AIPrediction.objects.all().order_by('-created_at')[:5]
     
     context = {
         'models': models,
-        'active_model': active_model,
-        'prediction_count': prediction_count,
         'recent_predictions': recent_predictions,
+        'prediction_count': AIPrediction.objects.count(),
+        'model_count': models.count()
     }
     
     return render(request, 'quiz/ai_dashboard.html', context)
 
 @login_required
 def upload_training_data(request):
-    """View for uploading CSV training data"""
-    if request.method == 'POST' and request.FILES.get('data_file'):
-        file = request.FILES['data_file']
+    """View for uploading training data"""
+    if request.method == 'POST':
+        if 'training_file' not in request.FILES:
+            return JsonResponse({'success': False, 'error': 'No file uploaded'})
+            
+        training_file = request.FILES['training_file']
+        target_column = request.POST.get('target_column', 'success')
         
-        # Create a new training data object
-        training_data = AIModel.objects.create(
-            name=request.POST.get('name', 'Training Data'),
-            description=request.POST.get('description', ''),
-            file=file
-        )
+        # Save the file
+        file_path = os.path.join(settings.MEDIA_ROOT, 'training', training_file.name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
+        with open(file_path, 'wb+') as destination:
+            for chunk in training_file.chunks():
+                destination.write(chunk)
         
         # Process the file
-        file_path = os.path.join(settings.MEDIA_ROOT, str(training_data.file))
-        result = process_training_data(file_path, training_data)
+        result = process_training_data(file_path, target_column)
         
-        if result['success']:
-            # Train the model if auto-train is enabled
-            if request.POST.get('auto_train', False):
-                train_result = train_model(training_data)
-                if train_result['success']:
-                    messages.success(request, 'Data uploaded and model trained successfully!')
-                else:
-                    messages.error(request, train_result['message'])
-            else:
-                messages.success(request, 'Training data uploaded successfully!')
-                
-            return redirect('ai_data_detail', data_id=training_data.id)
-        else:
-            messages.error(request, result['message'])
-            return redirect('upload_training_data')
+        return JsonResponse(result)
     
     return render(request, 'quiz/upload_training_data.html')
 
 @login_required
-def ai_data_detail(request, data_id):
-    """View training data details"""
-    try:
-        training_data = AIModel.objects.get(id=data_id)
+def train_ai_model(request):
+    """View for training a new AI model"""
+    if request.method == 'POST':
+        dataset_path = request.POST.get('dataset_path')
+        model_name = request.POST.get('model_name')
+        model_type = request.POST.get('model_type', 'random_forest')
+        description = request.POST.get('description', '')
         
-        # If training is requested
-        if request.method == 'POST' and 'train_model' in request.POST:
-            result = train_model(training_data)
+        if not dataset_path or not os.path.exists(dataset_path):
+            return JsonResponse({'success': False, 'error': 'Invalid dataset path'})
+        
+        # Create model directory if it doesn't exist
+        model_dir = os.path.join(settings.MEDIA_ROOT, 'models')
+        os.makedirs(model_dir, exist_ok=True)
+        
+        # Generate model filename
+        model_filename = f"{model_name.lower().replace(' ', '_')}_{model_type}.pkl"
+        model_path = os.path.join(model_dir, model_filename)
+        
+        # Train the model
+        result = train_model(dataset_path, model_type=model_type, save_path=model_path)
+        
+        if result['success']:
+            # Create model record in database
+            model = AIModel.objects.create(
+                name=model_name,
+                model_type=model_type,
+                description=description,
+                model_file=os.path.join('models', model_filename),
+                accuracy=result['accuracy'],
+                feature_importance=json.dumps(result['feature_importance'])
+            )
             
-            if result['success']:
-                messages.success(request, 'Model trained successfully!')
-                return redirect('ai_model_detail', model_id=result['model_id'])
-            else:
-                messages.error(request, result['message'])
+            result['model_id'] = model.id
         
-        context = {
-            'training_data': training_data,
-            'data_profile': json.loads(training_data.data_profile) if training_data.data_profile else {}
-        }
-        
-        return render(request, 'quiz/ai_data_detail.html', context)
+        return JsonResponse(result)
     
-    except AIModel.DoesNotExist:
-        messages.error(request, 'Training data not found')
-        return redirect('ai_dashboard')
+    return render(request, 'quiz/train_model.html')
 
 @login_required
-def ai_model_detail(request, model_id):
-    """View model details and insights"""
-    try:
-        model = AIModel.objects.get(id=model_id)
-        insights = AIInsight.objects.filter(model=model).order_by('-importance')
-        
-        context = {
-            'model': model,
-            'insights': insights
-        }
-        
-        return render(request, 'quiz/ai_model_detail.html', context)
-    
-    except AIModel.DoesNotExist:
-        messages.error(request, 'Model not found')
-        return redirect('ai_dashboard')
-
-@login_required
-def make_new_prediction(request):
-    """Make a new prediction"""
-    # Get available models
+def make_prediction_view(request):
+    """View for making predictions"""
     models = AIModel.objects.all()
-    active_model = AIModel.objects.filter(is_active=True).first()
+    students = Student.objects.all()
     
     if request.method == 'POST':
-        try:
-            # Get form data
-            form_data = {
-                'quiz_score_avg': float(request.POST.get('quiz_score_avg', 0)),
-                'exam_score_avg': float(request.POST.get('exam_score_avg', 0)),
+        model_id = request.POST.get('model_id')
+        input_type = request.POST.get('input_type')
+        
+        if not model_id:
+            return JsonResponse({'success': False, 'error': 'Model ID is required'})
+        
+        if input_type == 'student':
+            student_id = request.POST.get('student_id')
+            if not student_id:
+                return JsonResponse({'success': False, 'error': 'Student ID is required'})
+                
+            result = make_prediction(model_id, student_id=student_id)
+        else:
+            # Manual input
+            input_data = {
+                'prev_score': float(request.POST.get('prev_score', 0)),
                 'attendance_rate': float(request.POST.get('attendance_rate', 0)),
-                'study_time_weekly': float(request.POST.get('study_time_weekly', 0)),
-                'participation_score': float(request.POST.get('participation_score', 0)),
-                'assignments_completed': int(request.POST.get('assignments_completed', 0)),
-                'major': request.POST.get('major', 'Unknown'),
-                'year_level': int(request.POST.get('year_level', 1))
+                'quiz_completion': float(request.POST.get('quiz_completion', 0)),
+                'time_spent': float(request.POST.get('time_spent', 0)),
+                'age': int(request.POST.get('age', 20)),
+                'gender': request.POST.get('gender', 'M')
             }
             
-            # Get selected model ID if provided
-            model_id = request.POST.get('model_id')
-            if model_id:
-                model_id = int(model_id)
-            
-            # Make prediction
-            result = make_prediction(form_data, model_id)
-            
-            if result['success']:
-                messages.success(request, 'Prediction made successfully!')
-                return redirect('prediction_result', prediction_id=result['prediction_id'])
-            else:
-                messages.error(request, result['message'])
+            result = make_prediction(model_id, student_data=input_data)
         
-        except Exception as e:
-            messages.error(request, f'Error making prediction: {str(e)}')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse(result)
+        
+        # Store prediction result in session for non-AJAX requests
+        request.session['prediction_result'] = result
+        return redirect('prediction_result')
     
     context = {
         'models': models,
-        'active_model': active_model
+        'students': students
     }
     
     return render(request, 'quiz/make_prediction.html', context)
 
 @login_required
-def prediction_result(request, prediction_id):
-    """View prediction result"""
-    try:
-        prediction = AIPredictionData.objects.get(id=prediction_id)
-        
-        context = {
-            'prediction': prediction,
-            'input_data': json.loads(prediction.input_data)
-        }
-        
-        return render(request, 'quiz/prediction_result.html', context)
+def prediction_result(request):
+    """View for displaying prediction results"""
+    result = request.session.get('prediction_result')
     
-    except AIPredictionData.DoesNotExist:
-        messages.error(request, 'Prediction not found')
-        return redirect('make_new_prediction')
+    if not result:
+        return redirect('make_prediction')
+    
+    # Clear result from session
+    request.session.pop('prediction_result', None)
+    
+    return render(request, 'quiz/prediction_result.html', {'result': result})
 
 @login_required
-def all_predictions(request):
-    """View all predictions"""
-    predictions = AIPredictionData.objects.all().order_by('-created_at')
+def view_predictions(request):
+    """View for listing all predictions"""
+    predictions = AIPrediction.objects.all().order_by('-created_at')
     
     context = {
         'predictions': predictions
     }
     
-    return render(request, 'quiz/all_predictions.html', context)
+    return render(request, 'quiz/view_predictions.html', context)
 
 @login_required
-def all_insights(request):
-    """View all insights from all models"""
-    insights = AIInsight.objects.all().order_by('-importance')
+def prediction_detail(request, prediction_id):
+    """View for displaying detailed prediction information"""
+    prediction = get_object_or_404(AIPrediction, id=prediction_id)
+    
+    # Parse input data JSON
+    input_data = json.loads(prediction.input_data)
     
     context = {
-        'insights': insights
+        'prediction': prediction,
+        'input_data': input_data
     }
     
-    return render(request, 'quiz/all_insights.html', context)
-
-# API endpoints
-@login_required
-def api_activate_model(request, model_id):
-    """API to activate a model"""
-    if request.method == 'POST':
-        try:
-            model = AIModel.objects.get(id=model_id)
-            
-            # Deactivate all models
-            AIModel.objects.all().update(is_active=False)
-            
-            # Activate this model
-            model.is_active = True
-            model.save()
-            
-            return JsonResponse({
-                'success': True,
-                'message': f'Model {model.name} activated successfully'
-            })
-        
-        except AIModel.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'Model not found'
-            })
-    
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request method'
-    })
-
-@login_required
-def api_delete_model(request, model_id):
-    """API to delete a model"""
-    if request.method == 'POST':
-        try:
-            model = AIModel.objects.get(id=model_id)
-            
-            # Delete the model file
-            if model.model_file:
-                file_path = os.path.join(settings.MEDIA_ROOT, str(model.model_file))
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            
-            # Delete the model
-            model.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Model deleted successfully'
-            })
-        
-        except AIModel.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'Model not found'
-            })
-    
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request method'
-    })
-
-@login_required
-def api_delete_training_data(request, data_id):
-    """API to delete training data"""
-    if request.method == 'POST':
-        try:
-            training_data = AIModel.objects.get(id=data_id)
-            
-            # Delete the file
-            if training_data.file:
-                file_path = os.path.join(settings.MEDIA_ROOT, str(training_data.file))
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            
-            # Delete the training data
-            training_data.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Training data deleted successfully'
-            })
-        
-        except AIModel.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'message': 'Training data not found'
-            })
-    
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request method'
-    })
+    return render(request, 'quiz/prediction_detail.html', context)
 
 @csrf_exempt
-@login_required
-def query_ai(request):
-    """
-    API endpoint to handle natural language queries about the AI data
-    """
+def get_student_data(request):
+    """AJAX endpoint to get student data"""
     if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        
+        if not student_id:
+            return JsonResponse({'success': False, 'error': 'Student ID is required'})
+        
         try:
-            data = json.loads(request.body)
-            query_text = data.get('query', '')
+            student = Student.objects.get(id=student_id)
             
-            if not query_text:
-                return JsonResponse({'error': 'Query is required'}, status=400)
+            # Get student's metrics
+            from .ai_utils import get_student_metrics
+            metrics = get_student_metrics(student)
             
-            # Process the query
-            result = process_nl_query(query_text, request.user)
-            
-            # Save the query to the database
-            nl_query = NLQuery(
-                user=request.user,
-                query=query_text,
-                processed_query=query_text,  # In a real system, this might be different
-                response=result.get('response', ''),
-                response_type=result.get('response_type', 'text'),
-                chart_data=json.dumps(result.get('chart_data', [])) if result.get('chart_data') else None
-            )
-            nl_query.save()
-            
-            # Return the result
             return JsonResponse({
                 'success': True,
-                'response': result.get('response', ''),
-                'response_type': result.get('response_type', 'text'),
-                'chart_data': result.get('chart_data'),
-                'chart_type': result.get('chart_type'),
-                'chart_title': result.get('chart_title')
+                'data': metrics
             })
         
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Student.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Student not found'})
+        
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'success': False, 'error': str(e)})
     
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 
 
