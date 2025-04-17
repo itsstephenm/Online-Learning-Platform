@@ -329,6 +329,12 @@ def admin_question_view(request):
 @login_required(login_url='adminlogin')
 def admin_add_question_view(request):
     questionForm = forms.QuestionForm()
+    
+    # Pre-select question type if provided in URL
+    question_type = request.GET.get('type', 'multiple_choice')
+    if question_type in ['multiple_choice', 'checkbox', 'short_answer']:
+        questionForm.initial['question_type'] = question_type
+    
     if request.method == 'POST':
         questionForm = forms.QuestionForm(request.POST)
         if questionForm.is_valid():
