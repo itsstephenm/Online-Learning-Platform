@@ -1450,6 +1450,56 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Show prediction preview in the preview section
+    function showPredictionPreview(prediction) {
+        const previewSection = document.getElementById('predictionPreview');
+        if (!previewSection) return;
+        
+        // Update progress bars
+        document.getElementById('successBar').style.width = `${prediction.success_probability}%`;
+        document.getElementById('successBar').setAttribute('aria-valuenow', prediction.success_probability);
+        if (prediction.success_probability > 15) {
+            document.getElementById('successBar').textContent = `${prediction.success_probability.toFixed(1)}%`;
+        } else {
+            document.getElementById('successBar').textContent = '';
+        }
+        
+        document.getElementById('riskBar').style.width = `${prediction.risk_probability}%`;
+        document.getElementById('riskBar').setAttribute('aria-valuenow', prediction.risk_probability);
+        if (prediction.risk_probability > 15) {
+            document.getElementById('riskBar').textContent = `${prediction.risk_probability.toFixed(1)}%`;
+        } else {
+            document.getElementById('riskBar').textContent = '';
+        }
+        
+        // Update probability values
+        document.getElementById('successProb').textContent = `${prediction.success_probability.toFixed(1)}%`;
+        document.getElementById('riskProb').textContent = `${prediction.risk_probability.toFixed(1)}%`;
+        
+        // Update title based on prediction
+        if (prediction.prediction_class === 1) {
+            document.getElementById('predictionResultTitle').innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>Success Probability`;
+        } else {
+            document.getElementById('predictionResultTitle').innerHTML = `<i class="fas fa-exclamation-triangle text-danger me-2"></i>Risk Probability`;
+        }
+        
+        // Update AI explanation
+        document.getElementById('aiExplanation').innerHTML = `<p>${prediction.explanation || 'No explanation available'}</p>`;
+        
+        // Update view full details link
+        document.getElementById('viewFullPredictionLink').href = `{% url 'quiz:prediction_result' %}${prediction.id}/`;
+        
+        // Show the preview section
+        previewSection.style.display = 'block';
+    }
+    
+    // Format feature names for display
+    function formatFeatureName(feature) {
+        return feature.split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
 });
 </script>
 {% endblock %} 
