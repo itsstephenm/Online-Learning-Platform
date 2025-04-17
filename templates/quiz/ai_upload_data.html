@@ -87,6 +87,9 @@
             <button type="submit" class="btn btn-primary" id="upload-btn">
               <i class="fas fa-upload"></i> Upload
             </button>
+            <button type="submit" class="btn btn-outline-secondary ml-2" id="direct-upload-btn" formnovalidate>
+              <i class="fas fa-upload"></i> Direct Upload (No AJAX)
+            </button>
           </form>
           
           <div id="upload-progress" class="mt-3 d-none">
@@ -737,6 +740,12 @@ $(document).ready(function() {
             
             $('#confirmDeleteModal').modal('hide');
         }
+    });
+
+    // Direct upload button bypasses AJAX
+    $('#direct-upload-btn').on('click', function() {
+        // This will allow the form to submit normally without AJAX
+        $('#upload-form').off('submit');
     });
 });
 </script>
