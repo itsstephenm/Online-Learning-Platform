@@ -335,8 +335,32 @@ def admin_add_question_view(request):
             question = questionForm.save(commit=False)
             course = models.Course.objects.get(id=request.POST.get('courseID'))
             question.course = course
+            
+            # Handle different question types
+            question_type = request.POST.get('question_type')
+            
+            if question_type == 'multiple_choice':
+                # Ensure required fields for multiple choice
+                question.answer = request.POST.get('answer')
+                
+            elif question_type == 'checkbox':
+                # For checkbox questions, save multiple answers as JSON
+                multiple_answers = request.POST.getlist('multiple_answers')
+                question.multiple_answers = multiple_answers
+                question.answer = None  # Clear single answer field
+                
+            elif question_type == 'short_answer':
+                # For short answer questions, save the pattern
+                question.short_answer_pattern = request.POST.get('short_answer_pattern')
+                question.answer = None  # Clear single answer field
+                # Make options empty for short answer questions
+                question.option1 = None
+                question.option2 = None
+                question.option3 = None
+                question.option4 = None
+            
             question.save()
-        return HttpResponseRedirect('/admin-view-question')
+            return HttpResponseRedirect('/admin-view-question')
     return render(request, 'quiz/admin_add_question.html', {'questionForm': questionForm})
 
 @login_required(login_url='adminlogin')
