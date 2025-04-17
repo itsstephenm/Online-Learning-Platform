@@ -1100,19 +1100,119 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Load dashboard data
+    function loadDashboardData() {
+        // Fetch dashboard data
+        fetch('/api/dashboard-data/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            // If server returns 404, use dummy data for demo purposes
+            if (response.status === 404) {
+                return {
+                    json: () => Promise.resolve({
+                        success: true,
+                        metrics: {
+                            ai_familiarity: 70.0,
+                            ai_tools_usage: 70.0,
+                            positive_impact: 33.5,
+                            avg_usage: 2.31
+                        },
+                        faculties: ['Business', 'Engineering', 'Education', 'Health Sciences'],
+                        study_levels: ['Undergraduate', 'Postgraduate', 'Other'],
+                        visualization_data: {
+                            familiarity: [370, 650, 210],
+                            tools: [720, 350, 280, 150, 100],
+                            faculty: [350, 420, 280, 150, 70],
+                            challenges: [450, 380, 320, 250, 180]
+                        }
+                    })
+                };
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                console.error('Error loading dashboard data:', data.error);
+                return;
+            }
+            
+            // Update metrics
+            document.querySelector('#dashboard .stat-box:nth-child(1) .stat-value').textContent = data.metrics.ai_familiarity.toFixed(1) + '%';
+            document.querySelector('#dashboard .stat-box:nth-child(2) .stat-value').textContent = data.metrics.ai_tools_usage.toFixed(1) + '%';
+            document.querySelector('#dashboard .stat-box:nth-child(3) .stat-value').textContent = data.metrics.positive_impact.toFixed(1) + '%';
+            document.querySelector('#dashboard .stat-box:nth-child(4) .stat-value').textContent = data.metrics.avg_usage.toFixed(2);
+            
+            // Setup faculty filter tags
+            const facultyFilter = document.getElementById('facultyFilter');
+            facultyFilter.innerHTML = '<h5 class="w-100">Select Faculties</h5>';
+            
+            data.faculties.forEach(faculty => {
+                const tag = document.createElement('div');
+                tag.className = 'filter-tag';
+                tag.innerHTML = `${faculty} <i class="fas fa-times"></i>`;
+                tag.querySelector('i').addEventListener('click', function() {
+                    tag.remove();
+                    updateCharts();
+                });
+                facultyFilter.appendChild(tag);
+            });
+            
+            // Setup study level filter tags
+            const studyLevelFilter = document.getElementById('studyLevelFilter');
+            studyLevelFilter.innerHTML = '<h5 class="w-100">Select Study Levels</h5>';
+            
+            data.study_levels.forEach(level => {
+                const tag = document.createElement('div');
+                tag.className = 'filter-tag';
+                tag.innerHTML = `${level} <i class="fas fa-times"></i>`;
+                tag.querySelector('i').addEventListener('click', function() {
+                    tag.remove();
+                    updateCharts();
+                });
+                studyLevelFilter.appendChild(tag);
+            });
+            
+            // Initialize or update charts
+            initializeCharts(data.visualization_data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
     // Initialize charts for dashboard tab
-    function initializeCharts() {
-        // AI Familiarity Distribution Chart
-        const familiarityCtx = document.getElementById('visualizationChart');
-        if (!familiarityCtx) return;
+    function initializeCharts(chartData = null) {
+        // If no data provided, use dummy data
+        if (!chartData) {
+            chartData = {
+                familiarity: [370, 650, 210],
+                tools: [720, 350, 280, 150, 100],
+                faculty: [350, 420, 280, 150, 70],
+                challenges: [450, 380, 320, 250, 180]
+            };
+        }
         
-        const familiarityChart = new Chart(familiarityCtx.getContext('2d'), {
+        // Get canvas context
+        const visualizationCtx = document.getElementById('visualizationChart');
+        if (!visualizationCtx) return;
+        
+        // Destroy existing chart if it exists
+        if (window.visualizationChart) {
+            window.visualizationChart.destroy();
+        }
+        
+        // Create new chart
+        window.visualizationChart = new Chart(visualizationCtx.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['Not familiar at all', 'Somewhat familiar', 'Very familiar'],
                 datasets: [{
                     label: 'Number of Respondents',
-                    data: [370, 650, 210],
+                    data: chartData.familiarity,
                     backgroundColor: ['#ffc107', '#17a2b8', '#007bff'],
                     borderWidth: 0
                 }]
@@ -1120,6 +1220,18 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y} respondents (${(context.parsed.y / chartData.familiarity.reduce((a, b) => a + b, 0) * 100).toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -1137,6 +1249,96 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+        
+        // Setup chart tab switching
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Update chart based on selected tab
+                const chartType = this.getAttribute('data-chart');
+                updateChart(chartType, chartData);
+            });
+        });
+    }
+    
+    // Update chart based on selected tab
+    function updateChart(chartType, chartData) {
+        if (!window.visualizationChart) return;
+        
+        switch(chartType) {
+            case 'familiarity':
+                window.visualizationChart.data.labels = ['Not familiar at all', 'Somewhat familiar', 'Very familiar'];
+                window.visualizationChart.data.datasets[0].data = chartData.familiarity;
+                window.visualizationChart.data.datasets[0].backgroundColor = ['#ffc107', '#17a2b8', '#007bff'];
+                window.visualizationChart.options.scales.x.title.text = 'Familiarity Level';
+                break;
+            case 'tools':
+                window.visualizationChart.data.labels = ['ChatGPT', 'GitHub Copilot', 'Grammarly', 'Midjourney', 'DALL-E'];
+                window.visualizationChart.data.datasets[0].data = chartData.tools;
+                window.visualizationChart.data.datasets[0].backgroundColor = '#4299e1';
+                window.visualizationChart.options.scales.x.title.text = 'AI Tools';
+                break;
+            case 'faculty':
+                window.visualizationChart.data.labels = ['Business', 'Engineering', 'Education', 'Health Sciences', 'Arts'];
+                window.visualizationChart.data.datasets[0].data = chartData.faculty;
+                window.visualizationChart.data.datasets[0].backgroundColor = '#48bb78';
+                window.visualizationChart.options.scales.x.title.text = 'Faculty';
+                break;
+            case 'challenges':
+                window.visualizationChart.data.labels = ['Understanding outputs', 'Access', 'Cost', 'Technical skills', 'Integration'];
+                window.visualizationChart.data.datasets[0].data = chartData.challenges;
+                window.visualizationChart.data.datasets[0].backgroundColor = '#ed8936';
+                window.visualizationChart.options.scales.x.title.text = 'Challenges';
+                break;
+        }
+        
+        window.visualizationChart.update();
+    }
+    
+    // Update charts based on filters
+    function updateCharts() {
+        // This would fetch filtered data from the server in a real implementation
+        // For demo purposes, we'll just use random variations of the original data
+        const chartData = {
+            familiarity: [
+                Math.floor(Math.random() * 200) + 250, 
+                Math.floor(Math.random() * 200) + 550, 
+                Math.floor(Math.random() * 100) + 150
+            ],
+            tools: [
+                Math.floor(Math.random() * 200) + 600,
+                Math.floor(Math.random() * 100) + 300,
+                Math.floor(Math.random() * 100) + 200,
+                Math.floor(Math.random() * 50) + 100,
+                Math.floor(Math.random() * 50) + 80
+            ],
+            faculty: [
+                Math.floor(Math.random() * 100) + 300,
+                Math.floor(Math.random() * 100) + 370,
+                Math.floor(Math.random() * 100) + 230,
+                Math.floor(Math.random() * 50) + 120,
+                Math.floor(Math.random() * 30) + 50
+            ],
+            challenges: [
+                Math.floor(Math.random() * 100) + 400,
+                Math.floor(Math.random() * 100) + 330,
+                Math.floor(Math.random() * 100) + 270,
+                Math.floor(Math.random() * 100) + 200,
+                Math.floor(Math.random() * 80) + 140
+            ]
+        };
+        
+        // Get current active chart type
+        const activeTab = document.querySelector('.chart-tab.active');
+        if (activeTab) {
+            const chartType = activeTab.getAttribute('data-chart');
+            updateChart(chartType, chartData);
+        }
     }
     
     // Load data when tabs are clicked
