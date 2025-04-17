@@ -132,16 +132,25 @@
                 <button type="submit" class="btn btn-primary" id="upload-btn">
                   <i class="fas fa-upload"></i> Upload & Process
                 </button>
-                <form action="{% url 'upload_csv_view' %}" method="post" enctype="multipart/form-data" class="d-inline">
-                  {% csrf_token %}
-                  <input type="hidden" name="csv_file" id="standard-form-file">
-                  <button type="submit" class="btn btn-outline-secondary ml-2" id="direct-upload-btn">
-                    <i class="fas fa-external-link-alt"></i> Standard Form Upload
-                  </button>
-                </form>
               </div>
             </div>
           </form>
+          
+          <!-- Add separate standard form with correct action URL -->
+          <form action="{% url 'upload_csv_view' %}" method="post" enctype="multipart/form-data" class="d-none" id="direct-upload-form">
+            {% csrf_token %}
+            <input type="file" name="csv_file" id="standard-form-file" style="display:none;">
+            <input type="hidden" name="clean_data" id="standard-form-clean" value="true">
+            <input type="hidden" name="train_model" id="standard-form-train" value="true">
+            <button type="submit" id="standard-form-submit"></button>
+          </form>
+          
+          <!-- Add a direct link instead of a form button -->
+          <div class="mt-2">
+            <button type="button" class="btn btn-outline-secondary" id="direct-upload-btn">
+              <i class="fas fa-external-link-alt"></i> Standard Form Upload
+            </button>
+          </div>
           
           <!-- Enhanced Progress Indicators -->
           <div id="upload-progress-container" class="mt-4 d-none">
@@ -573,23 +582,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle direct upload
     document.getElementById('direct-upload-btn').addEventListener('click', function() {
+        // Check if file is selected
         if (!fileInput.files || !fileInput.files[0]) {
-            alert('Please select a file to upload');
-            event.preventDefault();
+            alert('Please select a CSV file first');
             return;
         }
         
-        // We need to actually create a new file input with the selected file
-        // since we can't directly set the value of a file input for security reasons
-        const standardFormFile = document.getElementById('standard-form-file');
+        // Create a temporary file input to clone the selected file
+        const tempFileInput = document.createElement('input');
+        tempFileInput.type = 'file';
         
-        // Create a FormData with the selected file
-        const formData = new FormData();
-        formData.append('csv_file', fileInput.files[0]);
+        // Create DataTransfer object to transfer the file
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(fileInput.files[0]);
         
-        // Set the value of the hidden input - this is a workaround 
-        // You'll need to handle this specially in the backend
-        standardFormFile.value = fileInput.files[0].name;
+        // Get the hidden file input in the standard form
+        const standardFileInput = document.getElementById('standard-form-file');
+        
+        // Copy the file selection
+        standardFileInput.files = dataTransfer.files;
+        standardFileInput.style.display = 'block'; // Make it visible for the form submission
+        
+        // Set other form values based on checkboxes
+        document.getElementById('standard-form-clean').value = cleanDataCheckbox.checked.toString();
+        document.getElementById('standard-form-train').value = trainModelCheckbox.checked.toString();
+        
+        // Submit the form
+        document.getElementById('direct-upload-form').submit();
     });
     
     /**
