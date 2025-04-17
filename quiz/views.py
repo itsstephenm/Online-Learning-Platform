@@ -2277,49 +2277,39 @@ def delete_model_view(request, model_id):
 @login_required(login_url='adminlogin')
 @require_POST
 def delete_upload_view(request, upload_id):
-    """View for deleting a CSV upload"""
-    from quiz.models import CSVUpload, AIAdoptionData
-    
-    try:
-        # Get the upload
-        upload = CSVUpload.objects.get(id=upload_id)
-        
-        # Delete associated data records
-        AIAdoptionData.objects.filter(upload_batch=upload).delete()
-        
-        # Delete the upload
-        upload.delete()
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    """Delete an upload and return success or error response."""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            # Get the upload and verify it belongs to the current user
+            upload = CSVUpload.objects.get(id=upload_id, user=request.user)
+            upload.delete()
+            
+            # Return statistics after deletion
+            total_records = CSVUpload.objects.aggregate(Sum('record_count'))['record_count__sum'] or 0
+            model_count = CSVUpload.objects.filter(model_trained=True).count()
+            best_model = CSVUpload.objects.filter(model_accuracy__isnull=False).order_by('-model_accuracy').first()
+            best_accuracy = f"{best_model.model_accuracy * 100:.2f}%" if best_model else "0%"
+            last_upload_obj = CSVUpload.objects.order_by('-created_at').first()
+            last_upload = last_upload_obj.created_at.strftime('%b %d, %Y') if last_upload_obj else "None"
+            
             return JsonResponse({
-                'status': 'success'
+                'status': 'success',
+                'message': 'Upload deleted successfully',
+                'total_records': total_records,
+                'model_count': model_count,
+                'best_accuracy': best_accuracy,
+                'last_upload': last_upload
             })
-        else:
-            messages.success(request, 'Successfully deleted upload and associated data')
-            return redirect('ai_upload_data')
-    
-    except CSVUpload.DoesNotExist:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Upload not found'
-            })
-        else:
-            messages.error(request, 'Upload not found')
-            return redirect('ai_upload_data')
-    
-    except Exception as e:
-        # Log the error
-        logger.error(f"Error deleting upload: {str(e)}", exc_info=True)
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        except CSVUpload.DoesNotExist:
             return JsonResponse({
                 'status': 'error',
-                'message': str(e)
+                'message': 'Upload not found or permission denied'
             })
-        else:
-            messages.error(request, f'Error deleting upload: {str(e)}')
-            return redirect('ai_upload_data')
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request'
+    })
 
 @login_required(login_url='adminlogin')
 def ai_data_detail_view(request, data_id):
