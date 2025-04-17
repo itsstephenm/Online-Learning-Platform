@@ -101,45 +101,27 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>CRS001</td>
-                  <td>Python Programming</td>
-                  <td>John Smith</td>
-                  <td><span class="badge bg-primary rounded-pill">45</span></td>
-                  <td>
-                    <div class="btn-group">
-                      <a href="#" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
-                      <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                      <a href="#" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>CRS002</td>
-                  <td>Web Development</td>
-                  <td>Sarah Johnson</td>
-                  <td><span class="badge bg-primary rounded-pill">38</span></td>
-                  <td>
-                    <div class="btn-group">
-                      <a href="#" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
-                      <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                      <a href="#" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>CRS003</td>
-                  <td>Database Management</td>
-                  <td>Michael Davis</td>
-                  <td><span class="badge bg-primary rounded-pill">32</span></td>
-                  <td>
-                    <div class="btn-group">
-                      <a href="#" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
-                      <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                      <a href="#" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
-                    </div>
-                  </td>
-                </tr>
+                {% if recent_courses %}
+                  {% for course in recent_courses %}
+                    <tr>
+                      <td>CRS{{ course.id }}</td>
+                      <td>{{ course.name }}</td>
+                      <td>{{ course.teacher_name }}</td>
+                      <td><span class="badge bg-primary rounded-pill">{{ course.student_count }}</span></td>
+                      <td>
+                        <div class="btn-group">
+                          <a href="{% url 'view-question' course.id %}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
+                          <a href="#" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                          <a href="{% url 'delete-course' course.id %}" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center">No courses available</td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>

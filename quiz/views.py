@@ -266,7 +266,40 @@ def delete_student_view(request, pk):
 
 @login_required(login_url='adminlogin')
 def admin_course_view(request):
-    return render(request, 'quiz/admin_course.html')
+    from django.db.models import Count
+    
+    # Get all courses and annotate with student count
+    courses = models.Course.objects.annotate(
+        student_count=Count('result__student', distinct=True)
+    ).order_by('-id')[:5]  # Get 5 most recent courses
+    
+    # Prepare course data for the template
+    recent_courses = []
+    
+    for course in courses:
+        # Try to get a teacher for this course
+        teacher_name = "Not Assigned"
+        try:
+            # This would depend on your model relationships
+            # Adjust this based on how teachers are assigned to courses
+            teacher = TMODEL.Teacher.objects.filter(user__in=course.question_set.values_list('user', flat=True).distinct()).first()
+            if teacher:
+                teacher_name = teacher.get_name
+        except:
+            pass
+        
+        recent_courses.append({
+            'id': course.id,
+            'name': course.course_name,
+            'teacher_name': teacher_name,
+            'student_count': course.student_count
+        })
+    
+    context = {
+        'total_course': models.Course.objects.count(),
+        'recent_courses': recent_courses
+    }
+    return render(request, 'quiz/admin_course.html', context)
 
 @login_required(login_url='adminlogin')
 def admin_add_course_view(request):
