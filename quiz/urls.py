@@ -22,7 +22,6 @@ urlpatterns = [
     path('ai/model/<int:model_id>/', views.ai_model_detail, name='ai_model_detail'),
     
     # Predictions
-    path('ai/make-prediction/', views.make_new_prediction, name='make_new_prediction'),
     path('ai/predictions/', views.all_predictions, name='all_predictions'),
     
     # API endpoints
