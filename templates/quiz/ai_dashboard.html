@@ -352,6 +352,7 @@
                             <p class="mb-2">Drop CSV file here or click to browse</p>
                             <p class="text-muted small">Limit 200MB per file • CSV format only</p>
                             <input type="file" id="fileInput" name="csv_file" accept=".csv" style="display: none;">
+                            <button type="button" id="browseButton" class="btn btn-sm btn-outline-primary mt-3">Browse Files</button>
                         </div>
                     </form>
                     
@@ -668,7 +669,7 @@
                                     <span><i class="fas fa-list me-1"></i> View All Predictions</span>
                                     <i class="fas fa-arrow-right"></i>
                                 </a>
-                                <a href="/ai-prediction-dashboard" class="btn btn-outline-primary d-flex align-items-center justify-content-between w-100">
+                                <a href="{% url 'quiz:teacher_ai_prediction_dashboard' %}" class="btn btn-outline-primary d-flex align-items-center justify-content-between w-100">
                                     <span><i class="fas fa-chart-bar me-1"></i> Advanced Analytics Dashboard</span>
                                     <i class="fas fa-arrow-right"></i>
                                 </a>
@@ -747,7 +748,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make drop area clickable
     if (dropArea) {
         dropArea.addEventListener('click', function(e) {
+            if (e.target !== this) return; // Don't trigger if clicking on child elements
             e.preventDefault();
+            fileInput.click();
+        });
+    }
+    
+    // Add explicit browse button functionality
+    const browseButton = document.getElementById('browseButton');
+    if (browseButton) {
+        browseButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             fileInput.click();
         });
     }
