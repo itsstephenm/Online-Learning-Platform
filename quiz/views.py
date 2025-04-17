@@ -1997,24 +1997,29 @@ def upload_csv_view(request):
 
 @login_required(login_url='adminlogin')
 def upload_history_view(request):
-    """View for getting upload history via AJAX"""
-    from quiz.models import CSVUpload
-    
-    upload_history = CSVUpload.objects.all().order_by('-created_at')[:10]
-    
-    history_data = []
-    for upload in upload_history:
-        history_data.append({
-            'id': upload.id,
-            'filename': upload.original_filename,
-            'record_count': upload.record_count,
-            'status': upload.status,
-            'created_at': upload.created_at.strftime("%b %d, %Y %H:%M")
+    """View to return upload history for AJAX refresh."""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        uploads = CSVUpload.objects.all().order_by('-created_at')[:10]
+        
+        history = []
+        for upload in uploads:
+            history.append({
+                'id': upload.id,
+                'filename': upload.original_filename,
+                'records': upload.record_count,
+                'status': upload.status,
+                'date': upload.created_at.strftime('%b %d, %Y %H:%M'),
+                'user': upload.user.username if upload.user else 'System'
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'history': history
         })
     
     return JsonResponse({
-        'status': 'success',
-        'history': history_data
+        'status': 'error',
+        'message': 'Invalid request'
     })
 
 @login_required(login_url='adminlogin')

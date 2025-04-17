@@ -242,33 +242,28 @@ class AIModel(models.Model):
         super().delete(*args, **kwargs)
 
 class CSVUpload(models.Model):
-    """Model to track CSV file uploads for AI adoption data"""
+    """Model to store information about uploaded CSV files."""
     STATUS_CHOICES = (
+        ('pending', 'Pending'),
         ('processing', 'Processing'),
-        ('success', 'Success'),
-        ('error', 'Error'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
     )
     
-    filename = models.CharField(max_length=255)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='csv_uploads', null=True, blank=True)
     original_filename = models.CharField(max_length=255)
-    file_path = models.CharField(max_length=255, null=True, blank=True)
-    record_count = models.PositiveIntegerField(default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
-    error_message = models.TextField(null=True, blank=True)
-    processing_time = models.FloatField(null=True, blank=True, help_text="Processing time in seconds")
+    stored_filename = models.CharField(max_length=255)
+    file_size = models.IntegerField()
+    record_count = models.IntegerField(default=0)
+    cleaned_data = models.BooleanField(default=False)
+    model_trained = models.BooleanField(default=False)
+    model_accuracy = models.FloatField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    insights = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='csv_uploads')
-    trained_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_uploads')
     
     def __str__(self):
-        return f"{self.original_filename} ({self.record_count} records, {self.status})"
-    
-    def delete(self, *args, **kwargs):
-        # Delete the file when deleting the upload object
-        if self.file_path and os.path.exists(self.file_path):
-            os.remove(self.file_path)
-        super().delete(*args, **kwargs)
+        return self.original_filename
 
 class AIPrediction(models.Model):
     """Model for storing AI predictions"""
