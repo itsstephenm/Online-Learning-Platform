@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 from django.db.models import Count, Avg
@@ -11,6 +11,7 @@ import os
 import time
 import logging
 import json
+import pandas as pd
 
 # Import models and utilities
 from .models import CSVUpload, AIAdoptionData, AIModel
@@ -101,108 +102,133 @@ def ai_model_metrics_view(request):
     
     return render(request, 'quiz/ai_model_metrics.html', context)
 
-@login_required(login_url='adminlogin')
-@require_POST
+@login_required
+@require_http_methods(['POST'])
 def upload_csv_view(request):
-    """View for uploading and processing CSV files"""
-    if request.method == 'POST' and request.FILES.get('csv_file'):
-        csv_file = request.FILES['csv_file']
-        clean_data = request.POST.get('clean_data') == 'on'
-        train_model_param = request.POST.get('train_model') == 'on'
+    try:
+        csv_file = request.FILES.get('csv_file')
+        if not csv_file:
+            return JsonResponse({'success': False, 'error': 'No file uploaded'})
         
-        # Check if file is CSV
         if not csv_file.name.endswith('.csv'):
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Please upload a CSV file'
-                })
-            else:
-                messages.error(request, 'Please upload a CSV file')
-                return redirect('ai_upload_data')
+            return JsonResponse({'success': False, 'error': 'File must be a CSV'})
         
-        # Save file temporarily
-        fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'csv_uploads'))
-        filename = fs.save(csv_file.name, csv_file)
-        file_path = fs.path(filename)
+        # Create upload record
+        upload_record = CSVUpload.objects.create(
+            filename=csv_file.name,
+            uploaded_by=request.user,
+            status='processing'
+        )
         
-        try:
-            # Process CSV file
-            start_time = time.time()
-            df, model_results, accuracy, insights = import_from_csv(
-                file_path, 
-                save_to_db=True,
-                train_model=train_model_param
+        # Read CSV
+        df = pd.read_csv(csv_file)
+        
+        # Column mapping
+        column_mapping = {
+            'Email Address': 'email',
+            'Faculty': 'faculty',
+            'Level of Study': 'level_of_study',
+            'How familiar are you with AI tools?': 'ai_familiarity',
+            'Do you use AI tools for learning?': 'uses_ai_tools',
+            'Which AI tools do you use?': 'tools_used',
+            'How often do you use AI tools?': 'usage_frequency',
+            'What challenges do you face using AI tools?': 'challenges',
+            'Any suggestions for improving AI tools?': 'suggestions',
+            'Does AI improve your learning?': 'improves_learning'
+        }
+        
+        # Rename columns
+        df = df.rename(columns=column_mapping)
+        
+        # Clean and transform data
+        df['email_domain'] = df['email'].apply(lambda x: x.split('@')[1] if isinstance(x, str) and '@' in x else '')
+        
+        # Map AI familiarity to 1-5 scale
+        familiarity_mapping = {
+            'Not at all familiar': 1,
+            'Slightly familiar': 2,
+            'Moderately familiar': 3,
+            'Very familiar': 4,
+            'Extremely familiar': 5
+        }
+        df['ai_familiarity'] = df['ai_familiarity'].map(familiarity_mapping)
+        
+        # Map usage frequency
+        frequency_mapping = {
+            'Never': 'never',
+            'Rarely': 'rarely',
+            'Sometimes': 'sometimes',
+            'Often': 'often',
+            'Very often': 'very_often'
+        }
+        df['usage_frequency'] = df['usage_frequency'].map(frequency_mapping)
+        
+        # Clean yes/no responses
+        df['uses_ai_tools'] = df['uses_ai_tools'].str.lower().map({'yes': True, 'no': False})
+        df['improves_learning'] = df['improves_learning'].str.lower().apply(
+            lambda x: 'yes' if 'yes' in str(x) else ('no' if 'no' in str(x) else 'maybe')
+        )
+        
+        # Save records
+        records = []
+        for _, row in df.iterrows():
+            record = AIAdoptionData(
+                email_domain=row['email_domain'],
+                faculty=row['faculty'],
+                level_of_study=row['level_of_study'],
+                ai_familiarity=row['ai_familiarity'],
+                uses_ai_tools=row['uses_ai_tools'],
+                tools_used=row['tools_used'],
+                usage_frequency=row['usage_frequency'],
+                challenges=row['challenges'],
+                suggestions=row['suggestions'],
+                improves_learning=row['improves_learning'],
+                upload_batch=upload_record
             )
-            processing_time = time.time() - start_time
-            
-            # Get updated stats
-            total_records = AIAdoptionData.objects.count()
-            model_count = AIModel.objects.count()
-            
-            # Get best accuracy from any model
-            try:
-                best_model = AIModel.objects.all().order_by('-accuracy').first()
-                best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
-            except:
-                best_accuracy = "0%"
-            
-            # Get last upload
-            try:
-                last_upload = CSVUpload.objects.all().order_by('-created_at').first()
-                last_upload_date = last_upload.created_at.strftime("%b %d, %Y") if last_upload else "Just now"
-            except:
-                last_upload_date = "Just now"
-            
-            # Success message
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            records.append(record)
+        
+        # Bulk create records
+        AIAdoptionData.objects.bulk_create(records)
+        
+        # Update upload record
+        upload_record.record_count = len(records)
+        upload_record.status = 'completed'
+        upload_record.insights = {
+            'total_records': len(records),
+            'ai_users': df['uses_ai_tools'].sum(),
+            'avg_familiarity': df['ai_familiarity'].mean(),
+            'improves_learning_yes': (df['improves_learning'] == 'yes').sum(),
+            'improves_learning_no': (df['improves_learning'] == 'no').sum(),
+            'improves_learning_maybe': (df['improves_learning'] == 'maybe').sum()
+        }
+        upload_record.save()
+        
+        # Train model if requested
+        if request.POST.get('train_model') == 'true':
+            result = train_ai_model(upload_record.id)
+            if not result['success']:
                 return JsonResponse({
-                    'status': 'success',
-                    'records': len(df),
-                    'processing_time': processing_time,
-                    'accuracy': accuracy,
-                    'model_trained': model_results.get('success', False),
-                    'total_records': total_records,
-                    'model_count': model_count,
-                    'best_accuracy': best_accuracy,
-                    'last_upload': last_upload_date,
-                    'insights': insights[:3]
+                    'success': True,
+                    'upload_id': upload_record.id,
+                    'warning': f"Upload successful but model training failed: {result['error']}"
                 })
-            else:
-                messages.success(
-                    request, 
-                    f'Successfully uploaded and processed {len(df)} records.' + 
-                    (f' Model accuracy: {accuracy:.2f}' if model_results.get('success', False) else '')
-                )
-                return redirect('ai_upload_data')
-                
-        except Exception as e:
-            # Log the error
-            logger.error(f"Error processing CSV: {str(e)}", exc_info=True)
-            
-            # Error message
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'status': 'error',
-                    'message': str(e)
-                })
-            else:
-                messages.error(request, f'Error processing CSV: {str(e)}')
-                return redirect('ai_upload_data')
-            
-        finally:
-            # Clean up
-            if os.path.exists(file_path):
-                fs.delete(filename)
-    
-    # If not a POST request with a file
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        
         return JsonResponse({
-            'status': 'error',
-            'message': 'No file uploaded'
+            'success': True,
+            'upload_id': upload_record.id,
+            'message': 'Data uploaded and processed successfully'
         })
-    else:
-        return redirect('ai_upload_data')
+        
+    except Exception as e:
+        logger.error(f"Error in upload_csv_view: {str(e)}")
+        if 'upload_record' in locals():
+            upload_record.status = 'failed'
+            upload_record.error_message = str(e)
+            upload_record.save()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 @login_required(login_url='adminlogin')
 def upload_history_view(request):

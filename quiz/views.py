@@ -1981,7 +1981,57 @@ def upload_csv_view(request):
                     'message': 'Failed to process CSV file. Please check the format.'
                 })
             
-            # Save upload record with the correct fields
+            # Map CSV columns to model fields
+            column_mapping = {
+                '1. Email': 'email',
+                '2. Level of study': 'level_of_study',
+                '3. Faculty': 'faculty',
+                '4. AI familiarity': 'ai_familiarity',
+                '5. Used AI tools': 'uses_ai_tools',
+                '6. Tools used': 'tools_used',
+                '7. Usage frequency': 'usage_frequency',
+                '8. Challenges': 'challenges',
+                '9. Helpful tools needed': 'helpful_tools',
+                '10. Improves learning?': 'improves_learning',
+                '11. Suggestions': 'suggestions'
+            }
+            
+            # Rename columns
+            df = df.rename(columns=column_mapping)
+            
+            # Clean and transform data
+            if clean_data:
+                # Extract email domain
+                df['email_domain'] = df['email'].apply(lambda x: x.split('@')[1] if pd.notnull(x) else None)
+                
+                # Map AI familiarity to 1-5 scale
+                familiarity_map = {
+                    'Not familiar at all': 1,
+                    'Somewhat familiar': 3,
+                    'Very familiar': 5
+                }
+                df['ai_familiarity'] = df['ai_familiarity'].map(familiarity_map)
+                
+                # Map tools usage to yes/no
+                df['uses_ai_tools'] = df['uses_ai_tools'].apply(lambda x: 'yes' if x not in ['None', 'none', np.nan] else 'no')
+                
+                # Map usage frequency
+                frequency_map = {
+                    '1': 'never',
+                    '2': 'rarely',
+                    '3': 'monthly',
+                    '4': 'weekly',
+                    '5': 'daily'
+                }
+                df['usage_frequency'] = df['usage_frequency'].map(frequency_map)
+                
+                # Clean improves_learning responses
+                df['improves_learning'] = df['improves_learning'].str.lower()
+                df['improves_learning'] = df['improves_learning'].apply(
+                    lambda x: x if x in ['yes', 'no', 'maybe'] else 'maybe'
+                )
+            
+            # Save upload record
             upload = CSVUpload.objects.create(
                 user=request.user,
                 original_filename=csv_file.name,
@@ -1989,34 +2039,30 @@ def upload_csv_view(request):
                 file_size=csv_file.size,
                 record_count=len(df),
                 cleaned_data=clean_data,
-                model_trained=False,  # Will be set to true after training
+                model_trained=False,
                 status='processing'
             )
             
-            # Process data according to options
-            if clean_data:
-                # Clean data if requested (simulate for demo)
-                df = df.dropna()  # Simple cleaning example
-                upload.cleaned_data = True
-            
             # Save records to AIAdoptionData
-            batch_size = 1000
             records = []
-            for i, row in df.iterrows():
-                data = row.to_dict()
+            for _, row in df.iterrows():
                 record = AIAdoptionData(
-                    user=request.user,
-                    upload_batch=upload,
-                    data=data
+                    email_domain=row.get('email_domain'),
+                    faculty=row.get('faculty', 'Unknown'),
+                    level_of_study=row.get('level_of_study', 'Unknown'),
+                    ai_familiarity=row.get('ai_familiarity', 3),
+                    uses_ai_tools=row.get('uses_ai_tools', 'no'),
+                    tools_used=row.get('tools_used'),
+                    usage_frequency=row.get('usage_frequency', 'never'),
+                    challenges=row.get('challenges'),
+                    suggestions=row.get('suggestions'),
+                    improves_learning=row.get('improves_learning', 'no'),
+                    upload_batch=upload
                 )
                 records.append(record)
-                
-                if len(records) >= batch_size:
-                    AIAdoptionData.objects.bulk_create(records)
-                    records = []
             
-            if records:
-                AIAdoptionData.objects.bulk_create(records)
+            # Batch create records
+            AIAdoptionData.objects.bulk_create(records)
             
             # Train model if requested
             model_trained = False
@@ -2024,27 +2070,30 @@ def upload_csv_view(request):
             insights = []
             
             if train_model:
-                # Simulate model training for demo
-                import random
-                model_accuracy = random.uniform(0.75, 0.95)
-                model_trained = True
-                
-                # Update upload record
-                upload.model_trained = True
-                upload.model_accuracy = model_accuracy
-                
-                # Generate basic insights
-                insights = [
-                    f"Successfully processed {len(df)} records from {csv_file.name}.",
-                    f"The dataset contains {len(df.columns)} columns.",
-                    f"Model training was successful with {model_accuracy:.2f} accuracy.",
-                    f"Average values across numeric columns look reasonable.",
-                    f"No major issues detected in the uploaded data."
-                ]
+                try:
+                    # Train the model using the utility function
+                    results = train_ai_model(csv_upload_id=upload.id)
+                    
+                    if results['success']:
+                        model_trained = True
+                        model_accuracy = results['accuracy']
+                        upload.model_trained = True
+                        upload.model_accuracy = model_accuracy
+                        
+                        insights = [
+                            f"Successfully processed {len(df)} records from {csv_file.name}",
+                            f"Model training achieved {model_accuracy:.2%} accuracy",
+                            f"Data includes {df['faculty'].nunique()} different faculties",
+                            f"Average AI familiarity score: {df['ai_familiarity'].mean():.1f}/5",
+                            f"{(df['uses_ai_tools'] == 'yes').mean():.1%} of respondents use AI tools"
+                        ]
+                except Exception as e:
+                    logger.error(f"Error training model: {str(e)}")
+                    insights = ["Model training failed, but data was successfully uploaded"]
             
             # Update status and save insights
             upload.status = 'completed'
-            upload.insights = "\n".join(insights) if insights else None
+            upload.insights = '|'.join(insights) if insights else None
             upload.save()
             
             # Calculate processing time
@@ -2052,11 +2101,11 @@ def upload_csv_view(request):
             
             # Get updated stats
             total_records = AIAdoptionData.objects.count()
-            model_count = CSVUpload.objects.filter(model_trained=True).count()
+            model_count = AIModel.objects.count()
             
             # Get best accuracy
-            best_model = CSVUpload.objects.filter(model_accuracy__isnull=False).order_by('-model_accuracy').first()
-            best_accuracy = f"{best_model.model_accuracy * 100:.2f}%" if best_model else "0%"
+            best_model = AIModel.objects.filter(accuracy__isnull=False).order_by('-accuracy').first()
+            best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
             
             # Format last upload date
             last_upload = upload.created_at.strftime('%b %d, %Y')
