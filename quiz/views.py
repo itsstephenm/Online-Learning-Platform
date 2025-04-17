@@ -1123,6 +1123,44 @@ def api_delete_training_data(request, data_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+@login_required(login_url='adminlogin')
+def update_question_view(request, pk):
+    question = models.Question.objects.get(id=pk)
+    questionForm = forms.QuestionForm(instance=question)
+    
+    if request.method == 'POST':
+        questionForm = forms.QuestionForm(request.POST, instance=question)
+        if questionForm.is_valid():
+            question = questionForm.save(commit=False)
+            
+            # Handle different question types
+            question_type = request.POST.get('question_type')
+            
+            if question_type == 'multiple_choice':
+                # Ensure required fields for multiple choice
+                question.answer = request.POST.get('answer')
+                
+            elif question_type == 'checkbox':
+                # For checkbox questions, save multiple answers as JSON
+                multiple_answers = request.POST.getlist('multiple_answers')
+                question.multiple_answers = multiple_answers
+                question.answer = None  # Clear single answer field
+                
+            elif question_type == 'short_answer':
+                # For short answer questions, save the pattern
+                question.short_answer_pattern = request.POST.get('short_answer_pattern')
+                question.answer = None  # Clear single answer field
+                # Make options empty for short answer questions
+                question.option1 = None
+                question.option2 = None
+                question.option3 = None
+                question.option4 = None
+            
+            question.save()
+            return HttpResponseRedirect('/admin-view-question')
+            
+    return render(request, 'quiz/update_question.html', {'questionForm': questionForm, 'question': question})
+
 
 
     

@@ -19,6 +19,32 @@
     .row {
       margin: 100px;
     }
+    
+    .badge-question-type {
+      margin-left: 5px;
+      font-size: 12px;
+    }
+    
+    .question-details {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    
+    .options-list {
+      list-style-type: none;
+      padding-left: 10px;
+    }
+    
+    .options-list li {
+      margin-bottom: 5px;
+    }
+    
+    .correct-answer {
+      color: green;
+      font-weight: bold;
+    }
   </style>
 </head>
 <br><br>
@@ -30,21 +56,68 @@
     <table class="table table-hover" id="dev-table">
       <thead>
         <tr>
-
-          <th>Question</th>
-         
+          <th width="60%">Question</th>
+          <th>Type</th>
           <th>Marks</th>
-          <th>Delete Question</th>
+          <th>Actions</th>
         </tr>
       </thead>
-      {% for c in questions %}
+      {% for q in questions %}
       <tr>
-
-        <td> {{c.question}}</td>
-        
-        <td>{{c.marks}}</td>
-        <td><a class="btn btn-primary btn-xs" href="{% url 'delete-question' c.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
-        
+        <td>
+          <div>
+            {{ q.question }}
+            <div class="question-details">
+              {% if q.question_type == 'multiple_choice' %}
+                <div><strong>Type:</strong> Multiple Choice</div>
+                <div><strong>Options:</strong></div>
+                <ul class="options-list">
+                  <li {% if q.answer == 'Option1' %}class="correct-answer"{% endif %}>1. {{ q.option1 }}</li>
+                  <li {% if q.answer == 'Option2' %}class="correct-answer"{% endif %}>2. {{ q.option2 }}</li>
+                  <li {% if q.answer == 'Option3' %}class="correct-answer"{% endif %}>3. {{ q.option3 }}</li>
+                  <li {% if q.answer == 'Option4' %}class="correct-answer"{% endif %}>4. {{ q.option4 }}</li>
+                </ul>
+                <div><strong>Correct Answer:</strong> {{ q.get_answer_display }}</div>
+              
+              {% elif q.question_type == 'checkbox' %}
+                <div><strong>Type:</strong> Checkbox (Multiple Answers)</div>
+                <div><strong>Options:</strong></div>
+                <ul class="options-list">
+                  <li {% if 'Option1' in q.multiple_answers %}class="correct-answer"{% endif %}>1. {{ q.option1 }}</li>
+                  <li {% if 'Option2' in q.multiple_answers %}class="correct-answer"{% endif %}>2. {{ q.option2 }}</li>
+                  <li {% if 'Option3' in q.multiple_answers %}class="correct-answer"{% endif %}>3. {{ q.option3 }}</li>
+                  <li {% if 'Option4' in q.multiple_answers %}class="correct-answer"{% endif %}>4. {{ q.option4 }}</li>
+                </ul>
+                <div><strong>Correct Answers:</strong> 
+                  {% for answer in q.multiple_answers %}
+                    {{ answer }}{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                </div>
+                
+              {% elif q.question_type == 'short_answer' %}
+                <div><strong>Type:</strong> Short Answer</div>
+                <div><strong>Correct Answer Pattern:</strong> {{ q.short_answer_pattern }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="label 
+                 {% if q.question_type == 'multiple_choice' %}label-primary
+                 {% elif q.question_type == 'checkbox' %}label-warning
+                 {% elif q.question_type == 'short_answer' %}label-success{% endif %}">
+            {{ q.get_question_type_display }}
+          </span>
+        </td>
+        <td>{{ q.marks }}</td>
+        <td>
+          <a class="btn btn-danger btn-xs" href="{% url 'delete-question' q.id %}">
+            <span class="glyphicon glyphicon-trash"></span>
+          </a>
+          <a class="btn btn-primary btn-xs" href="{% url 'update-question' q.id %}">
+            <span class="glyphicon glyphicon-edit"></span>
+          </a>
+        </td>
       </tr>
       {% endfor %}
     </table>
