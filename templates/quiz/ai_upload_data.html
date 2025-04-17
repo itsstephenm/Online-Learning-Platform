@@ -574,6 +574,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Handle direct upload
+    document.getElementById('direct-upload-btn').addEventListener('click', function() {
+        if (!fileInput.files || !fileInput.files[0]) {
+            alert('Please select a file to upload');
+            event.preventDefault();
+            return;
+        }
+        
+        // We need to actually create a new file input with the selected file
+        // since we can't directly set the value of a file input for security reasons
+        const standardFormFile = document.getElementById('standard-form-file');
+        
+        // Create a FormData with the selected file
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
+        
+        // Set the value of the hidden input - this is a workaround 
+        // You'll need to handle this specially in the backend
+        standardFormFile.value = fileInput.files[0].name;
+    });
+    
     /**
      * Core upload functionality
      */
