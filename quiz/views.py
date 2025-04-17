@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import date, timedelta
-from django.db.models import Sum, Q, Count, Avg, FloatField, Max
+from django.db.models import Sum, Q, Count, Avg, FloatField, Max, F
 from django.db.models.functions import Coalesce
 from django.contrib.auth.models import Group, User
 from . import forms, models
