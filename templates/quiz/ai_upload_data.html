@@ -356,8 +356,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const API = {
         upload: "{% url 'upload_csv_view' %}",
         history: "{% url 'upload_history' %}",
-        delete: "{% url 'delete_upload' 0 %}".replace('$id', '$id'),
-        viewData: "{% url 'ai_data_detail' 0 %}".replace('$id', '$id'),
+        delete: "{% url 'delete_upload' 0 %}",
+        viewData: "{% url 'ai_data_detail' 0 %}"
     };
 
     // CSRF token for AJAX requests
@@ -390,12 +390,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const modelAccuracy = document.getElementById('model-accuracy');
     const insightsContainer = document.getElementById('insights-container');
     const insightsList = document.getElementById('insights-list');
-    const viewDataButton = document.getElementById('view-data-button');
-    const uploadAnotherButton = document.getElementById('upload-another');
     
     // Track upload ID for view data button
     let currentUploadId = null;
-    
+    let uploadStartTime = null;
+
     // File input change handler - update label with selected filename
     fileInput.addEventListener('change', function(e) {
         const fileName = e.target.value.split('\\').pop();
@@ -403,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate file type
         if (fileName && !fileName.toLowerCase().endsWith('.csv')) {
-            showNotification('Please select a CSV file', 'warning');
+            alert('Please select a CSV file');
             fileInput.value = '';
             this.nextElementSibling.textContent = 'Choose CSV file';
         }
@@ -415,32 +414,94 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate form
         if (!fileInput.files || !fileInput.files[0]) {
-            showNotification('Please select a file to upload', 'warning');
+            alert('Please select a file to upload');
             return;
         }
         
         // Reset upload process state
         resetUploadState();
         
+        // Record start time
+        uploadStartTime = new Date();
+        
         // Start upload process
         const file = fileInput.files[0];
         const formData = new FormData();
         formData.append('csv_file', file);
-        formData.append('clean_data', cleanDataCheckbox.checked);
-        formData.append('train_model', trainModelCheckbox.checked);
+        formData.append('clean_data', cleanDataCheckbox.checked.toString());
+        formData.append('train_model', trainModelCheckbox.checked.toString());
         
-        // Show progress indicators
-        showProgressUI();
+        // Show progress UI
+        uploadBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        resultContainer.classList.add('d-none');
         
-        // Simulate upload progress
-        startProgressSimulation();
+        // Set upload status
+        updateProgressUI('upload', 0, 'Starting...');
         
         // Send the upload request
-        uploadFile(formData);
+        fetch(API.upload, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const uploadTime = ((new Date() - uploadStartTime) / 1000).toFixed(1);
+            
+            if (data.status === 'success') {
+                // Update UI for success
+                updateProgressUI('upload', 100, 'Completed');
+                updateProgressUI('clean', 100, 'Completed');
+                
+                if (trainModelCheckbox.checked) {
+                    updateProgressUI('train', 100, 'Completed');
+                } else {
+                    updateProgressUI('train', 0, 'Skipped');
+                }
+                
+                // Store the upload ID
+                currentUploadId = data.upload_id;
+                
+                // Show success UI
+                showSuccessUI(data, uploadTime);
+                
+                // Refresh history and stats
+                refreshUploadHistory();
+                
+                // Show confetti animation
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
+            } else {
+                // Show error UI
+                showErrorUI(data);
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            showErrorUI({ message: error.message });
+        })
+        .finally(() => {
+            // Re-enable upload button
+            uploadBtn.disabled = false;
+        });
     });
     
     // Handle "Upload Another" button
-    uploadAnotherButton.addEventListener('click', function() {
+    document.getElementById('upload-another').addEventListener('click', function() {
         // Reset UI and form
         resultContainer.classList.add('d-none');
         fileInput.value = '';
@@ -449,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Handle "View Data" button
-    viewDataButton.addEventListener('click', function() {
+    document.getElementById('view-data-button').addEventListener('click', function() {
         if (currentUploadId) {
             window.location.href = API.viewData.replace('$id', currentUploadId);
         }
@@ -610,10 +671,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset upload process state
     function resetUploadState() {
         // Reset progress indicators
-        updateUploadProgress(0, 'Pending');
-        updateCleanProgress(0, 'Pending');
-        updateTrainProgress(0, 'Pending');
-        updateOverallProgress(0);
+        updateProgressUI('upload', 0, 'Pending');
+        updateProgressUI('clean', 0, 'Pending');
+        updateProgressUI('train', 0, 'Pending');
         
         // Reset UI elements
         document.getElementById('step-upload').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
@@ -827,9 +887,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Enable view data button if we have upload ID
         if (data.upload_id) {
-            viewDataButton.disabled = false;
+            document.getElementById('view-data-button').disabled = false;
         } else {
-            viewDataButton.disabled = true;
+            document.getElementById('view-data-button').disabled = true;
         }
     }
     
@@ -853,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function() {
         insightsContainer.style.display = 'none';
         
         // Disable view data button
-        viewDataButton.disabled = true;
+        document.getElementById('view-data-button').disabled = true;
         
         // Reset metrics
         recordsProcessed.textContent = '0';
