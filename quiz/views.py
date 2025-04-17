@@ -2212,7 +2212,9 @@ def export_csv_view(request, dataset_id):
 
 @login_required(login_url='adminlogin')
 def ai_prediction_form_view(request):
-    return render(request, 'quiz/ai_prediction_form.html', {'message': 'This page is under construction'})
+    return render(request, 'quiz/under_construction.html', {
+        'message': 'The Prediction Form will allow you to make AI adoption predictions for individual students.'
+    })
 
 @login_required(login_url='adminlogin')
 @require_POST
