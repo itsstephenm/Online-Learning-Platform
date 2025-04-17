@@ -1600,9 +1600,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update title based on prediction
         if (prediction.prediction_class === 1) {
-            document.getElementById('predictionResultTitle').innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>Success Probability`;
+            document.getElementById('predictionResultTitle').innerHTML = `<i class="fas fa-check-circle text-success me-2"></i>High Adoption Probability`;
         } else {
-            document.getElementById('predictionResultTitle').innerHTML = `<i class="fas fa-exclamation-triangle text-danger me-2"></i>Risk Probability`;
+            document.getElementById('predictionResultTitle').innerHTML = `<i class="fas fa-exclamation-triangle text-danger me-2"></i>Low Adoption Probability`;
         }
         
         // Update AI explanation
