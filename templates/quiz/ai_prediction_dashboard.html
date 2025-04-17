@@ -625,9 +625,14 @@ ORDER BY count DESC;</textarea>
   document.addEventListener('DOMContentLoaded', function() {
     // Use real data from the backend for charts
     
+    // Parse chart data from Django templates
+    const adoptionChartData = JSON.parse('{{ adoption_chart_data|escapejs }}');
+    const toolsChartData = JSON.parse('{{ tools_chart_data|escapejs }}');
+    const challengeChartData = JSON.parse('{{ challenge_chart_data|escapejs }}');
+    const facultyChartData = JSON.parse('{{ faculty_chart_data|escapejs }}');
+    
     // AI Adoption Prediction Chart
     const adoptionCtx = document.getElementById('adoptionPredictionChart').getContext('2d');
-    const adoptionChartData = JSON.parse('{{ adoption_chart_data|safe }}');
     const adoptionChart = new Chart(adoptionCtx, {
       type: 'doughnut',
       data: {
@@ -653,7 +658,6 @@ ORDER BY count DESC;</textarea>
     
     // Tool Usage Chart
     const toolUsageCtx = document.getElementById('toolUsageChart').getContext('2d');
-    const toolsChartData = JSON.parse('{{ tools_chart_data|safe }}');
     const toolUsageChart = new Chart(toolUsageCtx, {
       type: 'bar',
       data: {
@@ -696,7 +700,6 @@ ORDER BY count DESC;</textarea>
     
     // Challenges Chart
     const challengesCtx = document.getElementById('challengesChart').getContext('2d');
-    const challengeChartData = JSON.parse('{{ challenge_chart_data|safe }}');
     const challengesChart = new Chart(challengesCtx, {
       type: 'polarArea',
       data: {
@@ -722,7 +725,6 @@ ORDER BY count DESC;</textarea>
     
     // Faculty Chart
     const facultyCtx = document.getElementById('facultyChart').getContext('2d');
-    const facultyChartData = JSON.parse('{{ faculty_chart_data|safe }}');
     const facultyChart = new Chart(facultyCtx, {
       type: 'radar',
       data: {
@@ -767,10 +769,20 @@ ORDER BY count DESC;</textarea>
     });
     
     // Query interface functionality
+    setupQueryInterface();
+    
+    // SQL query execution
+    setupSqlQueryExecution();
+  });
+  
+  // Setup query interface
+  function setupQueryInterface() {
     const queryInput = document.getElementById('nlQuery');
     const submitQuery = document.getElementById('submitQuery');
     const queryResult = document.querySelector('.query-result');
     const queryLoading = document.querySelector('.query-result-loading');
+    
+    if (!submitQuery) return;
     
     submitQuery.addEventListener('click', function() {
       const query = queryInput.value.trim();
@@ -849,77 +861,91 @@ ORDER BY count DESC;</textarea>
         `;
       });
     });
-    
-    // SQL query execution
+  }
+  
+  // Setup SQL query execution
+  function setupSqlQueryExecution() {
     const runQueryBtn = document.getElementById('runQuery');
     
-    if (runQueryBtn) {
-      runQueryBtn.addEventListener('click', function() {
-        const sqlQuery = document.getElementById('sqlQuery').value;
-        
-        // Send AJAX request to execute SQL query
-        fetch('/run-sql-query/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCsrfToken(),
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: JSON.stringify({ query: sqlQuery })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            // Display results in table
-            const tableBody = document.querySelector('.table-dark tbody');
-            tableBody.innerHTML = '';
+    if (!runQueryBtn) return;
+    
+    runQueryBtn.addEventListener('click', function() {
+      const sqlQuery = document.getElementById('sqlQuery').value;
+      
+      // Send AJAX request to execute SQL query
+      fetch('/run-sql-query/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ query: sqlQuery })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Display results in table
+          const tableBody = document.querySelector('.table-dark tbody');
+          if (!tableBody) return;
+          
+          tableBody.innerHTML = '';
+          
+          if (data.results && data.results.length > 0) {
+            // Add column headers
+            const headerRow = document.createElement('tr');
+            Object.keys(data.results[0]).forEach(key => {
+              const th = document.createElement('th');
+              th.textContent = key;
+              headerRow.appendChild(th);
+            });
             
-            if (data.results && data.results.length > 0) {
-              // Add column headers
-              const headerRow = document.createElement('tr');
-              Object.keys(data.results[0]).forEach(key => {
-                const th = document.createElement('th');
-                th.textContent = key;
-                headerRow.appendChild(th);
-              });
-              tableBody.parentNode.querySelector('thead').innerHTML = '';
-              tableBody.parentNode.querySelector('thead').appendChild(headerRow);
-              
-              // Add data rows
-              data.results.forEach(row => {
-                const tr = document.createElement('tr');
-                Object.values(row).forEach(value => {
-                  const td = document.createElement('td');
-                  td.textContent = value;
-                  tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-              });
-            } else {
-              tableBody.innerHTML = '<tr><td colspan="5">No results found</td></tr>';
+            const thead = tableBody.parentNode.querySelector('thead');
+            if (thead) {
+              thead.innerHTML = '';
+              thead.appendChild(headerRow);
             }
             
-            // Show success message
-            showToast('success', 'Query executed successfully');
+            // Add data rows
+            data.results.forEach(row => {
+              const tr = document.createElement('tr');
+              Object.values(row).forEach(value => {
+                const td = document.createElement('td');
+                td.textContent = value;
+                tr.appendChild(td);
+              });
+              tableBody.appendChild(tr);
+            });
           } else {
-            showToast('error', data.message || 'Error executing query');
+            tableBody.innerHTML = '<tr><td colspan="5">No results found</td></tr>';
           }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showToast('error', 'Error executing query');
-        });
+          
+          // Show success message
+          showToast('success', 'Query executed successfully');
+        } else {
+          showToast('error', data.message || 'Error executing query');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error executing query');
       });
-    }
-  });
+    });
+  }
   
   // Helper function to get CSRF token
   function getCsrfToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+    return tokenElement ? tokenElement.value : '';
   }
   
   // Helper function to show toast notifications
   function showToast(type, message) {
+    if (typeof Swal === 'undefined') {
+      console.log(`${type}: ${message}`);
+      return;
+    }
+    
     const Toast = Swal.mixin({
       toast: true,
       position: 'top-end',
@@ -927,8 +953,8 @@ ORDER BY count DESC;</textarea>
       timer: 3000,
       timerProgressBar: true,
       didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer)
-        toast.addEventListener('mouseleave', Swal.resumeTimer)
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
       }
     });
     
