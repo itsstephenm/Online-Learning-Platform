@@ -32,16 +32,47 @@ class CourseForm(forms.ModelForm):
         }
 
 class QuestionForm(forms.ModelForm):
-    
     #this will show dropdown __str__ method course model is shown on html so override it
-    #to_field_name this will fetch corresponding value  user_id present in course model and return it
-    courseID=forms.ModelChoiceField(queryset=models.Course.objects.all(),empty_label="Course Name", to_field_name="id")
+    #to_field_name this will fetch corresponding value user_id present in course model and return it
+    courseID = forms.ModelChoiceField(queryset=models.Course.objects.all(), empty_label="Course Name", to_field_name="id")
+    
     class Meta:
-        model=models.Question
-        fields=['marks','question','option1','option2','option3','option4','answer']
+        model = models.Question
+        fields = ['marks', 'question', 'question_type', 'option1', 'option2', 'option3', 'option4', 
+                  'answer', 'multiple_answers', 'short_answer_pattern']
         widgets = {
-            'question': forms.Textarea(attrs={'rows': 3, 'cols': 50})
+            'question': forms.Textarea(attrs={'rows': 3, 'cols': 50}),
+            'short_answer_pattern': forms.Textarea(attrs={'rows': 2, 'cols': 50, 'placeholder': 'Enter keywords or patterns to match correct answers, separated by commas'}),
+            'multiple_answers': forms.CheckboxSelectMultiple(choices=[
+                ('Option1', 'Option 1'),
+                ('Option2', 'Option 2'),
+                ('Option3', 'Option 3'),
+                ('Option4', 'Option 4'),
+            ]),
+            'question_type': forms.Select(attrs={'class': 'form-select', 'id': 'question-type-select'})
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        question_type = cleaned_data.get('question_type')
+        
+        if question_type == 'multiple_choice':
+            # Validate required fields for multiple choice
+            if not cleaned_data.get('answer'):
+                self.add_error('answer', 'Answer is required for multiple choice questions')
+                
+        elif question_type == 'checkbox':
+            # Validate required fields for checkbox questions
+            multiple_answers = cleaned_data.get('multiple_answers')
+            if not multiple_answers:
+                self.add_error('multiple_answers', 'At least one correct answer is required for checkbox questions')
+                
+        elif question_type == 'short_answer':
+            # Validate required fields for short answer questions
+            if not cleaned_data.get('short_answer_pattern'):
+                self.add_error('short_answer_pattern', 'Answer pattern is required for short answer questions')
+                
+        return cleaned_data
 
 class AIAdoptionDataForm(forms.ModelForm):
     class Meta:

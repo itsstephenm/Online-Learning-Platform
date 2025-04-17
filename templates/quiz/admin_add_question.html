@@ -14,7 +14,16 @@
   a:link {
         text-decoration: none;
       }
-    
+    .question-section {
+        display: none;
+    }
+    .section-active {
+        display: block;
+    }
+    .checkbox-options label {
+        display: block;
+        margin-bottom: 10px;
+    }
   </style>
 </head>
 <h2 style="text-align:center; color:blue;">ADD QUESTION</h2>
@@ -22,33 +31,107 @@
     {%csrf_token%}
     <div class="form-group">
         <label for="question">Course</label>
-      {% render_field questionForm.courseID|attr:'required:true' class="form-control"  %}
+        {% render_field questionForm.courseID|attr:'required:true' class="form-control" %}
         <br>
 
-      <label for="question">Question</label>
-      {% render_field questionForm.question|attr:'required:true' class="form-control" placeholder="What is the currency of India ?" %}
+        <label for="question">Question</label>
+        {% render_field questionForm.question|attr:'required:true' class="form-control" placeholder="What is the currency of India ?" %}
         <br>
-      <label for="question_number">Marks</label>
-      {% render_field questionForm.marks|attr:'required:true' class="form-control" placeholder="10" %}
+        
+        <label for="question_type">Question Type</label>
+        {% render_field questionForm.question_type|attr:'required:true' class="form-control" id="question-type-selector" %}
         <br>
-      <label for="option1">Option 1</label>
-      {% render_field questionForm.option1|attr:'required:true' class="form-control" placeholder="Rupees" %}
+        
+        <label for="question_number">Marks</label>
+        {% render_field questionForm.marks|attr:'required:true' class="form-control" placeholder="10" %}
         <br>
-      <label for="option2">Option 2</label>
-      {% render_field questionForm.option2|attr:'required:true' class="form-control" placeholder="Dollar" %}
-        <br>
-      <label for="option3">Option 3</label>
-      {% render_field questionForm.option3|attr:'required:true' class="form-control" placeholder="Taka" %}
-        <br>
-      <label for="option4">Option 4</label>
-      {% render_field questionForm.option4|attr:'required:true' class="form-control" placeholder="Euro" %}
-        <br>
-      <label for="answer">Answer</label>
-      {% render_field questionForm.answer|attr:'required:true' class="form-control" %}
+        
+        <!-- Multiple Choice Question Fields -->
+        <div id="multiple-choice-section" class="question-section">
+            <h4>Multiple Choice Options</h4>
+            <label for="option1">Option 1</label>
+            {% render_field questionForm.option1 class="form-control" placeholder="Rupees" %}
+            <br>
+            <label for="option2">Option 2</label>
+            {% render_field questionForm.option2 class="form-control" placeholder="Dollar" %}
+            <br>
+            <label for="option3">Option 3</label>
+            {% render_field questionForm.option3 class="form-control" placeholder="Taka" %}
+            <br>
+            <label for="option4">Option 4</label>
+            {% render_field questionForm.option4 class="form-control" placeholder="Euro" %}
+            <br>
+            <label for="answer">Correct Answer</label>
+            {% render_field questionForm.answer class="form-control" %}
+        </div>
+        
+        <!-- Checkbox Question Fields -->
+        <div id="checkbox-section" class="question-section">
+            <h4>Checkbox Options (Multiple Answers)</h4>
+            <label for="option1">Option 1</label>
+            {% render_field questionForm.option1 class="form-control" placeholder="Rupees" %}
+            <br>
+            <label for="option2">Option 2</label>
+            {% render_field questionForm.option2 class="form-control" placeholder="Dollar" %}
+            <br>
+            <label for="option3">Option 3</label>
+            {% render_field questionForm.option3 class="form-control" placeholder="Taka" %}
+            <br>
+            <label for="option4">Option 4</label>
+            {% render_field questionForm.option4 class="form-control" placeholder="Euro" %}
+            <br>
+            <label>Correct Answers (Select all that apply)</label>
+            <div class="checkbox-options">
+                {% for key, value in questionForm.multiple_answers.field.widget.choices %}
+                <label>
+                    <input type="checkbox" name="multiple_answers" value="{{ key }}"> {{ value }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Short Answer Question Fields -->
+        <div id="short-answer-section" class="question-section">
+            <h4>Short Answer</h4>
+            <label for="short_answer_pattern">Answer Pattern (comma-separated keywords or patterns)</label>
+            {% render_field questionForm.short_answer_pattern class="form-control" placeholder="rupee, rupees, indian rupee, ₹" %}
+            <small class="text-muted">Enter keywords or patterns separated by commas. Student answers will be matched against these.</small>
+        </div>
     </div>
-    
 
     <button type="submit" class="btn btn-primary">ADD</button>
-  </form>
+</form>
+
+<script>
+    // Show/hide fields based on question type
+    document.addEventListener('DOMContentLoaded', function() {
+        const questionTypeSelector = document.getElementById('question-type-selector');
+        
+        // Show initial section based on selected value
+        updateVisibleSection(questionTypeSelector.value);
+        
+        // Update when selection changes
+        questionTypeSelector.addEventListener('change', function() {
+            updateVisibleSection(this.value);
+        });
+        
+        function updateVisibleSection(questionType) {
+            // Hide all sections first
+            document.querySelectorAll('.question-section').forEach(section => {
+                section.classList.remove('section-active');
+            });
+            
+            // Show the appropriate section
+            if (questionType === 'multiple_choice') {
+                document.getElementById('multiple-choice-section').classList.add('section-active');
+            } else if (questionType === 'checkbox') {
+                document.getElementById('checkbox-section').classList.add('section-active');
+            } else if (questionType === 'short_answer') {
+                document.getElementById('short-answer-section').classList.add('section-active');
+            }
+        }
+    });
+</script>
+
 <br><br><br>
 {% endblock content %}

@@ -24,15 +24,39 @@ class Course(models.Model):
         return self.course_name
 
 class Question(models.Model):
-    course=models.ForeignKey(Course,on_delete=models.CASCADE)
-    marks=models.PositiveIntegerField()
-    question=models.CharField(max_length=600)
-    option1=models.CharField(max_length=200)
-    option2=models.CharField(max_length=200)
-    option3=models.CharField(max_length=200)
-    option4=models.CharField(max_length=200)
-    cat=(('Option1','Option1'),('Option2','Option2'),('Option3','Option3'),('Option4','Option4'))
-    answer=models.CharField(max_length=200,choices=cat)
+    QUESTION_TYPE_CHOICES = (
+        ('multiple_choice', 'Multiple Choice'),
+        ('checkbox', 'Checkbox (Multiple Answers)'),
+        ('short_answer', 'Short Answer'),
+    )
+    
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    marks = models.PositiveIntegerField()
+    question = models.CharField(max_length=600)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='multiple_choice')
+    
+    # Options for multiple choice and checkbox questions
+    option1 = models.CharField(max_length=200, blank=True, null=True)
+    option2 = models.CharField(max_length=200, blank=True, null=True)
+    option3 = models.CharField(max_length=200, blank=True, null=True)
+    option4 = models.CharField(max_length=200, blank=True, null=True)
+    
+    # Single answer for multiple choice questions
+    cat = (('Option1','Option1'),('Option2','Option2'),('Option3','Option3'),('Option4','Option4'))
+    answer = models.CharField(max_length=200, choices=cat, blank=True, null=True)
+    
+    # Multiple answers for checkbox questions (stored as JSON)
+    multiple_answers = models.JSONField(blank=True, null=True, help_text="JSON array of correct answers for checkbox questions")
+    
+    # Answer pattern for short answer questions
+    short_answer_pattern = models.CharField(max_length=500, blank=True, null=True, help_text="Pattern or keywords for matching short answers")
+    
+    # For AI-generated questions
+    is_ai_generated = models.BooleanField(default=False)
+    ai_generation_prompt = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return self.question
 
 class Result(models.Model):
     student = models.ForeignKey(Student,on_delete=models.CASCADE)
