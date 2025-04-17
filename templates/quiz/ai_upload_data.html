@@ -10,19 +10,19 @@
       
       <!-- Action Buttons -->
       <div class="mb-4">
-        <a href="/quiz/admin/ai-adoption/model-metrics/" class="btn btn-primary mr-2">
+        <a href="{% url 'ai_model_metrics_view' %}" class="btn btn-primary mr-2">
           <i class="fas fa-chart-line"></i> Model Metrics
         </a>
-        <a href="/quiz/admin/ai-adoption/predict/" class="btn btn-success mr-2">
+        <a href="{% url 'ai_prediction_form_view' %}" class="btn btn-success mr-2">
           <i class="fas fa-brain"></i> Make Prediction
         </a>
-        <a href="/quiz/admin/ai-adoption/view-data/" class="btn btn-info mr-2">
+        <a href="{% url 'ai_view_data_list' %}" class="btn btn-info mr-2">
           <i class="fas fa-table"></i> View All Data
         </a>
         <button id="train-existing-data" class="btn btn-warning">
           <i class="fas fa-cogs"></i> Train Model on Existing Data
         </button>
-        <form method="post" action="/quiz/admin/ai-adoption/train-model/" class="d-inline">
+        <form method="post" action="{% url 'train_model_view' %}" class="d-inline">
           {% csrf_token %}
           <input type="hidden" name="algorithm" value="random_forest">
           <button type="submit" class="btn btn-outline-warning">
@@ -73,7 +73,7 @@
           <h5>Upload Survey Data</h5>
         </div>
         <div class="card-body">
-          <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_csv_ai' %}">
+          <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_csv_view' %}">
             {% csrf_token %}
             <div class="custom-file mb-3">
               <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required>
@@ -205,17 +205,17 @@
                   <td>{{ upload.original_filename }}</td>
                   <td>{{ upload.record_count }}</td>
                   <td>
-                    {% if upload.status == 'success' %}
-                    <span class="badge badge-success">Success</span>
-                    {% elif upload.status == 'error' %}
-                    <span class="badge badge-danger">Error</span>
+                    {% if upload.status == 'completed' %}
+                    <span class="badge badge-success">Completed</span>
+                    {% elif upload.status == 'failed' %}
+                    <span class="badge badge-danger">Failed</span>
                     {% else %}
                     <span class="badge badge-warning">{{ upload.status|title }}</span>
                     {% endif %}
                   </td>
                   <td>{{ upload.created_at|date:"M d, Y H:i" }}</td>
                   <td>
-                    <a href="{% url 'ai_view_data_list' %}?upload={{ upload.id }}" class="btn btn-sm btn-info view-data" data-id="{{ upload.id }}">
+                    <a href="{% url 'ai_data_detail_view' upload.id %}" class="btn btn-sm btn-info">
                       <i class="fas fa-eye"></i> View</a>
                     <button class="btn btn-sm btn-danger delete-upload" data-id="{{ upload.id }}">
                       <i class="fas fa-trash"></i>
@@ -262,12 +262,12 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    // Define direct URLs as fallbacks
+    // Define URLs using Django template tags
     const urls = {
-        uploadCsv: '{% url "upload_csv_ai" %}' || '/quiz/admin/ai-adoption/upload-csv/',
-        trainModel: '{% url "train_model_view" %}' || '/quiz/admin/ai-adoption/train-model/',
-        uploadHistory: '{% url "upload_history" %}' || '/quiz/admin/ai-adoption/upload-history/',
-        deleteBase: '{% url "delete_upload" 0 %}' || '/quiz/admin/ai-adoption/delete-upload/0/'
+        uploadCsv: "{% url 'upload_csv_view' %}",
+        trainModel: "{% url 'train_model_view' %}",
+        uploadHistory: "{% url 'upload_history_view' %}",
+        deleteBase: "{% url 'delete_upload_view' 0 %}"
     };
     
     // Test if we have access to the CSRF token
@@ -347,7 +347,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: "{% url 'upload_csv_ai' %}",
+            url: urls.uploadCsv,
             type: 'POST',
             data: formData,
             processData: false,
@@ -674,10 +674,10 @@ $(document).ready(function() {
                     } else {
                         response.history.forEach(function(upload) {
                             var statusBadge = '';
-                            if (upload.status === 'success') {
-                                statusBadge = '<span class="badge badge-success">Success</span>';
-                            } else if (upload.status === 'error') {
-                                statusBadge = '<span class="badge badge-danger">Error</span>';
+                            if (upload.status === 'completed') {
+                                statusBadge = '<span class="badge badge-success">Completed</span>';
+                            } else if (upload.status === 'failed') {
+                                statusBadge = '<span class="badge badge-danger">Failed</span>';
                             } else {
                                 statusBadge = '<span class="badge badge-warning">' + upload.status.charAt(0).toUpperCase() + upload.status.slice(1) + '</span>';
                             }
@@ -687,9 +687,9 @@ $(document).ready(function() {
                                 '<td>' + upload.filename + '</td>' +
                                 '<td>' + upload.record_count + '</td>' +
                                 '<td>' + statusBadge + '</td>' +
-                                '<td>' + upload.date + '</td>' +
+                                '<td>' + upload.created_at + '</td>' +
                                 '<td>' +
-                                '<a href="{% url 'ai_view_data_list' %}?upload=' + upload.id + '" class="btn btn-sm btn-info view-data" data-id="' + upload.id + '"><i class="fas fa-eye"></i> View</a> ' +
+                                '<a href="' + "{% url 'ai_data_detail_view' 0 %}".replace('0', upload.id) + '" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> View</a> ' +
                                 '<button class="btn btn-sm btn-danger delete-upload" data-id="' + upload.id + '"><i class="fas fa-trash"></i></button>' +
                                 '</td>' +
                                 '</tr>'
