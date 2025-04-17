@@ -425,9 +425,31 @@ def delete_upload_view(request, upload_id):
         # Delete the upload
         upload.delete()
         
+        # Get updated stats
+        total_records = AIAdoptionData.objects.count()
+        model_count = AIModel.objects.count()
+        
+        # Get best accuracy from any model
+        try:
+            best_model = AIModel.objects.all().order_by('-accuracy').first()
+            best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
+        except:
+            best_accuracy = "0%"
+        
+        # Get last upload date
+        try:
+            last_upload = CSVUpload.objects.all().order_by('-created_at').first()
+            last_upload_date = last_upload.created_at.strftime("%b %d, %Y") if last_upload else "None"
+        except:
+            last_upload_date = "None"
+            
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
-                'status': 'success'
+                'status': 'success',
+                'total_records': total_records,
+                'model_count': model_count,
+                'best_accuracy': best_accuracy,
+                'last_upload': last_upload_date
             })
         else:
             messages.success(request, 'Successfully deleted upload and associated data')
