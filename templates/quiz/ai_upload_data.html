@@ -412,7 +412,13 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                showError({message: 'Error: ' + error});
+                console.error('Upload error:', xhr.responseText);
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    showError({message: 'Error: ' + (response.message || error)});
+                } catch (e) {
+                    showError({message: 'Error: ' + error + '. Check console for details.'});
+                }
             }
         });
         
