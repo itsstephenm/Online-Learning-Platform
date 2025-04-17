@@ -567,6 +567,53 @@ $(document).ready(function() {
     script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
     document.head.appendChild(script);
     
+    // Handle Train Model on Existing Data button
+    $('#train-existing-data').on('click', function() {
+        if (!confirm('Train a new model on existing data? This may take a few minutes.')) {
+            return;
+        }
+        
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Training...');
+        
+        $.ajax({
+            url: '/quiz/admin/ai-adoption/train-model/',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: {
+                algorithm: 'random_forest'  // Default algorithm
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Update model count
+                    var currentCount = parseInt($('#model-count').text());
+                    $('#model-count').text(currentCount + 1);
+                    
+                    // Update best accuracy if this model is better
+                    var currentAccuracy = parseFloat($('#best-accuracy').text().replace('%', ''));
+                    var newAccuracy = (response.accuracy * 100).toFixed(1);
+                    if (isNaN(currentAccuracy) || newAccuracy > currentAccuracy) {
+                        $('#best-accuracy').text(newAccuracy + '%');
+                    }
+                    
+                    // Show success message
+                    alert('Model trained successfully with accuracy: ' + newAccuracy + '%');
+                } else {
+                    alert('Error training model: ' + response.message);
+                }
+                
+                $btn.prop('disabled', false).html('<i class="fas fa-cogs"></i> Train Model on Existing Data');
+            },
+            error: function(xhr, status, error) {
+                alert('Error training model: ' + error);
+                $btn.prop('disabled', false).html('<i class="fas fa-cogs"></i> Train Model on Existing Data');
+            }
+        });
+    });
+    
     // Refresh upload history
     function refreshUploadHistory() {
         $.ajax({
