@@ -1862,7 +1862,7 @@ def upload_csv_ai(request):
 def upload_history_view(request):
     """Return the upload history for AJAX requests to refresh the history table."""
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Get the last 10 uploads
+        # Get the last 10 uploads for the current user
         uploads = CSVUpload.objects.filter(user=request.user).order_by('-created_at')[:10]
         
         history = []
@@ -1876,9 +1876,21 @@ def upload_history_view(request):
                 'accuracy': f"{upload.model_accuracy * 100:.1f}%" if upload.model_accuracy else "N/A",
             })
         
+        # Get statistics for the dashboard
+        total_records = CSVUpload.objects.aggregate(Sum('record_count'))['record_count__sum'] or 0
+        model_count = CSVUpload.objects.filter(model_trained=True).count()
+        best_model = CSVUpload.objects.filter(model_accuracy__isnull=False).order_by('-model_accuracy').first()
+        best_accuracy = f"{best_model.model_accuracy * 100:.2f}%" if best_model else "0%"
+        last_upload_obj = CSVUpload.objects.order_by('-created_at').first()
+        last_upload = last_upload_obj.created_at.strftime('%b %d, %Y') if last_upload_obj else "None"
+        
         return JsonResponse({
             'status': 'success',
-            'history': history
+            'history': history,
+            'total_records': total_records,
+            'model_count': model_count,
+            'best_accuracy': best_accuracy,
+            'last_upload': last_upload
         })
     
     return JsonResponse({
