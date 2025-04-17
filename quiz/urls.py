@@ -15,7 +15,8 @@ urlpatterns = [
     path('ai/prediction/<int:prediction_id>/', views.prediction_result, name='prediction_result'),
     path('ai/insights/', views.insights_view, name='insights_view'),
     path('ai/query/', views.query_ai, name='query_ai'),
-
+    path('ai/make-prediction/', views.make_prediction_view, name='make_new_prediction'),  # Added URL for make_new_prediction
+    
     # Training data management
     path('ai/upload-training-data/', views.upload_training_data, name='upload_training_data'),
     path('ai/data/<int:data_id>/', views.ai_data_detail, name='ai_data_detail'),
