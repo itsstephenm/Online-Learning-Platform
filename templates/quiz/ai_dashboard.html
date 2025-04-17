@@ -7,26 +7,27 @@
 <style>
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: #f5f7fb;
         color: #2d3748;
     }
     
-    .main-container {
+    .ai-dashboard-container {
         display: flex;
-        min-height: 100vh;
+        min-height: 85vh;
+        margin-top: 20px;
     }
     
-    .sidebar {
+    .ai-sidebar {
         width: 250px;
         background-color: #fff;
         border-right: 1px solid #e2e8f0;
         padding: 20px 0;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-left: 15px;
     }
     
-    .content-area {
+    .ai-content-area {
         flex: 1;
-        padding: 30px;
+        padding: 0 30px;
     }
     
     .header-logo {
@@ -45,7 +46,7 @@
         margin-bottom: 5px;
     }
     
-    .nav-link {
+    .ai-nav-link {
         display: flex;
         align-items: center;
         padding: 12px 20px;
@@ -55,17 +56,17 @@
         margin: 0 10px;
     }
     
-    .nav-link:hover {
+    .ai-nav-link:hover {
         background-color: #f7fafc;
     }
     
-    .nav-link.active {
+    .ai-nav-link.active {
         background-color: #edf2f7;
         color: #3182ce;
         font-weight: 500;
     }
     
-    .nav-link i {
+    .ai-nav-link i {
         margin-right: 10px;
         width: 20px;
         text-align: center;
@@ -323,281 +324,291 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+    
+    .about-section {
+        padding: 0 20px;
+        margin-bottom: 20px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="main-container">
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <div class="header-logo">
-            <img src="{% static 'images/logo.png' %}" alt="Logo" width="160">
-        </div>
-        <div class="about-section">
-            <h5>About</h5>
-            <p class="small text-muted">This platform analyzes AI adoption at CUT based on survey data and provides predictions.</p>
-        </div>
-        <h5 class="px-4 mt-4 mb-2">Navigation</h5>
-        <p class="px-4 small text-muted">Go to</p>
-        <ul class="nav-menu">
-            <li class="nav-item">
-                <a href="#" class="nav-link active" id="nav-data-upload">
-                    <i class="fas fa-upload"></i> Data Upload
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" id="nav-dashboard">
-                    <i class="fas fa-chart-bar"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" id="nav-predictions">
-                    <i class="fas fa-brain"></i> AI Predictions
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" id="nav-insights">
-                    <i class="fas fa-lightbulb"></i> Insights & Suggestions
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" id="nav-admin">
-                    <i class="fas fa-cog"></i> Admin
-                </a>
-            </li>
-        </ul>
-    </div>
+<div class="container-fluid">
+    <h1 class="mt-4">CUT AI Adoption Analytics Platform</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'teacher-dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">AI Adoption Analytics</li>
+    </ol>
 
-    <!-- Main Content Area -->
-    <div class="content-area">
-        <!-- Data Upload Section -->
-        <div id="section-data-upload">
-            <h2>Upload Survey Data</h2>
-            <p class="text-muted">Upload your CSV file containing the AI adoption survey responses.</p>
-            
-            <div class="upload-container">
-                <h5>Choose a CSV file</h5>
-                <form id="uploadForm" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="upload-area" id="drop-area">
-                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                        <p>Drag and drop file here</p>
-                        <p class="text-muted small">Limit 200MB per file • CSV</p>
-                        <input type="file" id="fileInput" name="csv_file" accept=".csv" style="display: none;">
-                        <button type="button" class="btn btn-primary" id="browseButton">Browse files</button>
-                    </div>
-                </form>
+    <div class="ai-dashboard-container">
+        <!-- AI Dashboard Sidebar Navigation -->
+        <div class="ai-sidebar">
+            <div class="about-section">
+                <h5>About</h5>
+                <p class="small text-muted">This platform analyzes AI adoption at CUT based on survey data and provides predictions.</p>
+            </div>
+            <h5 class="px-4 mt-4 mb-2">Navigation</h5>
+            <p class="px-4 small text-muted">Go to</p>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="ai-nav-link active" id="nav-data-upload">
+                        <i class="fas fa-upload"></i> Data Upload
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="ai-nav-link" id="nav-dashboard">
+                        <i class="fas fa-chart-bar"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="ai-nav-link" id="nav-predictions">
+                        <i class="fas fa-brain"></i> AI Predictions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="ai-nav-link" id="nav-insights">
+                        <i class="fas fa-lightbulb"></i> Insights & Suggestions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="ai-nav-link" id="nav-admin">
+                        <i class="fas fa-cog"></i> Admin
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- AI Dashboard Content Area -->
+        <div class="ai-content-area">
+            <!-- Data Upload Section -->
+            <div id="section-data-upload">
+                <h2>Upload Survey Data</h2>
+                <p class="text-muted">Upload your CSV file containing the AI adoption survey responses.</p>
                 
-                <div id="filePreview" style="display: none;">
-                    <div class="file-item">
-                        <i class="fas fa-file-csv file-icon"></i>
-                        <div class="file-info">
-                            <div id="fileName">filename.csv</div>
-                            <div class="file-size" id="fileSize">0 KB</div>
+                <div class="upload-container">
+                    <h5>Choose a CSV file</h5>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="upload-area" id="drop-area">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <p>Drag and drop file here</p>
+                            <p class="text-muted small">Limit 200MB per file • CSV</p>
+                            <input type="file" id="fileInput" name="csv_file" accept=".csv" style="display: none;">
+                            <button type="button" class="btn btn-primary" id="browseButton">Browse files</button>
                         </div>
-                        <i class="fas fa-times remove-file" id="removeFile"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Processing Indicator -->
-            <div id="processingIndicator" class="loading-indicator" style="display: none;">
-                <div class="loading-spinner"></div>
-                <span id="processingText">RUNNING...</span>
-                <button id="stopProcessingBtn" class="btn btn-outline-secondary btn-sm ms-3">Stop</button>
-            </div>
-            
-            <!-- Data Preview Section (initially hidden) -->
-            <div id="dataPreviewSection" style="display: none;">
-                <div class="data-preview">
-                    <h4>Data Preview</h4>
-                    <div class="table-responsive">
-                        <table class="data-table" id="previewTable">
-                            <thead>
-                                <tr id="previewTableHeader">
-                                    <!-- Table headers will be inserted here -->
-                                </tr>
-                            </thead>
-                            <tbody id="previewTableBody">
-                                <!-- Table rows will be inserted here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Success Message -->
-            <div id="successMessage" class="status-message success" style="display: none;">
-                <i class="fas fa-check-circle me-2"></i>
-                <span id="successText">Data successfully uploaded! Added 0 new records.</span>
-            </div>
-            
-            <!-- Skipped Records Message -->
-            <div id="skippedMessage" class="status-message info" style="display: none;">
-                <i class="fas fa-info-circle me-2"></i>
-                <span id="skippedText">Skipped 0 existing records to avoid duplicates.</span>
-                <div class="form-check mt-2">
-                    <input class="form-check-input" type="checkbox" id="showSkipped">
-                    <label class="form-check-label" for="showSkipped">
-                        Show skipped emails
-                    </label>
-                </div>
-            </div>
-            
-            <!-- Basic Statistics Section -->
-            <div id="statsSection" style="display: none;">
-                <div class="stats-container">
-                    <h4>Basic Statistics</h4>
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-value" id="totalResponses">0</div>
-                            <div class="stat-label">Total Responses</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value" id="toolsCount">0</div>
-                            <div class="stat-label">Different AI Tools Used</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value" id="avgUsage">0.00</div>
-                            <div class="stat-label">Avg. Usage Frequency</div>
-                        </div>
-                    </div>
+                    </form>
                     
-                    <div class="text-center mt-4">
-                        <button class="btn btn-primary" id="trainModelBtn">Train Prediction Model</button>
+                    <div id="filePreview" style="display: none;">
+                        <div class="file-item">
+                            <i class="fas fa-file-csv file-icon"></i>
+                            <div class="file-info">
+                                <div id="fileName">filename.csv</div>
+                                <div class="file-size" id="fileSize">0 KB</div>
+                            </div>
+                            <i class="fas fa-times remove-file" id="removeFile"></i>
+                        </div>
                     </div>
+                </div>
+                
+                <!-- Processing Indicator -->
+                <div id="processingIndicator" class="loading-indicator" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span id="processingText">RUNNING...</span>
+                    <button id="stopProcessingBtn" class="btn btn-outline-secondary btn-sm ms-3">Stop</button>
+                </div>
+                
+                <!-- Data Preview Section (initially hidden) -->
+                <div id="dataPreviewSection" style="display: none;">
+                    <div class="data-preview">
+                        <h4>Data Preview</h4>
+                        <div class="table-responsive">
+                            <table class="data-table" id="previewTable">
+                                <thead>
+                                    <tr id="previewTableHeader">
+                                        <!-- Table headers will be inserted here -->
+                                    </tr>
+                                </thead>
+                                <tbody id="previewTableBody">
+                                    <!-- Table rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Success Message -->
+                <div id="successMessage" class="status-message success" style="display: none;">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span id="successText">Data successfully uploaded! Added 0 new records.</span>
+                </div>
+                
+                <!-- Skipped Records Message -->
+                <div id="skippedMessage" class="status-message info" style="display: none;">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span id="skippedText">Skipped 0 existing records to avoid duplicates.</span>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="showSkipped">
+                        <label class="form-check-label" for="showSkipped">
+                            Show skipped emails
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Basic Statistics Section -->
+                <div id="statsSection" style="display: none;">
+                    <div class="stats-container">
+                        <h4>Basic Statistics</h4>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-value" id="totalResponses">0</div>
+                                <div class="stat-label">Total Responses</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value" id="toolsCount">0</div>
+                                <div class="stat-label">Different AI Tools Used</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-value" id="avgUsage">0.00</div>
+                                <div class="stat-label">Avg. Usage Frequency</div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary" id="trainModelBtn">Train Prediction Model</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Model Training Success Message -->
+                <div id="modelSuccessMessage" class="status-message success" style="display: none;">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span id="modelSuccessText">Model trained successfully! Accuracy: 0.00</span>
                 </div>
             </div>
             
-            <!-- Model Training Success Message -->
-            <div id="modelSuccessMessage" class="status-message success" style="display: none;">
-                <i class="fas fa-check-circle me-2"></i>
-                <span id="modelSuccessText">Model trained successfully! Accuracy: 0.00</span>
-            </div>
-        </div>
-        
-        <!-- Dashboard Section (initially hidden) -->
-        <div id="section-dashboard" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Filter Data</h2>
-            </div>
-            
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="filter-container" id="facultyFilter">
-                        <h5 class="w-100">Select Faculties</h5>
-                        <div class="filter-tag">
-                            Business <i class="fas fa-times"></i>
-                        </div>
-                        <div class="filter-tag">
-                            Engineering <i class="fas fa-times"></i>
-                        </div>
-                        <div class="filter-tag">
-                            Education <i class="fas fa-times"></i>
-                        </div>
-                        <div class="filter-tag">
-                            Health Sciences <i class="fas fa-times"></i>
-                        </div>
-                    </div>
+            <!-- Dashboard Section (initially hidden) -->
+            <div id="section-dashboard" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Filter Data</h2>
                 </div>
-                <div class="col-md-6">
-                    <div class="filter-container" id="studyLevelFilter">
-                        <h5 class="w-100">Select Study Levels</h5>
-                        <div class="filter-tag">
-                            Undergraduate <i class="fas fa-times"></i>
-                        </div>
-                        <div class="filter-tag">
-                            Postgraduate <i class="fas fa-times"></i>
-                        </div>
-                        <div class="filter-tag">
-                            Other <i class="fas fa-times"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="stats-container">
-                <h4>Key Metrics</h4>
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <div class="stat-value">70.0%</div>
-                        <div class="stat-label">AI Familiarity</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">70.0%</div>
-                        <div class="stat-label">AI Tools Usage</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">33.5%</div>
-                        <div class="stat-label">Positive Learning Impact</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">2.31</div>
-                        <div class="stat-label">Avg Usage Frequency</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="chart-container">
-                <h4>Data Visualizations</h4>
-                <div class="chart-tabs">
-                    <div class="chart-tab active" data-chart="familiarity">AI Familiarity</div>
-                    <div class="chart-tab" data-chart="tools">Tool Usage</div>
-                    <div class="chart-tab" data-chart="faculty">Faculty Adoption</div>
-                    <div class="chart-tab" data-chart="challenges">Challenges</div>
-                </div>
-                <div class="chart-area">
-                    <canvas id="visualizationChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- AI Predictions Section -->
-        <div id="section-predictions" style="display: none;">
-            <h2>Predicted AI Adoption by Faculty and Study Level</h2>
-            <div class="chart-container">
-                <div class="chart-area">
-                    <canvas id="facultyPredictionChart"></canvas>
-                </div>
-            </div>
-            
-            <h4>Factors Influencing AI Adoption</h4>
-            <div class="chart-container">
-                <div class="chart-area">
-                    <canvas id="factorsChart"></canvas>
-                </div>
-            </div>
-            
-            <div class="prediction-container">
-                <h4>Prediction Analysis</h4>
-                <div class="row">
+                
+                <div class="row mb-4">
                     <div class="col-md-6">
-                        <div class="prediction-box">
-                            <div class="stat-label">Predicted AI Adoption Rate</div>
-                            <div class="prediction-value">33.2%</div>
-                            <div class="prediction-change">
-                                <i class="fas fa-arrow-up"></i> +5.2%
+                        <div class="filter-container" id="facultyFilter">
+                            <h5 class="w-100">Select Faculties</h5>
+                            <div class="filter-tag">
+                                Business <i class="fas fa-times"></i>
+                            </div>
+                            <div class="filter-tag">
+                                Engineering <i class="fas fa-times"></i>
+                            </div>
+                            <div class="filter-tag">
+                                Education <i class="fas fa-times"></i>
+                            </div>
+                            <div class="filter-tag">
+                                Health Sciences <i class="fas fa-times"></i>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="prediction-box">
-                            <div class="stat-label">Confidence Score</div>
-                            <div class="prediction-value">75%</div>
+                        <div class="filter-container" id="studyLevelFilter">
+                            <h5 class="w-100">Select Study Levels</h5>
+                            <div class="filter-tag">
+                                Undergraduate <i class="fas fa-times"></i>
+                            </div>
+                            <div class="filter-tag">
+                                Postgraduate <i class="fas fa-times"></i>
+                            </div>
+                            <div class="filter-tag">
+                                Other <i class="fas fa-times"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-container">
+                    <h4>Key Metrics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value">70.0%</div>
+                            <div class="stat-label">AI Familiarity</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">70.0%</div>
+                            <div class="stat-label">AI Tools Usage</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">33.5%</div>
+                            <div class="stat-label">Positive Learning Impact</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">2.31</div>
+                            <div class="stat-label">Avg Usage Frequency</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h4>Data Visualizations</h4>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active" data-chart="familiarity">AI Familiarity</div>
+                        <div class="chart-tab" data-chart="tools">Tool Usage</div>
+                        <div class="chart-tab" data-chart="faculty">Faculty Adoption</div>
+                        <div class="chart-tab" data-chart="challenges">Challenges</div>
+                    </div>
+                    <div class="chart-area">
+                        <canvas id="visualizationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Predictions Section -->
+            <div id="section-predictions" style="display: none;">
+                <h2>Predicted AI Adoption by Faculty and Study Level</h2>
+                <div class="chart-container">
+                    <div class="chart-area">
+                        <canvas id="facultyPredictionChart"></canvas>
+                    </div>
+                </div>
+                
+                <h4>Factors Influencing AI Adoption</h4>
+                <div class="chart-container">
+                    <div class="chart-area">
+                        <canvas id="factorsChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="prediction-container">
+                    <h4>Prediction Analysis</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="prediction-box">
+                                <div class="stat-label">Predicted AI Adoption Rate</div>
+                                <div class="prediction-value">33.2%</div>
+                                <div class="prediction-change">
+                                    <i class="fas fa-arrow-up"></i> +5.2%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="prediction-box">
+                                <div class="stat-label">Confidence Score</div>
+                                <div class="prediction-value">75%</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Insights Section -->
-        <div id="section-insights" style="display: none;">
-            <h2>AI-Generated Insights & Recommendations</h2>
-        </div>
-        
-        <!-- Admin Section -->
-        <div id="section-admin" style="display: none;">
-            <h2>Admin Settings</h2>
+            
+            <!-- Insights Section -->
+            <div id="section-insights" style="display: none;">
+                <h2>AI-Generated Insights & Recommendations</h2>
+            </div>
+            
+            <!-- Admin Section -->
+            <div id="section-admin" style="display: none;">
+                <h2>Admin Settings</h2>
+            </div>
         </div>
     </div>
 </div>
@@ -609,7 +620,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Navigation functionality
-    const navLinks = document.querySelectorAll('.nav-link');
+    const navLinks = document.querySelectorAll('.ai-nav-link');
     const sections = {
         'nav-data-upload': 'section-data-upload',
         'nav-dashboard': 'section-dashboard',
@@ -1001,9 +1012,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Show checkbox functionality
-    document.getElementById('showSkipped').addEventListener('change', function() {
-        console.log('Show skipped emails:', this.checked);
-    });
+    const showSkippedCheckbox = document.getElementById('showSkipped');
+    if (showSkippedCheckbox) {
+        showSkippedCheckbox.addEventListener('change', function() {
+            console.log('Show skipped emails:', this.checked);
+        });
+    }
     
     // Stop processing button
     stopProcessingBtn.addEventListener('click', function() {
