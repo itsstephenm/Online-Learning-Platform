@@ -253,6 +253,20 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    // Define direct URLs as fallbacks
+    const urls = {
+        uploadCsv: '{% url "upload_csv_view" %}' || '/quiz/admin/ai-adoption/upload-csv/',
+        trainModel: '{% url "train_model_view" %}' || '/quiz/admin/ai-adoption/train-model/',
+        uploadHistory: '{% url "upload_history" %}' || '/quiz/admin/ai-adoption/upload-history/',
+        deleteBase: '{% url "delete_upload" 0 %}' || '/quiz/admin/ai-adoption/delete-upload/0/'
+    };
+    
+    // Test if we have access to the CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (!csrfToken) {
+        console.error('CSRF token not found! Form submissions may fail.');
+    }
+
     // Add some CSS for the animations
     $('<style>').text(`
         .step-icon {
@@ -324,13 +338,13 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: '{% url "upload_csv_view" %}',
+            url: urls.uploadCsv,
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
             },
             success: function(response) {
@@ -599,10 +613,10 @@ $(document).ready(function() {
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Training...');
         
         $.ajax({
-            url: '{% url "train_model_view" %}',
+            url: urls.trainModel,
             type: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
             },
             data: {
@@ -640,7 +654,7 @@ $(document).ready(function() {
     // Refresh upload history
     function refreshUploadHistory() {
         $.ajax({
-            url: '{% url "upload_history" %}',
+            url: urls.uploadHistory,
             type: 'GET',
             success: function(response) {
                 if (response.status === 'success') {
@@ -688,11 +702,12 @@ $(document).ready(function() {
     // Handle confirmation
     $('#confirmDelete').on('click', function() {
         if (deleteUploadId) {
+            const deleteUrl = urls.deleteBase.replace('0', deleteUploadId);
             $.ajax({
-                url: '{% url "delete_upload" 0 %}'.replace('0', deleteUploadId),
+                url: deleteUrl,
                 type: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 success: function(response) {
@@ -701,7 +716,7 @@ $(document).ready(function() {
                         
                         // Update stats
                         $.ajax({
-                            url: '{% url "upload_history" %}',
+                            url: urls.uploadHistory,
                             type: 'GET',
                             success: function(response) {
                                 $('#total-records').text(response.total_records || 0);
