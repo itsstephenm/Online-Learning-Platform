@@ -741,59 +741,73 @@ document.addEventListener('DOMContentLoaded', function() {
     const stopProcessingBtn = document.getElementById('stopProcessingBtn');
     
     // Make drop area clickable
-    dropArea.addEventListener('click', function() {
-        fileInput.click();
-    });
+    if (dropArea) {
+        dropArea.addEventListener('click', function(e) {
+            e.preventDefault();
+            fileInput.click();
+        });
+    }
     
     // File input change
-    fileInput.addEventListener('change', function() {
-        handleFiles(this.files);
-    });
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFiles(this.files);
+            }
+        });
+    }
     
     // Prevent default drag behaviors
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, preventDefaults, false);
-    });
+    if (dropArea) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        // Highlight drop area when dragging over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        // Handle dropped files
+        dropArea.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            if (dt && dt.files && dt.files.length > 0) {
+                handleFiles(dt.files);
+            }
+        });
+    }
     
     function preventDefaults(e) {
         e.preventDefault();
         e.stopPropagation();
     }
     
-    // Highlight drop area when dragging over it
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, highlight, false);
-    });
-    
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, unhighlight, false);
-    });
-    
     function highlight() {
-        dropArea.classList.add('highlight');
-        dropArea.style.borderColor = '#3182ce';
-        dropArea.style.backgroundColor = '#ebf8ff';
+        if (dropArea) {
+            dropArea.classList.add('highlight');
+            dropArea.style.borderColor = '#3182ce';
+            dropArea.style.backgroundColor = '#ebf8ff';
+        }
     }
     
     function unhighlight() {
-        dropArea.classList.remove('highlight');
-        dropArea.style.borderColor = '#cbd5e0';
-        dropArea.style.backgroundColor = '#f7fafc';
+        if (dropArea) {
+            dropArea.classList.remove('highlight');
+            dropArea.style.borderColor = '#cbd5e0';
+            dropArea.style.backgroundColor = '#f7fafc';
+        }
     }
-    
-    // Handle dropped files
-    dropArea.addEventListener('drop', function(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        handleFiles(files);
-    });
     
     function handleFiles(files) {
         if (files.length > 0) {
             const file = files[0];
             
-            // Check if file is CSV
-            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+            // Check if file is CSV (more permissive check)
+            if (!file.name.toLowerCase().endsWith('.csv')) {
                 alert('Please upload a CSV file');
                 return;
             }
@@ -850,7 +864,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('avgUsage').textContent = (data.stats?.avg_usage || 0).toFixed(2);
                 
                 // Hide the drop area and show the train button section
-                dropArea.style.display = 'none';
+                if (dropArea) dropArea.style.display = 'none';
                 document.getElementById('trainModelBtn').focus();
             })
             .catch(error => {
