@@ -380,13 +380,14 @@ def calculate_data_stats(df: pd.DataFrame) -> Dict[str, Any]:
     
     return stats
 
-def train_ai_model(csv_upload_id: Optional[int] = None, algorithm: str = 'random_forest', test_size: float = 0.2) -> Dict[str, Any]:
+def train_ai_model(csv_upload_id: Optional[int] = None, algorithm: str = 'random_forest', test_size: float = 0.2, min_records: int = 10) -> Dict[str, Any]:
     """Train an AI model using the survey data.
     
     Args:
         csv_upload_id (int, optional): ID of the CSV upload to use. If None, uses all data.
         algorithm (str, optional): Algorithm to use. Defaults to 'random_forest'.
         test_size (float, optional): Proportion of the dataset to use for testing. Defaults to 0.2.
+        min_records (int, optional): Minimum number of records required. Defaults to 10.
         
     Returns:
         Dict[str, Any]: Training results
@@ -405,6 +406,17 @@ def train_ai_model(csv_upload_id: Optional[int] = None, algorithm: str = 'random
             data = AIAdoptionData.objects.all()
             upload = None
         
+        # Check if we have enough data
+        if data.count() < min_records:
+            error_msg = f"Not enough data to train a model (minimum {min_records} records required, found {data.count()})"
+            logger.warning(error_msg)
+            return {
+                'success': False,
+                'error': error_msg,
+                'data_count': data.count(),
+                'min_required': min_records
+            }
+        
         # Convert to DataFrame
         columns = [
             'faculty', 'level_of_study', 'ai_familiarity', 'uses_ai_tools',
@@ -414,8 +426,16 @@ def train_ai_model(csv_upload_id: Optional[int] = None, algorithm: str = 'random
         
         df = pd.DataFrame(list(data.values(*columns)))
         
-        if len(df) < 10:
-            raise ValueError("Not enough data to train a model (minimum 10 records required)")
+        # Create a dummy row if needed for model training but not enough data variation
+        if len(df['adoption_level'].unique()) < 2:
+            logger.warning("Not enough variation in adoption levels, adding a dummy row")
+            # Create a synthetic row with a different adoption level
+            existing_level = df['adoption_level'].iloc[0]
+            new_level = 'high' if existing_level != 'high' else 'low'
+            
+            new_row = df.iloc[0].copy()
+            new_row['adoption_level'] = new_level
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         
         # Define features and target
         X = df.drop('adoption_level', axis=1)
@@ -577,43 +597,40 @@ def train_ai_model(csv_upload_id: Optional[int] = None, algorithm: str = 'random
             roc_auc=np.mean([curve['auc'] for curve in roc_curves.values()]),
             parameters=grid_search.best_params_,
             feature_importance=feature_importances,
-            confusion_matrix=cm.tolist(),
+            confusion_matrix={
+                'matrix': cm.tolist(),
+                'labels': classes.tolist()
+            },
             roc_curve_data=roc_curves,
+            model_file_path=model_path,
             training_records_count=len(df),
             features_count=len(feature_names),
-            model_file_path=model_path,
-            is_active=True  # Set this model as active
+            is_active=False  # Not active by default
         )
         
-        # Deactivate other models
-        AIModel.objects.exclude(id=model_obj.id).update(is_active=False)
-        
-        # If we're training from a specific upload, link the model
+        # Update the CSVUpload if it exists
         if upload:
-            upload.trained_model = model_obj
+            upload.model_trained = True
+            upload.model_accuracy = accuracy
             upload.save()
-        
-        # Prepare results
-        training_time = time.time() - start_time
-        
-        results = {
+            
+        # If there are no active models, make this one active
+        if not AIModel.objects.filter(is_active=True).exists():
+            model_obj.is_active = True
+            model_obj.save()
+            
+        # Return the results
+        return {
             'success': True,
             'model_id': model_obj.id,
-            'algorithm': algorithm,
             'accuracy': accuracy,
             'precision': precision,
             'recall': recall,
             'f1_score': f1,
-            'training_time': training_time,
-            'training_records': len(df),
-            'test_records': len(X_test),
-            'feature_importance': feature_importances,
-            'confusion_matrix': cm.tolist(),
-            'classes': classes.tolist(),
-            'best_params': grid_search.best_params_
+            'training_time': time.time() - start_time,
+            'algorithm': algorithm,
+            'parameters': grid_search.best_params_
         }
-        
-        return results
     
     except Exception as e:
         logger.error(f"Error training AI model: {str(e)}", exc_info=True)
@@ -679,33 +696,59 @@ def predict_adoption_level(data: Dict[str, Any]) -> Tuple[str, float, Dict[str, 
         levels = ['low', 'medium', 'high']
         return random.choice(levels), random.uniform(0.65, 0.95), {}
 
-def import_from_csv(file_path: str, save_to_db: bool = True) -> Tuple[pd.DataFrame, Dict[str, Any], float, List[str]]:
+def import_from_csv(file_path: str, save_to_db: bool = True, train_model: bool = True) -> Tuple[pd.DataFrame, Dict[str, Any], float, List[str]]:
     """Process CSV file, optionally train a model, and generate insights.
     
     Args:
         file_path (str): Path to the CSV file
         save_to_db (bool, optional): Whether to save data to the DB. Defaults to True.
+        train_model (bool, optional): Whether to train a model after importing. Defaults to True.
         
     Returns:
         Tuple: (Processed data, Model dict if trained, Accuracy, Insights list)
     """
+    from quiz.models import CSVUpload
+    
     try:
         # Process the CSV file
         df, stats = process_csv_file(file_path, save_to_db=save_to_db)
         
-        # Train a model if we're saving to the DB
-        model_results = {'success': False}
-        if save_to_db and stats.get('upload_status') == 'success':
-            model_results = train_ai_model(csv_upload_id=stats.get('upload_id'))
+        # Set default model results
+        model_results = {'success': False, 'error': 'No model training attempted'}
+        accuracy = 0.0
+        
+        # Train a model if requested and we have a successful upload
+        if save_to_db and train_model and stats.get('upload_status') == 'success':
+            upload_id = stats.get('upload_id')
+            
+            # Get the number of records to check if we have enough for training
+            if upload_id:
+                try:
+                    upload = CSVUpload.objects.get(id=upload_id)
+                    record_count = upload.record_count
+                    
+                    # Only train if we have enough records
+                    if record_count >= 10:
+                        model_results = train_ai_model(csv_upload_id=upload_id)
+                        accuracy = model_results.get('accuracy', 0.0)
+                    else:
+                        model_results = {
+                            'success': False, 
+                            'error': f'Not enough data to train a model (minimum 10 records required, found {record_count})'
+                        }
+                except CSVUpload.DoesNotExist:
+                    model_results = {'success': False, 'error': f'Upload record {upload_id} not found'}
+            else:
+                model_results = {'success': False, 'error': 'No upload ID provided'}
         
         # Generate insights
         insights = generate_insights(df, stats)
         
-        return df, model_results, model_results.get('accuracy', 0.0), insights
+        return df, model_results, accuracy, insights
     
     except Exception as e:
         logger.error(f"Error importing from CSV: {str(e)}", exc_info=True)
-        raise
+        return pd.DataFrame(), {'success': False, 'error': str(e)}, 0.0, []
 
 def generate_insights(df: pd.DataFrame, stats: Dict[str, Any]) -> List[str]:
     """Generate insights from the data.

@@ -129,7 +129,11 @@ def upload_csv_view(request):
         try:
             # Process CSV file
             start_time = time.time()
-            df, model_results, accuracy, insights = import_from_csv(file_path, save_to_db=True)
+            df, model_results, accuracy, insights = import_from_csv(
+                file_path, 
+                save_to_db=True,
+                train_model=train_model_param
+            )
             processing_time = time.time() - start_time
             
             # Get updated stats

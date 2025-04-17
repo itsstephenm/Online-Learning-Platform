@@ -1,0 +1,146 @@
+{% extends 'quiz/adminbase.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>AI Adoption Data Details</h2>
+        <a href="{% url 'ai_upload_data' %}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Back to Data Management
+        </a>
+      </div>
+      
+      {% if data %}
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Dataset Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table">
+                <tr>
+                  <th>Faculty:</th>
+                  <td>{{ data.faculty }}</td>
+                </tr>
+                <tr>
+                  <th>Level of Study:</th>
+                  <td>{{ data.level_of_study }}</td>
+                </tr>
+                <tr>
+                  <th>AI Familiarity:</th>
+                  <td>{{ data.ai_familiarity }} / 5</td>
+                </tr>
+                <tr>
+                  <th>Uses AI Tools:</th>
+                  <td>{{ data.uses_ai_tools|title }}</td>
+                </tr>
+                <tr>
+                  <th>Usage Frequency:</th>
+                  <td>{{ data.usage_frequency|title }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table">
+                <tr>
+                  <th>Improves Learning:</th>
+                  <td>{{ data.improves_learning|title }}</td>
+                </tr>
+                <tr>
+                  <th>Tools Count:</th>
+                  <td>{{ data.tools_count }}</td>
+                </tr>
+                <tr>
+                  <th>Challenges Count:</th>
+                  <td>{{ data.challenges_count }}</td>
+                </tr>
+                <tr>
+                  <th>Adoption Level:</th>
+                  <td>
+                    {% if data.adoption_level == 'high' %}
+                      <span class="badge badge-success">High</span>
+                    {% elif data.adoption_level == 'medium' %}
+                      <span class="badge badge-warning">Medium</span>
+                    {% else %}
+                      <span class="badge badge-danger">Low</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Created:</th>
+                  <td>{{ data.created_at|date:"M d, Y H:i" }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">Tools Used</h5>
+            </div>
+            <div class="card-body">
+              {% if data.tools_used %}
+                <ul class="list-group">
+                  {% for tool in data.tools_used.split|dictsort:"0" %}
+                    <li class="list-group-item">{{ tool }}</li>
+                  {% empty %}
+                    <li class="list-group-item">No tools specified</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-muted">No tools specified</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="card mb-4">
+            <div class="card-header bg-warning text-white">
+              <h5 class="mb-0">Challenges</h5>
+            </div>
+            <div class="card-body">
+              {% if data.challenges %}
+                <ul class="list-group">
+                  {% for challenge in data.challenges.split|dictsort:"0" %}
+                    <li class="list-group-item">{{ challenge }}</li>
+                  {% empty %}
+                    <li class="list-group-item">No challenges specified</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="text-muted">No challenges specified</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {% if data.suggestions %}
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Suggestions</h5>
+        </div>
+        <div class="card-body">
+          <p>{{ data.suggestions }}</p>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% else %}
+      <div class="alert alert-warning">
+        <h4 class="alert-heading">Data Not Found</h4>
+        <p>The requested data record could not be found.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %} 
