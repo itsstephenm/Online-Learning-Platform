@@ -24,6 +24,7 @@ from student.models import Student
 from django.conf import settings
 from decouple import config
 from collections import Counter
+import numpy as np
 
 # Import AI utilities
 from .ai_utils import predict_adoption_level, train_model, make_prediction, generate_insights_from_data
