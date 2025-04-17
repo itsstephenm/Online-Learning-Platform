@@ -2753,6 +2753,31 @@ def ai_predict_view(request):
             'message': f'Error making prediction: {str(e)}'
         })
 
+@login_required(login_url='adminlogin')
+@require_POST
+def delete_dataset_view(request, dataset_id):
+    """View to delete a dataset and all its associated records."""
+    dataset = get_object_or_404(CSVUpload, id=dataset_id)
+    
+    try:
+        # Delete all associated records
+        AIAdoptionData.objects.filter(upload_batch=dataset).delete()
+        
+        # Delete the dataset
+        dataset.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Dataset deleted successfully'
+        })
+    except Exception as e:
+        logger.error(f"Error deleting dataset: {str(e)}")
+        
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Error deleting dataset: {str(e)}'
+        })
+
 
 
     
