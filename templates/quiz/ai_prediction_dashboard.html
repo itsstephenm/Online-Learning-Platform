@@ -285,9 +285,11 @@
                           <script>
                             document.addEventListener('DOMContentLoaded', function() {
                               const chartCtx = document.getElementById('responseChart').getContext('2d');
-                              const chartData = {{ query_result.chart|safe }};
+                              const chartData = JSON.parse('{{ query_result.chart|escapejs }}');
+                              const chartType = '{{ query_result.chart_type|default:"bar"|escapejs }}';
+                              
                               new Chart(chartCtx, {
-                                type: '{{ query_result.chart_type|default:"bar" }}',
+                                type: chartType,
                                 data: chartData,
                                 options: {
                                   responsive: true,

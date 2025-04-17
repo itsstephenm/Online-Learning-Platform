@@ -29,4 +29,8 @@ urlpatterns = [
     path('api/ai/delete-model/<int:model_id>/', views.api_delete_model, name='api_delete_model'),
     path('api/ai/delete-training-data/<int:data_id>/', views.api_delete_training_data, name='api_delete_training_data'),
     path('nl_query/', views.nl_query_view, name='nl_query'),
+    
+    # New API endpoints for AI dashboard
+    path('get-nl-query/', views.get_nl_query_view, name='get_nl_query'),
+    path('run-sql-query/', views.run_sql_query_view, name='run_sql_query'),
 ] 
