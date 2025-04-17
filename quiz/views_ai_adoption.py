@@ -113,15 +113,21 @@ def upload_csv_view(request):
         # Check if this is a standard form submission or AJAX
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
         
+        # Debug logging
+        logger.info(f"CSV upload request received. AJAX: {is_ajax}, POST keys: {request.POST.keys()}, FILES keys: {request.FILES.keys()}")
+        
         # Get the CSV file from the request
         csv_file = request.FILES.get('csv_file')
         
         # Validate file exists
         if not csv_file:
+            error_msg = 'No file uploaded. Please select a CSV file.'
+            logger.error(f"Upload failed: {error_msg}")
+            
             if is_ajax:
-                return JsonResponse({'status': 'error', 'message': 'No file uploaded. Please select a CSV file.'})
+                return JsonResponse({'status': 'error', 'message': error_msg})
             else:
-                messages.error(request, 'No file uploaded. Please select a CSV file.')
+                messages.error(request, error_msg)
                 return redirect('ai_upload_data')
         
         # Validate file type

@@ -139,10 +139,10 @@
           <!-- Add separate standard form with correct action URL -->
           <form action="{% url 'upload_csv_view' %}" method="post" enctype="multipart/form-data" class="d-none" id="direct-upload-form">
             {% csrf_token %}
-            <input type="file" name="csv_file" id="standard-form-file" style="display:none;">
+            <input type="file" name="csv_file" id="standard-form-file">
             <input type="hidden" name="clean_data" id="standard-form-clean" value="true">
             <input type="hidden" name="train_model" id="standard-form-train" value="true">
-            <button type="submit" id="standard-form-submit"></button>
+            <button type="submit" id="standard-form-submit">Submit Direct</button>
           </form>
           
           <!-- Add a direct link instead of a form button -->
@@ -424,12 +424,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission handler
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        console.log("Form submission intercepted");
         
         // Validate form
         if (!fileInput.files || !fileInput.files[0]) {
             alert('Please select a file to upload');
             return;
         }
+        
+        console.log("File selected, preparing to upload:", fileInput.files[0].name);
         
         // Reset upload process state
         resetUploadState();
