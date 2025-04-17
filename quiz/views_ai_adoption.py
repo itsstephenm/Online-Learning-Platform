@@ -105,17 +105,39 @@ def ai_model_metrics_view(request):
 @login_required
 @require_http_methods(['POST'])
 def upload_csv_view(request):
+    """View for processing CSV uploads with improved error handling"""
     try:
+        # Check if this is a standard form submission or AJAX
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
+        # Get the CSV file from the request
         csv_file = request.FILES.get('csv_file')
+        
+        # For standard form submissions with a hidden field
+        if not csv_file and request.POST.get('csv_file'):
+            # This is the workaround for standard form submission where we couldn't pass the file
+            return render(request, 'quiz/ai_upload_data.html', {
+                'error': 'Please use the AJAX upload button for now. Standard form upload requires additional configuration.'
+            })
+            
         if not csv_file:
-            return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+            else:
+                messages.error(request, 'No file uploaded')
+                return redirect('ai_upload_data')
         
         if not csv_file.name.endswith('.csv'):
-            return JsonResponse({'status': 'error', 'message': 'File must be a CSV'})
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'File must be a CSV'})
+            else:
+                messages.error(request, 'File must be a CSV')
+                return redirect('ai_upload_data')
         
         # Create upload record
         upload_record = CSVUpload.objects.create(
             filename=csv_file.name,
+            original_filename=csv_file.name,
             uploaded_by=request.user,
             status='processing'
         )
@@ -207,17 +229,45 @@ def upload_csv_view(request):
         if request.POST.get('train_model') == 'true':
             result = train_ai_model(upload_record.id)
             if not result['success']:
-                return JsonResponse({
-                    'status': 'success',
-                    'upload_id': upload_record.id,
-                    'warning': f"Upload successful but model training failed: {result['error']}"
-                })
+                if is_ajax:
+                    return JsonResponse({
+                        'status': 'success',
+                        'upload_id': upload_record.id,
+                        'warning': f"Upload successful but model training failed: {result['error']}"
+                    })
+                else:
+                    messages.warning(request, f"Upload successful but model training failed: {result['error']}")
         
-        return JsonResponse({
-            'status': 'success',
-            'upload_id': upload_record.id,
-            'message': 'Data uploaded and processed successfully'
-        })
+        # Get updated stats
+        total_records = AIAdoptionData.objects.count()
+        model_count = AIModel.objects.count()
+        
+        try:
+            best_model = AIModel.objects.all().order_by('-accuracy').first()
+            best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
+        except:
+            best_accuracy = "0%"
+        
+        try:
+            last_upload = CSVUpload.objects.all().order_by('-created_at').first()
+            last_upload_date = last_upload.created_at.strftime("%b %d, %Y") if last_upload else "None"
+        except:
+            last_upload_date = "None"
+            
+        if is_ajax:
+            return JsonResponse({
+                'status': 'success',
+                'upload_id': upload_record.id,
+                'message': 'Data uploaded and processed successfully',
+                'record_count': len(records),
+                'total_records': total_records,
+                'model_count': model_count,
+                'best_accuracy': best_accuracy,
+                'last_upload': last_upload_date
+            })
+        else:
+            messages.success(request, 'Data uploaded and processed successfully')
+            return redirect('ai_upload_data')
         
     except Exception as e:
         logger.error(f"Error in upload_csv_view: {str(e)}")
@@ -225,10 +275,15 @@ def upload_csv_view(request):
             upload_record.status = 'failed'
             upload_record.error_message = str(e)
             upload_record.save()
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        })
+            
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            })
+        else:
+            messages.error(request, f'Error: {str(e)}')
+            return redirect('ai_upload_data')
 
 @login_required(login_url='adminlogin')
 def upload_history_view(request):
