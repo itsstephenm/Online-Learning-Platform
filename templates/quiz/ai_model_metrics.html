@@ -1,0 +1,567 @@
+{% extends 'quiz/adminbase.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="section-title">AI Model Performance Metrics</h2>
+        <p class="text-muted">Monitor and evaluate AI adoption prediction model performance</p>
+      </div>
+    </div>
+    
+    <!-- Model Summary Section -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Active Model</h5>
+            <span class="badge bg-success">{{ active_model.algorithm }}</span>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-success" id="modelAccuracy">{{ active_model.accuracy|floatformat:2 }}</div>
+                  <div class="text-muted">Accuracy</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-info" id="f1Score">{{ active_model.f1_score|default:"0.00"|floatformat:2 }}</div>
+                  <div class="text-muted">F1 Score</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-warning" id="precision">{{ active_model.precision|default:"0.00"|floatformat:2 }}</div>
+                  <div class="text-muted">Precision</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-primary" id="recall">{{ active_model.recall|default:"0.00"|floatformat:2 }}</div>
+                  <div class="text-muted">Recall</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="model-info mt-4">
+              <h6>Model Details</h6>
+              <table class="table table-sm">
+                <tr>
+                  <th>Name</th>
+                  <td>{{ active_model.name }}</td>
+                </tr>
+                <tr>
+                  <th>Training Date</th>
+                  <td>{{ active_model.created_date }}</td>
+                </tr>
+                <tr>
+                  <th>Training Records</th>
+                  <td>{{ active_model.training_records_count }}</td>
+                </tr>
+                <tr>
+                  <th>Feature Count</th>
+                  <td>{{ active_model.features_count }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Feature Importance</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="featureImportanceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Confusion Matrix and ROC Curve -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Confusion Matrix</h5>
+          </div>
+          <div class="card-body">
+            <div class="confusion-matrix-container">
+              <div class="confusion-matrix">
+                <div class="matrix-labels">
+                  <div class="matrix-label vertical">Actual</div>
+                  <div class="matrix-label horizontal">Predicted</div>
+                </div>
+                <table class="matrix-table">
+                  <tr class="matrix-header">
+                    <th></th>
+                    <th>Low Adoption</th>
+                    <th>Medium Adoption</th>
+                    <th>High Adoption</th>
+                  </tr>
+                  <tr>
+                    <th>Low Adoption</th>
+                    <td class="true-positive">{{ confusion_matrix.0.0 }}</td>
+                    <td class="false-negative">{{ confusion_matrix.0.1 }}</td>
+                    <td class="false-negative">{{ confusion_matrix.0.2 }}</td>
+                  </tr>
+                  <tr>
+                    <th>Medium Adoption</th>
+                    <td class="false-positive">{{ confusion_matrix.1.0 }}</td>
+                    <td class="true-positive">{{ confusion_matrix.1.1 }}</td>
+                    <td class="false-negative">{{ confusion_matrix.1.2 }}</td>
+                  </tr>
+                  <tr>
+                    <th>High Adoption</th>
+                    <td class="false-positive">{{ confusion_matrix.2.0 }}</td>
+                    <td class="false-positive">{{ confusion_matrix.2.1 }}</td>
+                    <td class="true-positive">{{ confusion_matrix.2.2 }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">ROC Curve</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="rocCurveChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- All Models Section -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">All Trained Models</h5>
+            <a href="{% url 'train_model' %}" class="btn btn-sm btn-primary">
+              <i class="fas fa-plus me-1"></i> Train New Model
+            </a>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Algorithm</th>
+                    <th>Accuracy</th>
+                    <th>F1 Score</th>
+                    <th>Training Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for model in models %}
+                    <tr>
+                      <td>{{ model.name }}</td>
+                      <td>{{ model.algorithm }}</td>
+                      <td>{{ model.accuracy|floatformat:2 }}</td>
+                      <td>{{ model.f1_score|default:"N/A"|floatformat:2 }}</td>
+                      <td>{{ model.created_date|date:"M d, Y H:i" }}</td>
+                      <td>
+                        {% if model.is_active %}
+                          <span class="badge bg-success">Active</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="{% url 'ai_model_detail' model.id %}" class="btn btn-outline-info">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          {% if not model.is_active %}
+                            <button class="btn btn-outline-success activate-model" data-id="{{ model.id }}" title="Set as active model">
+                              <i class="fas fa-check"></i>
+                            </button>
+                          {% endif %}
+                          <button class="btn btn-outline-danger delete-model" data-id="{{ model.id }}" title="Delete model">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="7" class="text-center">No models trained yet</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .content-wrapper {
+    padding: 1.5rem;
+    background-color: #151521;
+    color: var(--text-primary, #ffffff);
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #24b0ed;
+    margin-bottom: 0.5rem;
+  }
+  
+  .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+  
+  .card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    background-color: #1e1e2d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.25rem;
+  }
+  
+  .card-title {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+  }
+  
+  .table {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .table thead th {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .table td, .table th {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .border {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .confusion-matrix-container {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0;
+  }
+  
+  .confusion-matrix {
+    position: relative;
+    padding: 2rem;
+  }
+  
+  .matrix-labels {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .matrix-label {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: bold;
+  }
+  
+  .matrix-label.horizontal {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .matrix-label.vertical {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  
+  .matrix-table {
+    border-collapse: collapse;
+  }
+  
+  .matrix-table th, .matrix-table td {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 1.5rem;
+    text-align: center;
+  }
+  
+  .matrix-table th {
+    color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  .matrix-table .true-positive {
+    background-color: rgba(75, 192, 192, 0.3);
+  }
+  
+  .matrix-table .false-positive {
+    background-color: rgba(255, 99, 132, 0.3);
+  }
+  
+  .matrix-table .false-negative {
+    background-color: rgba(255, 206, 86, 0.3);
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feature Importance Chart
+    initFeatureImportanceChart();
+    
+    // Initialize ROC Curve Chart
+    initROCCurveChart();
+    
+    // Activate model button functionality
+    document.querySelectorAll('.activate-model').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modelId = this.getAttribute('data-id');
+        activateModel(modelId);
+      });
+    });
+    
+    // Delete model button functionality
+    document.querySelectorAll('.delete-model').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modelId = this.getAttribute('data-id');
+        deleteModel(modelId);
+      });
+    });
+    
+    // Function to initialize feature importance chart
+    function initFeatureImportanceChart() {
+      const ctx = document.getElementById('featureImportanceChart').getContext('2d');
+      
+      // Feature importance data (replace with actual data from backend)
+      const featureImportanceData = {
+        labels: {{ feature_importance_labels|safe }},
+        datasets: [{
+          label: 'Feature Importance',
+          data: {{ feature_importance_values|safe }},
+          backgroundColor: [
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(255, 206, 86, 0.6)',
+            'rgba(255, 99, 132, 0.6)',
+            'rgba(153, 102, 255, 0.6)',
+            'rgba(255, 159, 64, 0.6)',
+            'rgba(201, 203, 207, 0.6)'
+          ],
+          borderColor: [
+            'rgb(75, 192, 192)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 206, 86)',
+            'rgb(255, 99, 132)',
+            'rgb(153, 102, 255)',
+            'rgb(255, 159, 64)',
+            'rgb(201, 203, 207)'
+          ],
+          borderWidth: 1
+        }]
+      };
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: featureImportanceData,
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Feature Importance',
+              color: 'rgba(255, 255, 255, 0.9)'
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' }
+            },
+            y: {
+              ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+    
+    // Function to initialize ROC curve chart
+    function initROCCurveChart() {
+      const ctx = document.getElementById('rocCurveChart').getContext('2d');
+      
+      // ROC curve data (replace with actual data from backend)
+      const rocCurveData = {
+        labels: {{ roc_curve_x|safe }},
+        datasets: [{
+          label: 'ROC Curve (AUC = {{ roc_auc|default:"0.00"|floatformat:2 }})',
+          data: {{ roc_curve_y|safe }},
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgb(54, 162, 235)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true
+        }, {
+          label: 'Random Classifier',
+          data: {{ roc_curve_x|safe }},
+          backgroundColor: 'rgba(255, 99, 132, 0.0)',
+          borderColor: 'rgba(255, 99, 132, 0.5)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: false
+        }]
+      };
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: rocCurveData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            },
+            title: {
+              display: true,
+              text: 'ROC Curve',
+              color: 'rgba(255, 255, 255, 0.9)'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'False Positive Rate',
+                color: 'rgba(255, 255, 255, 0.7)'
+              },
+              min: 0,
+              max: 1,
+              ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'True Positive Rate',
+                color: 'rgba(255, 255, 255, 0.7)'
+              },
+              min: 0,
+              max: 1,
+              ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' }
+            }
+          }
+        }
+      });
+    }
+    
+    // Function to activate a model
+    function activateModel(modelId) {
+      if (confirm('Are you sure you want to set this as the active model?')) {
+        // Send AJAX request to activate model
+        fetch(`/quiz/admin/ai-adoption/activate-model/${modelId}/`, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCsrfToken()
+          }
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.status === 'success') {
+            // Reload page to reflect changes
+            window.location.reload();
+          } else {
+            alert(`Error: ${result.message}`);
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      }
+    }
+    
+    // Function to delete a model
+    function deleteModel(modelId) {
+      if (confirm('Are you sure you want to delete this model? This cannot be undone.')) {
+        // Send AJAX request to delete model
+        fetch(`/quiz/admin/ai-adoption/delete-model/${modelId}/`, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCsrfToken()
+          }
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.status === 'success') {
+            // Reload page to reflect changes
+            window.location.reload();
+          } else {
+            alert(`Error: ${result.message}`);
+          }
+        })
+        .catch(error => console.error('Error:', error));
+      }
+    }
+    
+    // Get CSRF token
+    function getCsrfToken() {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      
+      return cookieValue || '';
+    }
+  });
+</script>
+
+{% endblock content %} 
