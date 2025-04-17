@@ -1785,7 +1785,9 @@ def ai_upload_data_view(request):
 
 @login_required(login_url='adminlogin')
 def ai_model_metrics_view(request):
-    return render(request, 'quiz/ai_model_metrics.html', {'message': 'This page is under construction'})
+    return render(request, 'quiz/under_construction.html', {
+        'message': 'The Model Metrics page will display performance statistics for your AI models.'
+    })
 
 @login_required(login_url='adminlogin')
 @require_POST
