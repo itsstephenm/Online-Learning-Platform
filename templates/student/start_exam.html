@@ -16,53 +16,114 @@
     <div class="question-container" id="question-{{q.id}}" data-question-id="{{q.id}}">
       <h3 class="text-info">{{ forloop.counter }}. {{q.question}}</h3><h4 style="text-align: right;">[Marks {{q.marks}}]</h4>
       
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="{{ forloop.counter }}" 
-              id="option1-{{q.id}}" 
-              value="Option1"
-              data-question-id="{{q.id}}"
-              onclick="trackSelection(this)">
-        <label class="form-check-label" for="option1-{{q.id}}">
-          {{q.option1}}
-        </label>
-      </div>
+      {% if q.question_type == 'multiple_choice' %}
+        <div class="form-check mx-4">
+          <input class="form-check-input question-option" type="radio" 
+                name="{{ forloop.counter }}" 
+                id="option1-{{q.id}}" 
+                value="Option1"
+                data-question-id="{{q.id}}"
+                onclick="trackSelection(this)">
+          <label class="form-check-label" for="option1-{{q.id}}">
+            {{q.option1}}
+          </label>
+        </div>
 
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="{{ forloop.counter }}" 
-              id="option2-{{q.id}}" 
-              value="Option2"
-              data-question-id="{{q.id}}"
-              onclick="trackSelection(this)">
-        <label class="form-check-label" for="option2-{{q.id}}">
-          {{q.option2}}
-        </label>
-      </div>
+        <div class="form-check mx-4">
+          <input class="form-check-input question-option" type="radio" 
+                name="{{ forloop.counter }}" 
+                id="option2-{{q.id}}" 
+                value="Option2"
+                data-question-id="{{q.id}}"
+                onclick="trackSelection(this)">
+          <label class="form-check-label" for="option2-{{q.id}}">
+            {{q.option2}}
+          </label>
+        </div>
 
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="{{ forloop.counter }}" 
-              id="option3-{{q.id}}" 
-              value="Option3"
-              data-question-id="{{q.id}}"
-              onclick="trackSelection(this)">
-        <label class="form-check-label" for="option3-{{q.id}}">
-          {{q.option3}}
-        </label>
-      </div>
+        <div class="form-check mx-4">
+          <input class="form-check-input question-option" type="radio" 
+                name="{{ forloop.counter }}" 
+                id="option3-{{q.id}}" 
+                value="Option3"
+                data-question-id="{{q.id}}"
+                onclick="trackSelection(this)">
+          <label class="form-check-label" for="option3-{{q.id}}">
+            {{q.option3}}
+          </label>
+        </div>
 
-      <div class="form-check mx-4">
-        <input class="form-check-input question-option" type="radio" 
-              name="{{ forloop.counter }}" 
-              id="option4-{{q.id}}" 
-              value="Option4"
-              data-question-id="{{q.id}}"
-              onclick="trackSelection(this)">
-        <label class="form-check-label" for="option4-{{q.id}}">
-          {{q.option4}}
-        </label>
-      </div>
+        <div class="form-check mx-4">
+          <input class="form-check-input question-option" type="radio" 
+                name="{{ forloop.counter }}" 
+                id="option4-{{q.id}}" 
+                value="Option4"
+                data-question-id="{{q.id}}"
+                onclick="trackSelection(this)">
+          <label class="form-check-label" for="option4-{{q.id}}">
+            {{q.option4}}
+          </label>
+        </div>
+      
+      {% elif q.question_type == 'checkbox' %}
+        <div class="form-check mx-4">
+          <input class="form-check-input question-checkbox" type="checkbox" 
+                name="{{ forloop.counter }}_Option1" 
+                id="option1-{{q.id}}" 
+                value="Option1"
+                data-question-id="{{q.id}}"
+                onclick="trackCheckboxSelection(this)">
+          <label class="form-check-label" for="option1-{{q.id}}">
+            {{q.option1}}
+          </label>
+        </div>
+
+        <div class="form-check mx-4">
+          <input class="form-check-input question-checkbox" type="checkbox" 
+                name="{{ forloop.counter }}_Option2" 
+                id="option2-{{q.id}}" 
+                value="Option2"
+                data-question-id="{{q.id}}"
+                onclick="trackCheckboxSelection(this)">
+          <label class="form-check-label" for="option2-{{q.id}}">
+            {{q.option2}}
+          </label>
+        </div>
+
+        <div class="form-check mx-4">
+          <input class="form-check-input question-checkbox" type="checkbox" 
+                name="{{ forloop.counter }}_Option3" 
+                id="option3-{{q.id}}" 
+                value="Option3"
+                data-question-id="{{q.id}}"
+                onclick="trackCheckboxSelection(this)">
+          <label class="form-check-label" for="option3-{{q.id}}">
+            {{q.option3}}
+          </label>
+        </div>
+
+        <div class="form-check mx-4">
+          <input class="form-check-input question-checkbox" type="checkbox" 
+                name="{{ forloop.counter }}_Option4" 
+                id="option4-{{q.id}}" 
+                value="Option4"
+                data-question-id="{{q.id}}"
+                onclick="trackCheckboxSelection(this)">
+          <label class="form-check-label" for="option4-{{q.id}}">
+            {{q.option4}}
+          </label>
+        </div>
+      
+      {% elif q.question_type == 'short_answer' %}
+        <div class="form-group mx-4">
+          <textarea class="form-control question-short-answer" 
+                  name="{{ forloop.counter }}" 
+                  id="short-answer-{{q.id}}" 
+                  rows="3"
+                  data-question-id="{{q.id}}"
+                  oninput="trackShortAnswerInput(this)"></textarea>
+        </div>
+      {% endif %}
     </div>
     {% endfor %}
     <input class="btn btn-info btn-lg" type="submit" value="Submit">  
@@ -76,6 +137,7 @@
   let questionSelections = {};
   let currentFocusedQuestion = null;
   let lastInteractionTime = Date.now();
+  let checkboxSelections = {};
   
   // Initialize timing for all questions
   document.addEventListener("DOMContentLoaded", function () {
@@ -89,6 +151,7 @@
         lastInteraction: null
       };
       questionSelections[questionId] = null;
+      checkboxSelections[questionId] = [];
     });
     
     // Set the first question as focused
@@ -161,7 +224,7 @@
     }
   }
   
-  // Track when an option is selected
+  // Track when a radio option is selected
   function trackSelection(element) {
     let questionId = element.dataset.questionId;
     questionSelections[questionId] = element.value;
@@ -176,6 +239,44 @@
     setCookie("q_" + questionId + "_time", timing.time, 1);
   }
   
+  // Track checkbox selections
+  function trackCheckboxSelection(element) {
+    let questionId = element.dataset.questionId;
+    let value = element.value;
+    let index = checkboxSelections[questionId].indexOf(value);
+    
+    // Add or remove the selection based on checkbox state
+    if (element.checked && index === -1) {
+      checkboxSelections[questionId].push(value);
+    } else if (!element.checked && index !== -1) {
+      checkboxSelections[questionId].splice(index, 1);
+    }
+    
+    // Update timing data
+    lastInteractionTime = Date.now();
+    let timing = questionTimings[questionId];
+    timing.lastInteraction = Date.now();
+    
+    // Save the selection as JSON and timing
+    setCookie("q_" + questionId + "_checkbox_selection", JSON.stringify(checkboxSelections[questionId]), 1);
+    setCookie("q_" + questionId + "_time", timing.time, 1);
+  }
+  
+  // Track short answer input
+  function trackShortAnswerInput(element) {
+    let questionId = element.dataset.questionId;
+    let value = element.value;
+    
+    // Update timing data
+    lastInteractionTime = Date.now();
+    let timing = questionTimings[questionId];
+    timing.lastInteraction = Date.now();
+    
+    // Save the short answer text and timing
+    setCookie("q_" + questionId + "_short_answer", value, 1);
+    setCookie("q_" + questionId + "_time", timing.time, 1);
+  }
+  
   function saveAns() {  
     // Save the final timing data for all questions
     for (let questionId in questionTimings) {
@@ -186,13 +287,27 @@
     let totalTime = Math.floor((Date.now() - startTime) / 1000);
     setCookie("exam_total_time", totalTime, 1);
     
-    // Save answers as before
-    var ele = document.getElementsByTagName('input'); 
-    for (var i = 0; i < ele.length; i++) { 
-      if (ele[i].type === "radio" && ele[i].checked) {        
-        setCookie(ele[i].name, ele[i].value, 3);
+    // Save answers for all question types
+    var radioButtons = document.querySelectorAll('input[type="radio"]:checked');
+    for (var i = 0; i < radioButtons.length; i++) {
+      setCookie(radioButtons[i].name, radioButtons[i].value, 3);
+    }
+    
+    // Save checkbox selections (multiple answers)
+    for (let questionId in checkboxSelections) {
+      if (checkboxSelections[questionId].length > 0) {
+        setCookie("checkbox_" + questionId, JSON.stringify(checkboxSelections[questionId]), 3);
       }
     }
+    
+    // Save short answers
+    var shortAnswers = document.querySelectorAll('.question-short-answer');
+    for (var i = 0; i < shortAnswers.length; i++) {
+      if (shortAnswers[i].value.trim() !== '') {
+        setCookie(shortAnswers[i].name + "_short", shortAnswers[i].value, 3);
+      }
+    }
+    
     return true;  // Allow the form to submit naturally
   }
   
