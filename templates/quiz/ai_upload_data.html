@@ -76,7 +76,7 @@
           <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_csv_view' %}">
             {% csrf_token %}
             <div class="custom-file mb-3">
-              <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required>
+              <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required accept=".csv">
               <label class="custom-file-label" for="csv-file">Choose CSV file</label>
             </div>
             <div class="form-check mb-3">
@@ -334,17 +334,8 @@ $(document).ready(function() {
         const trainModel = $('#train-model').is(':checked');
         
         // Update formData with the correct values expected by the view
-        if (cleanData) {
-            formData.set('clean_data', 'on');
-        } else {
-            formData.delete('clean_data');
-        }
-        
-        if (trainModel) {
-            formData.set('train_model', 'on');
-        } else {
-            formData.delete('train_model');
-        }
+        formData.set('clean_data', cleanData.toString());
+        formData.set('train_model', trainModel.toString());
         
         $.ajax({
             url: urls.uploadCsv,
@@ -357,80 +348,10 @@ $(document).ready(function() {
                 'X-Requested-With': 'XMLHttpRequest'
             },
             success: function(response) {
-                // Mark upload as complete
-                $('#step-upload').removeClass('bg-info step-active').addClass('bg-success');
-                $('#upload-status').text('Complete');
-                $('#upload-spinner').addClass('d-none');
-                
+                // Handle success response
                 if (response.status === 'success') {
-                    // If clean data option is selected
-                    if (cleanData) {
-                        // Update cleaning step to active
-                        $('#step-clean').addClass('bg-info text-white step-active');
-                        $('#clean-status').removeClass('text-muted').addClass('text-white').text('In progress...');
-                        $('#clean-spinner').removeClass('d-none');
-                        $('#progress-message').html('<i class="fas fa-sync fa-spin mr-2"></i>Cleaning and standardizing data...');
-                        
-                        // Start a visual progress bar for cleaning
-                        var cleanProgress = $('<div class="progress mt-1 mb-3"><div class="progress-bar progress-bar-step progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div></div>');
-                        $('#progress-message').after(cleanProgress);
-                        
-                        var cleanProgressBar = cleanProgress.find('.progress-bar');
-                        var cleanSteps = 5; // Number of visual steps for the animation
-                        var cleanTimePerStep = 300; // ms per step
-                        
-                        function updateCleanProgress(step) {
-                            if (step <= cleanSteps) {
-                                var percent = (step / cleanSteps) * 100;
-                                cleanProgressBar.css('width', percent + '%');
-                                setTimeout(function() {
-                                    updateCleanProgress(step + 1);
-                                }, cleanTimePerStep);
-                            } else {
-                                // Mark cleaning as complete
-                                $('#step-clean').removeClass('bg-info step-active').addClass('bg-success');
-                                $('#clean-status').text('Complete');
-                                $('#clean-spinner').addClass('d-none');
-                                cleanProgress.remove();
-                                
-                                // If train model option is selected
-                                if (trainModel) {
-                                    startModelTraining();
-                                } else {
-                                    // If no training, show result after cleaning
-                                    $('#step-train').addClass('bg-secondary text-white');
-                                    $('#train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
-                                    $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Processing complete!');
-                                    
-                                    setTimeout(function() {
-                                        showFinalResult(response);
-                                    }, 1000);
-                                }
-                            }
-                        }
-                        
-                        // Start the cleaning progress animation
-                        updateCleanProgress(1);
-                        
-                    } else if (trainModel) {
-                        // If clean data is skipped but train model is selected
-                        $('#step-clean').addClass('bg-secondary text-white');
-                        $('#clean-status').removeClass('text-muted').addClass('text-white').text('Skipped');
-                        
-                        startModelTraining();
-                    } else {
-                        // If both cleaning and training are skipped
-                        $('#step-clean, #step-train').addClass('bg-secondary text-white');
-                        $('#clean-status, #train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
-                        $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Processing complete!');
-                        
-                        // Show final result after brief delay
-                        setTimeout(function() {
-                            showFinalResult(response);
-                        }, 1000);
-                    }
+                    showFinalResult(response);
                 } else {
-                    // Show error
                     showError(response);
                 }
             },
@@ -442,84 +363,11 @@ $(document).ready(function() {
                 } catch (e) {
                     showError({message: 'Error: ' + error + '. Check console for details.'});
                 }
+            },
+            complete: function() {
+                $('#upload-btn').prop('disabled', false);
             }
         });
-        
-        function startModelTraining() {
-            // Update training step to active
-            $('#step-train').addClass('bg-info text-white step-active pulse-animation');
-            $('#train-status').removeClass('text-muted').addClass('text-white').text('In progress...');
-            $('#train-spinner').removeClass('d-none');
-            $('#progress-message').html('<i class="fas fa-cogs fa-spin mr-2"></i>Training AI model, this may take a few minutes...');
-            
-            // Create a visual representation of model training with epochs
-            var totalEpochs = 10;
-            var epochsContainer = $('<div class="mt-2 mb-3"></div>');
-            $('#progress-message').after(epochsContainer);
-            
-            // Add epoch progress bars
-            var trainingProgress = $('<div class="progress mb-1"><div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div></div>');
-            epochsContainer.append('<p class="mb-1 small text-center">Training progress: <span id="current-epoch">0</span>/' + totalEpochs + ' epochs</p>');
-            epochsContainer.append(trainingProgress);
-            
-            // Add accuracy/loss indicators
-            var metricsDiv = $('<div class="row mt-2 mb-1"></div>');
-            metricsDiv.append('<div class="col-6 text-center"><small>Accuracy: <span id="current-accuracy">0.00</span>%</small></div>');
-            metricsDiv.append('<div class="col-6 text-center"><small>Loss: <span id="current-loss">0.00</span></small></div>');
-            epochsContainer.append(metricsDiv);
-            
-            var progressBar = trainingProgress.find('.progress-bar');
-            var currentEpochElem = $('#current-epoch');
-            var currentAccuracyElem = $('#current-accuracy');
-            var currentLossElem = $('#current-loss');
-            
-            function updateTrainingProgress(epoch) {
-                if (epoch <= totalEpochs) {
-                    var percent = (epoch / totalEpochs) * 100;
-                    progressBar.css('width', percent + '%');
-                    currentEpochElem.text(epoch);
-                    
-                    // Simulate improving metrics
-                    var baseAccuracy = 65;
-                    var accuracyGain = 30 * (epoch / totalEpochs);
-                    var accuracy = Math.min(baseAccuracy + accuracyGain, 95);
-                    currentAccuracyElem.text(accuracy.toFixed(2));
-                    
-                    var baseLoss = 0.5;
-                    var lossReduction = 0.45 * (epoch / totalEpochs);
-                    var loss = Math.max(baseLoss - lossReduction, 0.05);
-                    currentLossElem.text(loss.toFixed(4));
-                    
-                    setTimeout(function() {
-                        updateTrainingProgress(epoch + 1);
-                    }, 400); // Time per epoch
-                } else {
-                    // Mark training as complete
-                    $('#step-train').removeClass('bg-info step-active pulse-animation').addClass('bg-success');
-                    $('#train-status').text('Complete');
-                    $('#train-spinner').addClass('d-none');
-                    $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Model training complete!');
-                    
-                    // Remove the epoch progress display after a delay
-                    setTimeout(function() {
-                        epochsContainer.slideUp(300, function() {
-                            $(this).remove();
-                            $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Processing complete!');
-                            
-                            // Show final result after brief delay
-                            setTimeout(function() {
-                                showFinalResult(response);
-                            }, 800);
-                        });
-                    }, 1000);
-                }
-            }
-            
-            // Start the training progress animation
-            setTimeout(function() {
-                updateTrainingProgress(1);
-            }, 500);
-        }
     });
     
     // Function to display the final result
@@ -624,12 +472,12 @@ $(document).ready(function() {
         $.ajax({
             url: urls.trainModel,
             type: 'POST',
+            data: {
+                algorithm: 'random_forest'
+            },
             headers: {
                 'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
-            },
-            data: {
-                algorithm: 'random_forest'  // Default algorithm
             },
             success: function(response) {
                 if (response.status === 'success') {
@@ -649,12 +497,12 @@ $(document).ready(function() {
                 } else {
                     alert('Error training model: ' + (response.message || 'Unknown error'));
                 }
-                
-                $btn.prop('disabled', false).html('<i class="fas fa-cogs"></i> Train Model on Existing Data');
             },
             error: function(xhr, status, error) {
                 console.error('Training error:', xhr.responseText);
                 alert('Error training model: ' + error);
+            },
+            complete: function() {
                 $btn.prop('disabled', false).html('<i class="fas fa-cogs"></i> Train Model on Existing Data');
             }
         });
