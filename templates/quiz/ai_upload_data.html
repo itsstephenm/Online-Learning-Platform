@@ -22,6 +22,13 @@
         <button id="train-existing-data" class="btn btn-warning">
           <i class="fas fa-cogs"></i> Train Model on Existing Data
         </button>
+        <form method="post" action="/quiz/admin/ai-adoption/train-model/" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="algorithm" value="random_forest">
+          <button type="submit" class="btn btn-outline-warning">
+            <i class="fas fa-cogs"></i> Direct Train (No AJAX)
+          </button>
+        </form>
       </div>
       
       <!-- Stats Cards -->
