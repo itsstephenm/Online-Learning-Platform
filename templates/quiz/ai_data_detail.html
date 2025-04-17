@@ -1,5 +1,6 @@
 {% extends 'quiz/adminbase.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container-fluid">
@@ -348,7 +349,7 @@
         {% if top_tools %}
         var toolsCtx = document.getElementById('toolsChart').getContext('2d');
         var toolsChart = new Chart(toolsCtx, {
-            type: 'horizontalBar',
+            type: 'bar',
             data: {
                 labels: [{% for tool in top_tools %}"{{ tool.0 }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
                 datasets: [{
@@ -362,6 +363,7 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                indexAxis: 'y',
                 scales: {
                     x: {
                         beginAtZero: true
