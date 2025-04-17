@@ -100,7 +100,7 @@
         </div>
         <div class="card-body">
           <!-- Multi-stage upload form -->
-          <form id="uploadForm" enctype="multipart/form-data">
+          <form id="uploadForm" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="custom-file mb-3">
               <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required accept=".csv">
@@ -588,27 +588,44 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Create a temporary file input to clone the selected file
-        const tempFileInput = document.createElement('input');
-        tempFileInput.type = 'file';
+        // Get the standard form
+        const directForm = document.getElementById('direct-upload-form');
         
-        // Create DataTransfer object to transfer the file
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(fileInput.files[0]);
+        // First, create a new FormData from the main form
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
         
-        // Get the hidden file input in the standard form
-        const standardFileInput = document.getElementById('standard-form-file');
+        // Set the clean_data and train_model values
+        document.getElementById('standard-form-clean').value = cleanDataCheckbox.checked ? "true" : "false";
+        document.getElementById('standard-form-train').value = trainModelCheckbox.checked ? "true" : "false";
         
-        // Copy the file selection
-        standardFileInput.files = dataTransfer.files;
-        standardFileInput.style.display = 'block'; // Make it visible for the form submission
+        // Create a new file element to attach to the form
+        const tempInput = document.createElement('input');
+        tempInput.type = 'file';
+        tempInput.name = 'csv_file';
+        tempInput.files = fileInput.files; // This doesn't work in most browsers for security reasons
         
-        // Set other form values based on checkboxes
-        document.getElementById('standard-form-clean').value = cleanDataCheckbox.checked.toString();
-        document.getElementById('standard-form-train').value = trainModelCheckbox.checked.toString();
+        // We'll need to let the form submit normally, but we'll show a loading state
+        alert('Submitting file via standard form. Page will refresh after upload.');
         
-        // Submit the form
-        document.getElementById('direct-upload-form').submit();
+        // Submit the form - we can't set the files properly in JS, so we'll use the fetch API directly
+        fetch(API.upload, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            // Refresh the page on success to show the uploaded file
+            window.location.reload();
+        })
+        .catch(error => {
+            alert('Error uploading file: ' + error.message);
+        });
     });
     
     /**
