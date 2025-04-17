@@ -20,6 +20,9 @@ from django.db.models import Count
 import pickle
 import requests
 from decouple import config
+import random
+from django.db.models import Avg, Q
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -1311,4 +1314,235 @@ def make_prediction(input_data, model_id=None):
         return {
             'success': False,
             'error': str(e)
-        } 
+        }
+
+def generate_questions(course, difficulty, num_questions=5, question_types=None):
+    """
+    Generate AI questions for a course with specified difficulty
+    
+    Parameters:
+    - course: Course object
+    - difficulty: String ('easy', 'medium', 'hard')
+    - num_questions: Number of questions to generate
+    - question_types: List of question types to include, e.g. ['multiple_choice', 'checkbox', 'short_answer']
+                    If None, all types will be used
+    
+    Returns:
+    - List of question dictionaries ready to be saved to the database
+    """
+    from .models import Question
+    import json
+    import random
+    
+    # Default to all question types if not specified
+    if question_types is None:
+        question_types = ['multiple_choice', 'checkbox', 'short_answer']
+    
+    # Validate question types
+    valid_types = ['multiple_choice', 'checkbox', 'short_answer']
+    question_types = [t for t in question_types if t in valid_types]
+    
+    if not question_types:
+        question_types = ['multiple_choice']  # Default to multiple choice
+    
+    # Sample prompts for different question types and difficulties
+    sample_questions = {
+        'multiple_choice': {
+            'easy': [
+                {
+                    'question': f'What is the main purpose of {course.course_name}?',
+                    'options': ['Learning fundamentals', 'Advanced techniques', 'Historical context', 'Industry applications'],
+                    'answer': 'Option1'
+                },
+                {
+                    'question': f'Which of these is a basic concept in {course.course_name}?',
+                    'options': ['Foundational principles', 'Complex algorithms', 'Theoretical frameworks', 'Advanced systems'],
+                    'answer': 'Option1'
+                }
+            ],
+            'medium': [
+                {
+                    'question': f'How does {course.course_name} relate to other fields?',
+                    'options': ['Through shared methodologies', 'Through historical development', 'Through practical applications', 'All of the above'],
+                    'answer': 'Option4'
+                },
+                {
+                    'question': f'Which approach is commonly used in {course.course_name}?',
+                    'options': ['Analytical method', 'Experimental method', 'Theoretical method', 'Practical method'],
+                    'answer': 'Option2'
+                }
+            ],
+            'hard': [
+                {
+                    'question': f'What advanced concept underlies modern approaches to {course.course_name}?',
+                    'options': ['Integration of multiple paradigms', 'Specialization of techniques', 'Theoretical abstraction', 'Empirical validation'],
+                    'answer': 'Option1'
+                },
+                {
+                    'question': f'Which limitation most affects current research in {course.course_name}?',
+                    'options': ['Computational constraints', 'Theoretical gaps', 'Methodological challenges', 'Data availability'],
+                    'answer': 'Option3'
+                }
+            ]
+        },
+        'checkbox': {
+            'easy': [
+                {
+                    'question': f'Which of these are foundational components of {course.course_name}? (Select all that apply)',
+                    'options': ['Basic principles', 'Core concepts', 'Advanced theories', 'Historical figures'],
+                    'multiple_answers': ['Option1', 'Option2']
+                }
+            ],
+            'medium': [
+                {
+                    'question': f'Which factors influence the development of {course.course_name}? (Select all that apply)',
+                    'options': ['Technological advances', 'Theoretical breakthroughs', 'Industry demands', 'Academic research'],
+                    'multiple_answers': ['Option1', 'Option2', 'Option4']
+                }
+            ],
+            'hard': [
+                {
+                    'question': f'Which advanced techniques are commonly used in modern {course.course_name}? (Select all that apply)',
+                    'options': ['Integration of multiple frameworks', 'Cross-disciplinary approaches', 'Empirical validation', 'Theoretical modeling'],
+                    'multiple_answers': ['Option1', 'Option2', 'Option4']
+                }
+            ]
+        },
+        'short_answer': {
+            'easy': [
+                {
+                    'question': f'Define {course.course_name} in your own words.',
+                    'short_answer_pattern': f'{course.course_name}, definition, meaning, concept'
+                }
+            ],
+            'medium': [
+                {
+                    'question': f'Explain a key principle of {course.course_name} and its importance.',
+                    'short_answer_pattern': 'principle, key, important, significance, fundamental'
+                }
+            ],
+            'hard': [
+                {
+                    'question': f'Analyze the relationship between {course.course_name} and related fields.',
+                    'short_answer_pattern': 'relationship, connection, related fields, interdisciplinary, influence'
+                }
+            ]
+        }
+    }
+    
+    # Generate questions based on the specified types and difficulty
+    generated_questions = []
+    
+    for _ in range(num_questions):
+        # Randomly select a question type from the available types
+        q_type = random.choice(question_types)
+        
+        # Get a sample question for this type and difficulty
+        samples = sample_questions.get(q_type, {}).get(difficulty, [])
+        if not samples:
+            # Fallback to medium difficulty if the specific difficulty doesn't exist
+            samples = sample_questions.get(q_type, {}).get('medium', [])
+        
+        if samples:
+            # Randomly select a sample
+            question_data = random.choice(samples)
+            
+            # Create a new question
+            question = {
+                'course': course,
+                'question_type': q_type,
+                'question': question_data['question'],
+                'marks': {'easy': 1, 'medium': 3, 'hard': 5}.get(difficulty, 3),
+                'is_ai_generated': True
+            }
+            
+            # Add type-specific fields
+            if q_type == 'multiple_choice':
+                question['option1'] = question_data['options'][0]
+                question['option2'] = question_data['options'][1]
+                question['option3'] = question_data['options'][2]
+                question['option4'] = question_data['options'][3]
+                question['answer'] = question_data['answer']
+            
+            elif q_type == 'checkbox':
+                question['option1'] = question_data['options'][0]
+                question['option2'] = question_data['options'][1]
+                question['option3'] = question_data['options'][2]
+                question['option4'] = question_data['options'][3]
+                question['multiple_answers'] = question_data['multiple_answers']
+            
+            elif q_type == 'short_answer':
+                question['short_answer_pattern'] = question_data['short_answer_pattern']
+            
+            generated_questions.append(question)
+    
+    return generated_questions
+
+def predict_adoption_level(data):
+    """Dummy function for predicting AI adoption level"""
+    levels = ['low_adoption', 'medium_adoption', 'high_adoption']
+    confidence = random.uniform(0.65, 0.95)
+    return random.choice(levels), confidence, ['ai_familiarity', 'tools_count', 'usage_frequency']
+
+def train_model(dataset_path, model_type='random_forest', save_path=None):
+    """Dummy function for training an AI model"""
+    return {
+        'success': True,
+        'accuracy': random.uniform(0.75, 0.95),
+        'feature_importance': {
+            'ai_familiarity': random.uniform(0.1, 0.3),
+            'tools_count': random.uniform(0.1, 0.3),
+            'usage_frequency': random.uniform(0.1, 0.3),
+            'improves_learning': random.uniform(0.1, 0.3)
+        }
+    }
+
+def make_prediction(input_data, model_id=None):
+    """Dummy function for making AI predictions"""
+    outcome = random.choice([0, 1])
+    confidence = random.uniform(0.65, 0.95)
+    return {
+        'prediction': outcome,
+        'probability': confidence,
+        'prediction_class': outcome,
+        'explanation': 'This is a sample prediction explanation'
+    }
+
+def generate_insights_from_data():
+    """Dummy function for generating insights"""
+    return [
+        'Students using AI tools show better performance on average',
+        'Courses with interactive content have higher completion rates',
+        'Short quizzes tend to have higher engagement rates'
+    ]
+
+def get_data_counts():
+    """Dummy function for getting data counts"""
+    return {
+        'success': True,
+        'data': {
+            'students': random.randint(50, 200),
+            'courses': random.randint(5, 20),
+            'questions': random.randint(100, 500),
+            'results': random.randint(200, 1000)
+        }
+    }
+
+def prepare_features(data):
+    """Dummy function for preparing features"""
+    return data
+
+def process_nl_query(query):
+    """Dummy function for processing natural language queries"""
+    return {
+        'response': f'Response to query: {query}',
+        'response_type': 'text'
+    }
+
+def process_training_data(file_path, target_column):
+    """Dummy function for processing training data"""
+    return {
+        'success': True,
+        'rows': random.randint(50, 200),
+        'columns': ['feature1', 'feature2', 'feature3', target_column]
+    } 
