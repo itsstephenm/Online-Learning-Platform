@@ -189,7 +189,7 @@
                   </td>
                   <td>{{ upload.created_at|date:"M d, Y H:i" }}</td>
                   <td>
-                    <a href="{% url 'ai_data_detail' upload.id %}" class="btn btn-sm btn-info">
+                    <a href="/quiz/admin/ai-adoption/data-detail/{{ upload.id }}/" class="btn btn-sm btn-info">
                       <i class="fas fa-eye"></i>
                     </a>
                     <button class="btn btn-sm btn-danger delete-upload" data-id="{{ upload.id }}">
@@ -571,7 +571,7 @@ $(document).ready(function() {
                                 '<td>' + statusBadge + '</td>' +
                                 '<td>' + upload.date + '</td>' +
                                 '<td>' +
-                                '<a href="/quiz/admin/ai-adoption/view-data-detail/' + upload.id + '/" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a> ' +
+                                '<a href="/quiz/admin/ai-adoption/data-detail/' + upload.id + '/" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a> ' +
                                 '<button class="btn btn-sm btn-danger delete-upload" data-id="' + upload.id + '"><i class="fas fa-trash"></i></button>' +
                                 '</td>' +
                                 '</tr>'
@@ -594,7 +594,7 @@ $(document).ready(function() {
     $('#confirmDelete').on('click', function() {
         if (deleteUploadId) {
             $.ajax({
-                url: '{% url "delete_upload" %}' + deleteUploadId + '/',
+                url: '/quiz/admin/ai-adoption/delete-upload/' + deleteUploadId + '/',
                 type: 'POST',
                 headers: {
                     'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
