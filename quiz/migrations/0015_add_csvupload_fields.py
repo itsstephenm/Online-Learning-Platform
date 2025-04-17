@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('quiz', '0001_initial'),  # You may need to update this to match your latest migration
+        ('quiz', '0014_auto_20250417_1307'),  # Updated to match the latest migration
     ]
 
     operations = [
