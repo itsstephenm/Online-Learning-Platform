@@ -235,6 +235,7 @@ def upload_history_view(request):
     """View for getting upload history via AJAX"""
     upload_history = CSVUpload.objects.all().order_by('-created_at')[:10]
     
+    # Prepare history data
     history_data = []
     for upload in upload_history:
         history_data.append({
@@ -245,9 +246,32 @@ def upload_history_view(request):
             'created_at': upload.created_at.strftime("%b %d, %Y %H:%M")
         })
     
+    # Get stats for response
+    total_records = AIAdoptionData.objects.count()
+    model_count = AIModel.objects.count()
+    
+    try:
+        best_model = AIModel.objects.all().order_by('-accuracy').first()
+        best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
+    except:
+        best_accuracy = "0%"
+    
+    try:
+        last_upload = upload_history.first()
+        last_upload_date = last_upload.created_at.strftime("%b %d, %Y") if last_upload else "None"
+    except:
+        last_upload_date = "None"
+    
+    # Return combined response
     return JsonResponse({
         'status': 'success',
-        'history': history_data
+        'history': history_data,
+        'stats': {
+            'total_records': total_records,
+            'model_count': model_count,
+            'best_accuracy': best_accuracy,
+            'last_upload': last_upload_date
+        }
     })
 
 @login_required(login_url='adminlogin')
