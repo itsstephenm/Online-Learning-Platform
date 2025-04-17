@@ -1785,55 +1785,7 @@ def ai_upload_data_view(request):
 
 @login_required(login_url='adminlogin')
 def ai_model_metrics_view(request):
-    """View for displaying model performance metrics"""
-    from quiz.models import AIModel
-    import json
-    
-    # Get all models
-    models = AIModel.objects.all().order_by('-created_date')
-    
-    # Get active model
-    try:
-        active_model = AIModel.objects.filter(is_active=True).latest('created_date')
-        
-        # Get feature importance data for charts
-        feature_importances = active_model.feature_importance
-        # Sort by importance value (descending)
-        sorted_importances = sorted(feature_importances.items(), key=lambda x: x[1], reverse=True)
-        feature_labels = [item[0] for item in sorted_importances[:10]]  # Top 10 features
-        feature_values = [item[1] for item in sorted_importances[:10]]
-        
-        # Get ROC curve data
-        roc_curve_data = active_model.roc_curve_data
-        # Use the first class's ROC curve data for the chart
-        first_class = list(roc_curve_data.keys())[0] if roc_curve_data else None
-        roc_curve_x = roc_curve_data[first_class]['fpr'] if first_class else []
-        roc_curve_y = roc_curve_data[first_class]['tpr'] if first_class else []
-        roc_auc = roc_curve_data[first_class]['auc'] if first_class else 0.5
-        
-        # Get confusion matrix
-        confusion_matrix = active_model.confusion_matrix
-    except AIModel.DoesNotExist:
-        active_model = None
-        feature_labels = []
-        feature_values = []
-        roc_curve_x = []
-        roc_curve_y = []
-        roc_auc = 0.5
-        confusion_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
-    
-    context = {
-        'models': models,
-        'active_model': active_model,
-        'feature_importance_labels': json.dumps(feature_labels),
-        'feature_importance_values': json.dumps(feature_values),
-        'roc_curve_x': json.dumps(roc_curve_x),
-        'roc_curve_y': json.dumps(roc_curve_y),
-        'roc_auc': roc_auc,
-        'confusion_matrix': confusion_matrix
-    }
-    
-    return render(request, 'quiz/ai_model_metrics.html', context)
+    return render(request, 'quiz/ai_model_metrics.html', {'message': 'This page is under construction'})
 
 @login_required(login_url='adminlogin')
 @require_POST
