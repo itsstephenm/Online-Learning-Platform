@@ -160,7 +160,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'ai_data_detail_view' upload.id %}" class="btn btn-info btn-sm">
+                                <a href="{% url 'ai_view_data_detail' upload.id %}" class="btn btn-info btn-sm">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                                 <button class="btn btn-danger btn-sm delete-upload" data-id="{{ upload.id }}" data-toggle="modal" data-target="#deleteModal">
