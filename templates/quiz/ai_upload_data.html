@@ -1,0 +1,538 @@
+{% extends 'quiz/adminbase.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="section-title">AI Adoption Survey Data Upload</h2>
+        <p class="text-muted">Upload survey data to train and improve AI adoption prediction models</p>
+      </div>
+    </div>
+    
+    <!-- Upload Section -->
+    <div class="row mb-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Upload Survey Data</h5>
+          </div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="csv_file" class="form-label">Select CSV File</label>
+                <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                <small class="text-muted mt-2">File must be in CSV format with proper headings.</small>
+              </div>
+              
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="cleanData" name="clean_data" checked>
+                <label class="form-check-label" for="cleanData">
+                  Apply data cleaning
+                </label>
+                <small class="d-block text-muted">Handles missing values and normalizes data</small>
+              </div>
+              
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="trainModel" name="train_model" checked>
+                <label class="form-check-label" for="trainModel">
+                  Train model after upload
+                </label>
+                <small class="d-block text-muted">Automatically train a new prediction model with uploaded data</small>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" id="uploadBtn">
+                <i class="fas fa-upload me-2"></i>Upload and Process
+              </button>
+            </form>
+            
+            <div class="mt-4 d-none" id="uploadProgress">
+              <div class="d-flex justify-content-between mb-1">
+                <span>Processing data...</span>
+                <span id="progressPercentage">0%</span>
+              </div>
+              <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
+              </div>
+              <p class="text-muted mt-2 mb-0" id="progressStatus">Uploading file...</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Data Format Requirements</h5>
+          </div>
+          <div class="card-body">
+            <p>Your CSV file should include the following columns:</p>
+            <ul class="mb-0">
+              <li><strong>Email</strong> - Student email address</li>
+              <li><strong>Level of study</strong> - Undergraduate, Postgraduate, etc.</li>
+              <li><strong>Faculty</strong> - Engineering, Business, etc.</li>
+              <li><strong>AI familiarity</strong> - How familiar are they with AI</li>
+              <li><strong>Used AI tools</strong> - Yes/No/Maybe</li>
+              <li><strong>Tools used</strong> - List of tools used</li>
+              <li><strong>Usage frequency</strong> - How often they use AI tools</li>
+              <li><strong>Challenges</strong> - Challenges faced when using AI</li>
+              <li><strong>Helpful tools needed</strong> - What tools would help</li>
+              <li><strong>Improves learning?</strong> - Whether AI improves learning</li>
+              <li><strong>Suggestions</strong> - Suggestions for improvement</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Upload History</h5>
+            <button class="btn btn-sm btn-outline-primary" id="refreshHistory">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Filename</th>
+                    <th>Records</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="uploadHistoryTable">
+                  {% if upload_history %}
+                    {% for upload in upload_history %}
+                      <tr>
+                        <td>{{ upload.created_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ upload.filename }}</td>
+                        <td>{{ upload.record_count }}</td>
+                        <td>
+                          {% if upload.status == 'success' %}
+                            <span class="badge bg-success">Success</span>
+                          {% elif upload.status == 'error' %}
+                            <span class="badge bg-danger">Error</span>
+                          {% else %}
+                            <span class="badge bg-warning">Processing</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-info view-details" data-id="{{ upload.id }}">
+                              <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-danger delete-upload" data-id="{{ upload.id }}">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="5" class="text-center">No upload history found</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card mt-4">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Current Data Stats</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-info" id="totalRecords">{{ total_records|default:"0" }}</div>
+                  <div class="text-muted">Total Records</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-success" id="totalModels">{{ model_count|default:"0" }}</div>
+                  <div class="text-muted">Trained Models</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-warning" id="bestAccuracy">{{ best_accuracy|default:"0%" }}</div>
+                  <div class="text-muted">Best Accuracy</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-primary" id="lastUpload">{{ last_upload|default:"None" }}</div>
+                  <div class="text-muted">Last Upload</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sample Data Section -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Sample Data Preview</h5>
+            <a href="{% static 'quiz/sample_ai_survey.csv' %}" class="btn btn-sm btn-outline-primary" download>
+              <i class="fas fa-download me-1"></i> Download Sample CSV
+            </a>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Level of study</th>
+                    <th>Faculty</th>
+                    <th>AI familiarity</th>
+                    <th>Used AI tools</th>
+                    <th>Tools used</th>
+                    <th>Usage frequency</th>
+                    <th>Challenges</th>
+                    <th>Improves learning?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>student1@example.com</td>
+                    <td>Undergraduate</td>
+                    <td>Engineering</td>
+                    <td>Very familiar</td>
+                    <td>Yes</td>
+                    <td>ChatGPT, DALL-E</td>
+                    <td>Daily</td>
+                    <td>Understanding outputs</td>
+                    <td>Yes</td>
+                  </tr>
+                  <tr>
+                    <td>student2@example.com</td>
+                    <td>Postgraduate</td>
+                    <td>Business</td>
+                    <td>Somewhat familiar</td>
+                    <td>Yes</td>
+                    <td>ChatGPT, Grammarly</td>
+                    <td>Weekly</td>
+                    <td>Cost, Technical issues</td>
+                    <td>Maybe</td>
+                  </tr>
+                  <tr>
+                    <td>student3@example.com</td>
+                    <td>Undergraduate</td>
+                    <td>Health Sciences</td>
+                    <td>Not familiar</td>
+                    <td>No</td>
+                    <td></td>
+                    <td>Never</td>
+                    <td>Lack of training</td>
+                    <td>No</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .content-wrapper {
+    padding: 1.5rem;
+    background-color: #151521;
+    color: var(--text-primary, #ffffff);
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #24b0ed;
+    margin-bottom: 0.5rem;
+  }
+  
+  .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+  
+  .card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    background-color: #1e1e2d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.25rem;
+  }
+  
+  .card-title {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+  }
+  
+  .form-control, .form-select {
+    background-color: #1a1a2e;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+  
+  .form-control:focus, .form-select:focus {
+    background-color: #1a1a2e;
+    border-color: #24b0ed;
+    color: white;
+    box-shadow: 0 0 0 0.25rem rgba(36, 176, 237, 0.25);
+  }
+  
+  table {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .table thead th {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .table td, .table th {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .border {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const progressStatus = document.getElementById('progressStatus');
+    const refreshBtn = document.getElementById('refreshHistory');
+    
+    // Handle form submission
+    uploadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Show progress bar
+      uploadProgress.classList.remove('d-none');
+      progressBar.style.width = '0%';
+      progressPercentage.textContent = '0%';
+      progressStatus.textContent = 'Uploading file...';
+      
+      // Simulate progress for demonstration
+      simulateProgress();
+      
+      // Create form data
+      const formData = new FormData(uploadForm);
+      
+      // Send AJAX request
+      fetch('/quiz/admin/ai-adoption/upload-csv/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(result => {
+        // Complete progress
+        progressBar.style.width = '100%';
+        progressPercentage.textContent = '100%';
+        
+        if (result.status === 'success') {
+          progressStatus.textContent = `Successfully processed ${result.records} records!`;
+          progressBar.classList.remove('progress-bar-animated');
+          
+          // Update stats
+          document.getElementById('totalRecords').textContent = result.total_records || '0';
+          document.getElementById('totalModels').textContent = result.model_count || '0';
+          document.getElementById('bestAccuracy').textContent = result.best_accuracy || '0%';
+          document.getElementById('lastUpload').textContent = result.last_upload || 'Just now';
+          
+          // Update history table
+          refreshUploadHistory();
+          
+          // Show success message
+          alert('Data uploaded and processed successfully!');
+        } else {
+          progressStatus.textContent = `Error: ${result.message}`;
+          progressBar.classList.remove('progress-bar-animated', 'bg-primary');
+          progressBar.classList.add('bg-danger');
+          
+          // Show error message
+          alert(`Error: ${result.message}`);
+        }
+      })
+      .catch(error => {
+        progressStatus.textContent = 'Error uploading file';
+        progressBar.classList.remove('progress-bar-animated', 'bg-primary');
+        progressBar.classList.add('bg-danger');
+        console.error('Error:', error);
+      });
+    });
+    
+    // Refresh history button
+    refreshBtn.addEventListener('click', function() {
+      refreshUploadHistory();
+    });
+    
+    // Function to refresh upload history
+    function refreshUploadHistory() {
+      fetch('/quiz/admin/ai-adoption/upload-history/', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.status === 'success') {
+          updateHistoryTable(result.history);
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    }
+    
+    // Function to update history table
+    function updateHistoryTable(history) {
+      const historyTable = document.getElementById('uploadHistoryTable');
+      
+      if (history.length === 0) {
+        historyTable.innerHTML = '<tr><td colspan="5" class="text-center">No upload history found</td></tr>';
+        return;
+      }
+      
+      let html = '';
+      history.forEach(upload => {
+        let statusBadge = '';
+        if (upload.status === 'success') {
+          statusBadge = '<span class="badge bg-success">Success</span>';
+        } else if (upload.status === 'error') {
+          statusBadge = '<span class="badge bg-danger">Error</span>';
+        } else {
+          statusBadge = '<span class="badge bg-warning">Processing</span>';
+        }
+        
+        html += `
+          <tr>
+            <td>${upload.created_at}</td>
+            <td>${upload.filename}</td>
+            <td>${upload.record_count}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-info view-details" data-id="${upload.id}">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-danger delete-upload" data-id="${upload.id}">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      
+      historyTable.innerHTML = html;
+      
+      // Attach event listeners to new buttons
+      attachHistoryButtons();
+    }
+    
+    // Attach event listeners to history buttons
+    function attachHistoryButtons() {
+      document.querySelectorAll('.view-details').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = this.getAttribute('data-id');
+          window.location.href = `/quiz/admin/ai-adoption/data-detail/${id}/`;
+        });
+      });
+      
+      document.querySelectorAll('.delete-upload').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to delete this upload?')) {
+            const id = this.getAttribute('data-id');
+            
+            fetch(`/quiz/admin/ai-adoption/delete-data/${id}/`, {
+              method: 'POST',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCsrfToken()
+              }
+            })
+            .then(response => response.json())
+            .then(result => {
+              if (result.status === 'success') {
+                refreshUploadHistory();
+              } else {
+                alert(`Error: ${result.message}`);
+              }
+            })
+            .catch(error => console.error('Error:', error));
+          }
+        });
+      });
+    }
+    
+    // Simulate progress for demo
+    function simulateProgress() {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 70) {
+          clearInterval(interval);
+        }
+        
+        const width = Math.min(progress, 70);
+        progressBar.style.width = `${width}%`;
+        progressPercentage.textContent = `${Math.round(width)}%`;
+        
+        if (width > 20 && width < 40) {
+          progressStatus.textContent = 'Validating data...';
+        } else if (width >= 40 && width < 60) {
+          progressStatus.textContent = 'Processing records...';
+        } else if (width >= 60) {
+          progressStatus.textContent = 'Training model...';
+        }
+      }, 500);
+    }
+    
+    // Get CSRF token
+    function getCsrfToken() {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      
+      return cookieValue || '';
+    }
+    
+    // Initial history button setup
+    attachHistoryButtons();
+  });
+</script>
+
+{% endblock content %} 
