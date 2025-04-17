@@ -213,7 +213,7 @@
         // Handle delete confirmation
         $('.delete-upload').click(function() {
             var uploadId = $(this).data('id');
-            $('#confirmDelete').attr('href', "{% url 'delete_upload_view' 0 %}".replace('0', uploadId));
+            $('#confirmDelete').attr('href', "{% url 'delete_upload' 0 %}".replace('0', uploadId));
         });
         
         // Faculty Chart - Bar chart
