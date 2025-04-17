@@ -50,7 +50,7 @@
           <h5>Upload Survey Data</h5>
         </div>
         <div class="card-body">
-          <form id="upload-form" enctype="multipart/form-data" method="post" action="{% url 'upload_csv' %}">
+          <form id="upload-form" enctype="multipart/form-data" method="post" action="{% url 'upload_csv_view' %}">
             {% csrf_token %}
             <div class="custom-file mb-3">
               <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required>
@@ -293,6 +293,10 @@ $(document).ready(function() {
         var formData = new FormData(this);
         const cleanData = $('#clean-data').is(':checked');
         const trainModel = $('#train-model').is(':checked');
+        
+        // Update formData with boolean values as strings
+        formData.set('clean_data', cleanData ? 'true' : 'false');
+        formData.set('train_model', trainModel ? 'true' : 'false');
         
         $.ajax({
             url: $(this).attr('action'),
