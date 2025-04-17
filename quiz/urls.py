@@ -38,4 +38,7 @@ urlpatterns = [
     # AJAX endpoints for the new dashboard
     path('api/upload-csv/', views.ajax_upload_csv, name='ajax_upload_csv'),
     path('api/train-model/', views.ajax_train_model, name='ajax_train_model'),
+    
+    # Add a new URL pattern for teacher access to prediction dashboard
+    path('teacher/ai-prediction-dashboard/', views.teacher_ai_prediction_dashboard_view, name='teacher_ai_prediction_dashboard'),
 ] 
