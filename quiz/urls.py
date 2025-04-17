@@ -41,4 +41,22 @@ urlpatterns = [
     
     # Add a new URL pattern for teacher access to prediction dashboard
     path('teacher/ai-prediction-dashboard/', views.teacher_ai_prediction_dashboard_view, name='teacher_ai_prediction_dashboard'),
+    
+    # AI Adoption System URLs
+    path('admin/ai-adoption/upload/', views.ai_upload_data_view, name='ai_upload_data'),
+    path('admin/ai-adoption/view-data/', views.ai_view_data_list_view, name='ai_view_data_list'),
+    path('admin/ai-adoption/view-data/<int:dataset_id>/', views.ai_view_data_detail_view, name='ai_view_data_detail'),
+    path('admin/ai-adoption/model-metrics/', views.ai_model_metrics_view, name='ai_model_metrics'),
+    path('admin/ai-adoption/predict/', views.ai_prediction_form_view, name='ai_prediction_form'),
+    
+    # AJAX endpoints for AI adoption system
+    path('admin/ai-adoption/upload-csv/', views.upload_csv_view, name='upload_csv_view'),
+    path('admin/ai-adoption/load-more-data/<int:dataset_id>/', views.load_more_data_view, name='load_more_data_view'),
+    path('admin/ai-adoption/generate-chart/<int:dataset_id>/', views.generate_chart_view, name='generate_chart_view'),
+    path('admin/ai-adoption/generate-insights/<int:dataset_id>/', views.generate_insights_view, name='generate_insights_view'),
+    path('admin/ai-adoption/export-csv/<int:dataset_id>/', views.export_csv_view, name='export_csv_view'),
+    path('admin/ai-adoption/train-model/', views.train_model_view, name='train_model_view'),
+    path('admin/ai-adoption/activate-model/<int:model_id>/', views.activate_model_view, name='activate_model_view'),
+    path('admin/ai-adoption/delete-model/<int:model_id>/', views.delete_model_view, name='delete_model_view'),
+    path('admin/ai-adoption/predict-api/', views.ai_predict_view, name='ai_predict'),
 ] 
