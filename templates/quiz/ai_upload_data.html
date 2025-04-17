@@ -294,9 +294,18 @@ $(document).ready(function() {
         const cleanData = $('#clean-data').is(':checked');
         const trainModel = $('#train-model').is(':checked');
         
-        // Update formData with boolean values as strings
-        formData.set('clean_data', cleanData ? 'true' : 'false');
-        formData.set('train_model', trainModel ? 'true' : 'false');
+        // Update formData with the correct values expected by the view
+        if (cleanData) {
+            formData.set('clean_data', 'on');
+        } else {
+            formData.delete('clean_data');
+        }
+        
+        if (trainModel) {
+            formData.set('train_model', 'on');
+        } else {
+            formData.delete('train_model');
+        }
         
         $.ajax({
             url: $(this).attr('action'),
