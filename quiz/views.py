@@ -1176,17 +1176,25 @@ def nl_query_view(request):
 @login_required
 def insights_view(request):
     """View for displaying AI insights"""
-    try:
-        # Try with created_date first
-        insights = AIInsight.objects.all().order_by('-created_date')
-    except:
-        try:
-            # If that fails, try with created_at
-            insights = AIInsight.objects.all().order_by('-created_at')
-        except:
-            # If both fail, just get all insights without ordering
-            insights = AIInsight.objects.all()
+    insights = AIInsight.objects.all().order_by('-created_at')
     
+    # If this is an AJAX request, return JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        insights_data = []
+        for insight in insights:
+            insights_data.append({
+                'id': insight.id,
+                'title': insight.title,
+                'content': insight.content,
+                'created_at': insight.created_at.isoformat() if insight.created_at else None
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'insights': insights_data
+        })
+    
+    # Otherwise render the template
     return render(request, 'quiz/insights.html', {
         'insights': insights
     })
@@ -1223,6 +1231,26 @@ def ai_model_detail(request, model_id):
 def all_predictions(request):
     """View for displaying all predictions"""
     predictions = AIPrediction.objects.all().order_by('-created_at')
+    
+    # If this is an AJAX request, return JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        predictions_data = []
+        for prediction in predictions:
+            predictions_data.append({
+                'id': prediction.id,
+                'model_name': prediction.model.name if prediction.model else 'Unknown',
+                'prediction_class': prediction.prediction_class,
+                'success_probability': prediction.success_probability,
+                'risk_probability': prediction.risk_probability,
+                'created_at': prediction.created_at.isoformat() if prediction.created_at else None
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'predictions': predictions_data
+        })
+    
+    # Otherwise render the template
     return render(request, 'quiz/all_predictions.html', {
         'predictions': predictions
     })
