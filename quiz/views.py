@@ -471,14 +471,130 @@ def calculate_marks_view(request):
 
 @login_required(login_url='adminlogin')
 def ai_prediction_dashboard_view(request):
-    # Temporary remove the user_passes_test for debugging
-    dict = {
+    # Import necessary modules
+    from django.db.models import Count, Avg
+    from .ai_utils import get_chart_data
+    import json
+    
+    # Get adoption data statistics
+    adoption_data_count = models.AIAdoptionData.objects.count()
+    
+    # Get AI model statistics
+    ai_model_count = models.AIModel.objects.count()
+    avg_model_accuracy = models.AIModel.objects.aggregate(avg_accuracy=Avg('accuracy'))['avg_accuracy'] or 0
+    
+    # Get prediction statistics
+    prediction_count = models.AIPrediction.objects.count()
+    
+    # Get AI insights
+    ai_insights = models.AIInsight.objects.all().order_by('-created_at')[:3]
+    
+    # Get adoption level distribution
+    adoption_levels = models.AIAdoptionData.objects.values('adoption_level').annotate(
+        count=Count('id')
+    ).order_by('adoption_level')
+    
+    # Convert adoption level counts to chart data format
+    adoption_chart_data = {
+        'labels': [],
+        'data': [],
+        'backgroundColor': [
+            'rgba(220, 53, 69, 0.8)',  # very_low
+            'rgba(255, 193, 7, 0.8)',  # low
+            'rgba(23, 162, 184, 0.8)',  # medium 
+            'rgba(0, 123, 255, 0.8)',   # high
+            'rgba(40, 167, 69, 0.8)'    # very_high
+        ]
+    }
+    
+    # Map for nicer display labels
+    level_labels = {
+        'very_low': 'Very Low',
+        'low': 'Low',
+        'medium': 'Medium',
+        'high': 'High',
+        'very_high': 'Very High'
+    }
+    
+    # Default data if no records exist
+    if not adoption_levels.exists():
+        adoption_chart_data['labels'] = list(level_labels.values())
+        adoption_chart_data['data'] = [0, 0, 0, 0, 0]
+    else:
+        # Fill with actual data
+        for level in adoption_levels:
+            level_name = level['adoption_level']
+            display_name = level_labels.get(level_name, level_name.replace('_', ' ').title())
+            adoption_chart_data['labels'].append(display_name)
+            adoption_chart_data['data'].append(level['count'])
+    
+    # Get tool usage frequency
+    tools_data = get_chart_data('tools_usage')
+    
+    # Get challenges data
+    challenges_data = []
+    for data in models.AIAdoptionData.objects.all():
+        if data.challenges:
+            challenges = [c.strip() for c in data.challenges.split(',')]
+            challenges_data.extend(challenges)
+    
+    challenge_counts = {}
+    for challenge in challenges_data:
+        if challenge:
+            challenge_counts[challenge] = challenge_counts.get(challenge, 0) + 1
+    
+    # Get top challenges
+    top_challenges = sorted(challenge_counts.items(), key=lambda x: x[1], reverse=True)[:6]
+    
+    challenge_chart_data = {
+        'labels': [challenge for challenge, count in top_challenges] if top_challenges else ['No data available'],
+        'data': [count for challenge, count in top_challenges] if top_challenges else [0],
+        'backgroundColor': [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)'
+        ]
+    }
+    
+    # Get faculty distribution
+    faculty_data = get_chart_data('adoption_by_faculty')
+    
+    # Prepare template context
+    context = {
         'total_student': SMODEL.Student.objects.all().count(),
         'total_teacher': TMODEL.Teacher.objects.all().count(),
         'total_course': models.Course.objects.count(),
         'total_question': models.Question.objects.count(),
+        'adoption_data_count': adoption_data_count,
+        'ai_model_count': ai_model_count,
+        'avg_model_accuracy': round(avg_model_accuracy * 100, 1),
+        'prediction_count': prediction_count,
+        'ai_insights': ai_insights,
+        'adoption_chart_data': json.dumps(adoption_chart_data),
+        'tools_chart_data': json.dumps(tools_data),
+        'challenge_chart_data': json.dumps(challenge_chart_data),
+        'faculty_chart_data': json.dumps(faculty_data),
+        # Include sample data for initial display (if no real data exists)
+        'adoption_data': models.AIAdoptionData.objects.all().order_by('-created_at')[:5]
     }
-    return render(request, 'quiz/ai_prediction_dashboard.html', context=dict)
+    
+    # Process NL query form submission
+    if request.method == 'POST' and 'nl_query' in request.POST:
+        query = request.POST.get('nl_query')
+        if query:
+            # Process the query using AI function
+            from .ai_utils import process_nl_query
+            result = process_nl_query(query)
+            context['query_result'] = result
+            
+            # Return JSON response for AJAX requests
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse(result)
+    
+    return render(request, 'quiz/ai_prediction_dashboard.html', context=context)
 
 @staff_member_required
 def ai_prediction_dashboard(request):
