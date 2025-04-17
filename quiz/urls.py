@@ -59,4 +59,5 @@ urlpatterns = [
     path('admin/ai-adoption/activate-model/<int:model_id>/', views.activate_model_view, name='activate_model_view'),
     path('admin/ai-adoption/delete-model/<int:model_id>/', views.delete_model_view, name='delete_model_view'),
     path('admin/ai-adoption/predict-api/', views.ai_predict_view, name='ai_predict'),
+    path('admin/ai-adoption/delete-dataset/<int:dataset_id>/', views.delete_dataset_view, name='delete_dataset_view'),
 ] 
