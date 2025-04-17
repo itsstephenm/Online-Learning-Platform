@@ -2182,11 +2182,15 @@ def ai_data_detail_view(request, data_id):
 
 @login_required(login_url='adminlogin')
 def ai_view_data_list_view(request):
-    return render(request, 'quiz/ai_view_data_list.html', {'message': 'This page is under construction'})
+    return render(request, 'quiz/under_construction.html', {
+        'message': 'The Data Viewer will allow you to browse and analyze your uploaded datasets.'
+    })
 
 @login_required(login_url='adminlogin')
 def ai_view_data_detail_view(request, dataset_id):
-    return render(request, 'quiz/ai_view_data.html', {'message': 'This page is under construction'})
+    return render(request, 'quiz/under_construction.html', {
+        'message': 'The Dataset Detail view will show statistics and visualizations for your data.'
+    })
 
 @login_required(login_url='adminlogin')
 def load_more_data_view(request, dataset_id):
