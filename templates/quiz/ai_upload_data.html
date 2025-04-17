@@ -10,10 +10,10 @@
       
       <!-- Action Buttons -->
       <div class="mb-4">
-        <a href="{% url 'ai_model_metrics_view' %}" class="btn btn-primary mr-2">
+        <a href="{% url 'ai_model_metrics' %}" class="btn btn-primary mr-2">
           <i class="fas fa-chart-line"></i> Model Metrics
         </a>
-        <a href="{% url 'ai_prediction_form_view' %}" class="btn btn-success mr-2">
+        <a href="{% url 'ai_prediction_form' %}" class="btn btn-success mr-2">
           <i class="fas fa-brain"></i> Make Prediction
         </a>
         <a href="{% url 'ai_view_data_list' %}" class="btn btn-info mr-2">
@@ -215,7 +215,7 @@
                   </td>
                   <td>{{ upload.created_at|date:"M d, Y H:i" }}</td>
                   <td>
-                    <a href="{% url 'ai_data_detail_view' upload.id %}" class="btn btn-sm btn-info">
+                    <a href="{% url 'ai_data_detail' upload.id %}" class="btn btn-sm btn-info">
                       <i class="fas fa-eye"></i> View</a>
                     <button class="btn btn-sm btn-danger delete-upload" data-id="{{ upload.id }}">
                       <i class="fas fa-trash"></i>
@@ -266,8 +266,8 @@ $(document).ready(function() {
     const urls = {
         uploadCsv: "{% url 'upload_csv_view' %}",
         trainModel: "{% url 'train_model_view' %}",
-        uploadHistory: "{% url 'upload_history_view' %}",
-        deleteBase: "{% url 'delete_upload_view' 0 %}"
+        uploadHistory: "{% url 'upload_history' %}",
+        deleteBase: "{% url 'delete_upload' 0 %}"
     };
     
     // Test if we have access to the CSRF token
@@ -689,7 +689,7 @@ $(document).ready(function() {
                                 '<td>' + statusBadge + '</td>' +
                                 '<td>' + upload.created_at + '</td>' +
                                 '<td>' +
-                                '<a href="' + "{% url 'ai_data_detail_view' 0 %}".replace('0', upload.id) + '" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> View</a> ' +
+                                '<a href="' + "{% url 'ai_data_detail' 0 %}".replace('0', upload.id) + '" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> View</a> ' +
                                 '<button class="btn btn-sm btn-danger delete-upload" data-id="' + upload.id + '"><i class="fas fa-trash"></i></button>' +
                                 '</td>' +
                                 '</tr>'
