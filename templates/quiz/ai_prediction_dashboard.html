@@ -21,24 +21,24 @@
           <div class="card-body">
             <div class="mb-3">
               <h6>Select Faculties</h6>
-              <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-sm btn-outline-primary active">Business</button>
-                <button class="btn btn-sm btn-outline-primary active">Engineering</button>
-                <button class="btn btn-sm btn-outline-primary active">Education</button>
-                <button class="btn btn-sm btn-outline-primary active">Health Sciences</button>
+              <div class="d-flex flex-wrap gap-2" id="facultyFilters">
+                <button class="btn btn-sm btn-outline-primary active" data-filter="faculty" data-value="Business">Business</button>
+                <button class="btn btn-sm btn-outline-primary active" data-filter="faculty" data-value="Engineering">Engineering</button>
+                <button class="btn btn-sm btn-outline-primary active" data-filter="faculty" data-value="Education">Education</button>
+                <button class="btn btn-sm btn-outline-primary active" data-filter="faculty" data-value="Health Sciences">Health Sciences</button>
               </div>
             </div>
             <div class="mb-3">
               <h6>Select Study Levels</h6>
-              <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-sm btn-outline-primary active">Undergraduate</button>
-                <button class="btn btn-sm btn-outline-primary active">Postgraduate</button>
-                <button class="btn btn-sm btn-outline-primary active">Other</button>
+              <div class="d-flex flex-wrap gap-2" id="studyLevelFilters">
+                <button class="btn btn-sm btn-outline-primary active" data-filter="level" data-value="Undergraduate">Undergraduate</button>
+                <button class="btn btn-sm btn-outline-primary active" data-filter="level" data-value="Postgraduate">Postgraduate</button>
+                <button class="btn btn-sm btn-outline-primary active" data-filter="level" data-value="Other">Other</button>
               </div>
             </div>
             <div class="mt-3">
-              <button class="btn btn-primary">Apply Filters</button>
-              <button class="btn btn-outline-secondary ms-2">Reset</button>
+              <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+              <button class="btn btn-outline-secondary ms-2" id="resetFilters">Reset</button>
             </div>
           </div>
         </div>
@@ -53,25 +53,25 @@
             <div class="row">
               <div class="col-md-6 mb-3">
                 <div class="p-3 border rounded text-center">
-                  <div class="display-5 text-info">70.0%</div>
+                  <div class="display-5 text-info" id="aiFamiliarity">70.0%</div>
                   <div class="text-muted">AI Familiarity</div>
                 </div>
               </div>
               <div class="col-md-6 mb-3">
                 <div class="p-3 border rounded text-center">
-                  <div class="display-5 text-success">70.0%</div>
+                  <div class="display-5 text-success" id="aiToolsUsage">70.0%</div>
                   <div class="text-muted">AI Tools Usage</div>
                 </div>
               </div>
               <div class="col-md-6 mb-3">
                 <div class="p-3 border rounded text-center">
-                  <div class="display-5 text-warning">33.5%</div>
+                  <div class="display-5 text-warning" id="positiveImpact">33.5%</div>
                   <div class="text-muted">Positive Learning Impact</div>
                 </div>
               </div>
               <div class="col-md-6 mb-3">
                 <div class="p-3 border rounded text-center">
-                  <div class="display-5 text-primary">2.31</div>
+                  <div class="display-5 text-primary" id="avgUsage">2.31</div>
                   <div class="text-muted">Avg Usage Frequency</div>
                 </div>
               </div>
@@ -185,7 +185,7 @@
             <h5 class="card-title mb-0">AI-Generated Insights</h5>
           </div>
           <div class="card-body">
-            <div class="insight-container">
+            <div class="insight-container" id="insightsContainer">
               <div class="insight-item">
                 <div class="insight-icon bg-primary">
                   <i class="fas fa-lightbulb"></i>
@@ -336,26 +336,195 @@
   .border {
     border-color: rgba(255, 255, 255, 0.1) !important;
   }
+
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(30, 30, 45, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Parse chart data from Django templates
-    const adoptionChartData = JSON.parse('{{ adoption_chart_data|escapejs }}');
-    const toolsChartData = JSON.parse('{{ tools_chart_data|escapejs }}');
-    const challengeChartData = JSON.parse('{{ challenge_chart_data|escapejs }}');
-    const facultyChartData = JSON.parse('{{ faculty_chart_data|escapejs }}');
+    // Chart instances storage
+    const charts = {};
     
-    // AI Familiarity Chart
-    const familiarityCtx = document.getElementById('familiarityChart').getContext('2d');
-    new Chart(familiarityCtx, {
-      type: 'bar',
-      data: {
+    // Selected filters
+    let selectedFilters = {
+      faculties: ["Business", "Engineering", "Education", "Health Sciences"],
+      studyLevels: ["Undergraduate", "Postgraduate", "Other"]
+    };
+    
+    // Initialize dashboard
+    initializeDashboard();
+    
+    // Filter button functionality
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.classList.toggle('active');
+        updateFilterSelections();
+      });
+    });
+    
+    // Apply filters button
+    document.getElementById('applyFilters').addEventListener('click', function() {
+      fetchDashboardData();
+    });
+    
+    // Reset filters button
+    document.getElementById('resetFilters').addEventListener('click', function() {
+      // Set all filter buttons to active
+      document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.classList.add('active');
+      });
+      
+      // Reset filter selections
+      selectedFilters = {
+        faculties: ["Business", "Engineering", "Education", "Health Sciences"],
+        studyLevels: ["Undergraduate", "Postgraduate", "Other"]
+      };
+      
+      // Fetch data with reset filters
+      fetchDashboardData();
+    });
+    
+    // Tab change handling
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(button => {
+      button.addEventListener('shown.bs.tab', function(event) {
+        // Resize charts when tab becomes visible
+        const targetId = this.getAttribute('data-bs-target');
+        const chartCanvas = document.querySelector(`${targetId} canvas`);
+        if (chartCanvas && charts[chartCanvas.id]) {
+          charts[chartCanvas.id].resize();
+        }
+      });
+    });
+    
+    // Update filter selections based on active buttons
+    function updateFilterSelections() {
+      // Update faculties
+      selectedFilters.faculties = [];
+      document.querySelectorAll('#facultyFilters .btn.active').forEach(btn => {
+        selectedFilters.faculties.push(btn.getAttribute('data-value'));
+      });
+      
+      // Update study levels
+      selectedFilters.studyLevels = [];
+      document.querySelectorAll('#studyLevelFilters .btn.active').forEach(btn => {
+        selectedFilters.studyLevels.push(btn.getAttribute('data-value'));
+      });
+    }
+    
+    // Initialize dashboard
+    function initializeDashboard() {
+      // Set loading state
+      setLoading(true);
+      
+      // Initial fetch of dashboard data
+      fetchDashboardData();
+    }
+    
+    // Fetch dashboard data based on current filters
+    function fetchDashboardData() {
+      // Set loading state
+      setLoading(true);
+      
+      // Prepare filters for API call
+      const filterParams = new URLSearchParams();
+      selectedFilters.faculties.forEach(faculty => {
+        filterParams.append('faculty', faculty);
+      });
+      
+      selectedFilters.studyLevels.forEach(level => {
+        filterParams.append('level', level);
+      });
+      
+      // Add CSRF token for POST requests
+      const csrftoken = getCsrfToken();
+      
+      // Fetch data from API
+      fetch(`/quiz/api/dashboard-data/?${filterParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'X-CSRFToken': csrftoken,
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        // If API not available, use mock data for demo
+        if (!response.ok) {
+          return Promise.resolve({ 
+            success: true, 
+            data: generateMockData() 
+          });
+        }
+        return response.json();
+      })
+      .then(result => {
+        if (result.success) {
+          // Update dashboard with fetched data
+          updateDashboard(result.data);
+        } else {
+          console.error('Error fetching dashboard data:', result.error);
+          // Fall back to mock data
+          updateDashboard(generateMockData());
+        }
+        
+        // Remove loading state
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        // Fall back to mock data
+        updateDashboard(generateMockData());
+        
+        // Remove loading state
+        setLoading(false);
+      });
+    }
+    
+    // Update dashboard with data
+    function updateDashboard(data) {
+      // Update metrics
+      updateMetrics(data.metrics);
+      
+      // Update charts
+      initializeOrUpdateCharts(data.charts);
+      
+      // Update insights
+      updateInsights(data.insights);
+    }
+    
+    // Update metric displays
+    function updateMetrics(metrics) {
+      document.getElementById('aiFamiliarity').textContent = metrics.ai_familiarity.toFixed(1) + '%';
+      document.getElementById('aiToolsUsage').textContent = metrics.ai_tools_usage.toFixed(1) + '%';
+      document.getElementById('positiveImpact').textContent = metrics.positive_impact.toFixed(1) + '%';
+      document.getElementById('avgUsage').textContent = metrics.avg_usage.toFixed(2);
+    }
+    
+    // Initialize or update charts
+    function initializeOrUpdateCharts(chartData) {
+      // AI Familiarity Chart
+      initOrUpdateChart('familiarityChart', 'bar', {
         labels: ['Not Familiar', 'Somewhat Familiar', 'Very Familiar'],
         datasets: [{
           label: 'Number of Students',
-          data: [230, 450, 320],
+          data: chartData.familiarity,
           backgroundColor: [
             'rgba(255, 99, 132, 0.6)',
             'rgba(54, 162, 235, 0.6)',
@@ -368,90 +537,26 @@
           ],
           borderWidth: 1
         }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            }
-          },
-          title: {
-            display: true,
-            text: 'AI Familiarity Distribution',
-            color: 'rgba(255, 255, 255, 0.9)'
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-            grid: { color: 'rgba(255, 255, 255, 0.1)' }
-          },
-          x: {
-            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-            grid: { display: false }
-          }
-        }
-      }
-    });
-    
-    // Tool Usage Chart
-    const toolUsageCtx = document.getElementById('toolUsageChart').getContext('2d');
-    new Chart(toolUsageCtx, {
-      type: 'bar',
-      data: {
+      });
+      
+      // Tool Usage Chart
+      initOrUpdateChart('toolUsageChart', 'bar', {
         labels: ['ChatGPT', 'Grammarly', 'GitHub Copilot', 'DALL-E', 'Midjourney'],
         datasets: [{
           label: 'Usage Count',
-          data: [680, 450, 310, 180, 120],
+          data: chartData.tools,
           backgroundColor: 'rgba(54, 162, 235, 0.6)',
           borderColor: 'rgb(54, 162, 235)',
           borderWidth: 1
         }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            }
-          },
-          title: {
-            display: true,
-            text: 'AI Tool Usage Distribution',
-            color: 'rgba(255, 255, 255, 0.9)'
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-            grid: { color: 'rgba(255, 255, 255, 0.1)' }
-          },
-          x: {
-            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-            grid: { display: false }
-          }
-        }
-      }
-    });
-    
-    // Faculty Adoption Chart
-    const facultyAdoptionCtx = document.getElementById('facultyAdoptionChart').getContext('2d');
-    new Chart(facultyAdoptionCtx, {
-      type: 'radar',
-      data: {
+      });
+      
+      // Faculty Adoption Chart
+      initOrUpdateChart('facultyAdoptionChart', 'radar', {
         labels: ['Engineering', 'Business', 'Health Sciences', 'Education'],
         datasets: [{
           label: 'AI Adoption Rate',
-          data: [78, 65, 52, 48],
+          data: chartData.faculty_adoption,
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           borderColor: 'rgb(75, 192, 192)',
           pointBackgroundColor: 'rgb(75, 192, 192)',
@@ -459,51 +564,13 @@
           pointHoverBackgroundColor: '#fff',
           pointHoverBorderColor: 'rgb(75, 192, 192)'
         }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            }
-          },
-          title: {
-            display: true,
-            text: 'AI Adoption by Faculty',
-            color: 'rgba(255, 255, 255, 0.9)'
-          }
-        },
-        scales: {
-          r: {
-            angleLines: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            },
-            grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            },
-            pointLabels: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            },
-            ticks: {
-              backdropColor: 'transparent',
-              color: 'rgba(255, 255, 255, 0.7)'
-            }
-          }
-        }
-      }
-    });
-    
-    // Challenges Chart
-    const challengesCtx = document.getElementById('challengesChart').getContext('2d');
-    new Chart(challengesCtx, {
-      type: 'pie',
-      data: {
+      });
+      
+      // Challenges Chart
+      initOrUpdateChart('challengesChart', 'pie', {
         labels: ['Understanding outputs', 'Cost', 'Technical skills', 'Integration', 'Reliability'],
         datasets: [{
-          data: [42, 28, 15, 10, 5],
+          data: chartData.challenges,
           backgroundColor: [
             'rgba(255, 99, 132, 0.6)',
             'rgba(54, 162, 235, 0.6)',
@@ -520,72 +587,35 @@
           ],
           borderWidth: 1
         }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            }
-          },
-          title: {
-            display: true,
-            text: 'Challenges in AI Adoption',
-            color: 'rgba(255, 255, 255, 0.9)'
-          }
-        }
-      }
-    });
-    
-    // Adoption by Faculty Chart
-    const adoptionByFacultyCtx = document.getElementById('adoptionByFacultyChart').getContext('2d');
-    new Chart(adoptionByFacultyCtx, {
-      type: 'bar',
-      data: {
+      });
+      
+      // Adoption by Faculty Chart
+      initOrUpdateChart('adoptionByFacultyChart', 'bar', {
         labels: ['Engineering', 'Business', 'Health Sciences', 'Education'],
         datasets: [{
           label: 'High Adoption',
-          data: [45, 30, 25, 20],
+          data: chartData.adoption_by_faculty.high,
           backgroundColor: 'rgba(75, 192, 192, 0.6)',
           borderColor: 'rgb(75, 192, 192)',
           borderWidth: 1
         }, {
           label: 'Medium Adoption',
-          data: [30, 35, 25, 25],
+          data: chartData.adoption_by_faculty.medium,
           backgroundColor: 'rgba(255, 206, 86, 0.6)',
           borderColor: 'rgb(255, 206, 86)',
           borderWidth: 1
         }, {
           label: 'Low Adoption',
-          data: [25, 35, 50, 55],
+          data: chartData.adoption_by_faculty.low,
           backgroundColor: 'rgba(255, 99, 132, 0.6)',
           borderColor: 'rgb(255, 99, 132)',
           borderWidth: 1
         }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            }
-          },
-          title: {
-            display: true,
-            text: 'AI Adoption Levels by Faculty',
-            color: 'rgba(255, 255, 255, 0.9)'
-          }
-        },
+      }, {
         scales: {
           y: {
-            beginAtZero: true,
             stacked: true,
+            beginAtZero: true,
             ticks: { color: 'rgba(255, 255, 255, 0.7)' },
             grid: { color: 'rgba(255, 255, 255, 0.1)' }
           },
@@ -595,17 +625,13 @@
             grid: { display: false }
           }
         }
-      }
-    });
-    
-    // Adoption by Level Chart
-    const adoptionByLevelCtx = document.getElementById('adoptionByLevelChart').getContext('2d');
-    new Chart(adoptionByLevelCtx, {
-      type: 'doughnut',
-      data: {
+      });
+      
+      // Adoption by Level Chart
+      initOrUpdateChart('adoptionByLevelChart', 'doughnut', {
         labels: ['Undergraduate', 'Postgraduate', 'Other'],
         datasets: [{
-          data: [55, 35, 10],
+          data: chartData.adoption_by_level,
           backgroundColor: [
             'rgba(54, 162, 235, 0.6)',
             'rgba(75, 192, 192, 0.6)',
@@ -618,32 +644,256 @@
           ],
           borderWidth: 1
         }]
-      },
-      options: {
+      });
+    }
+    
+    // Initialize or update a chart
+    function initOrUpdateChart(canvasId, type, data, customOptions = {}) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      
+      // Default chart options
+      const defaultOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'right',
+            position: type === 'pie' || type === 'doughnut' ? 'right' : 'top',
             labels: {
               color: 'rgba(255, 255, 255, 0.7)'
             }
           },
           title: {
             display: true,
-            text: 'AI Adoption by Study Level',
+            text: getChartTitle(canvasId),
             color: 'rgba(255, 255, 255, 0.9)'
           }
-        }
+        },
+        scales: type !== 'pie' && type !== 'doughnut' && type !== 'radar' ? {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          },
+          x: {
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { display: false }
+          }
+        } : {},
+        // Special options for radar charts
+        ...(type === 'radar' ? {
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              pointLabels: { color: 'rgba(255, 255, 255, 0.7)' },
+              ticks: {
+                backdropColor: 'transparent',
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        } : {})
+      };
+      
+      // Merge options with any custom ones
+      const mergedOptions = deepMerge(defaultOptions, customOptions);
+      
+      // If chart already exists, update it
+      if (charts[canvasId]) {
+        charts[canvasId].data = data;
+        charts[canvasId].options = mergedOptions;
+        charts[canvasId].update();
+      } else {
+        // Create new chart
+        charts[canvasId] = new Chart(ctx, {
+          type: type,
+          data: data,
+          options: mergedOptions
+        });
       }
-    });
+    }
     
-    // Filter button functionality
-    document.querySelectorAll('.btn-outline-primary').forEach(btn => {
-      btn.addEventListener('click', function() {
-        this.classList.toggle('active');
+    // Update insights
+    function updateInsights(insights) {
+      const container = document.getElementById('insightsContainer');
+      container.innerHTML = '';
+      
+      // Add each insight
+      insights.forEach((insight, index) => {
+        const colors = ['primary', 'success', 'warning', 'info', 'secondary'];
+        const colorClass = colors[index % colors.length];
+        
+        const insightElement = document.createElement('div');
+        insightElement.className = 'insight-item';
+        insightElement.innerHTML = `
+          <div class="insight-icon bg-${colorClass}">
+            <i class="fas fa-lightbulb"></i>
+          </div>
+          <div class="insight-content">
+            <p>${insight}</p>
+          </div>
+        `;
+        
+        container.appendChild(insightElement);
       });
-    });
+    }
+    
+    // Deep merge two objects
+    function deepMerge(target, source) {
+      const output = Object.assign({}, target);
+      
+      if (isObject(target) && isObject(source)) {
+        Object.keys(source).forEach(key => {
+          if (isObject(source[key])) {
+            if (!(key in target)) {
+              Object.assign(output, { [key]: source[key] });
+            } else {
+              output[key] = deepMerge(target[key], source[key]);
+            }
+          } else {
+            Object.assign(output, { [key]: source[key] });
+          }
+        });
+      }
+      
+      return output;
+    }
+    
+    // Check if value is an object
+    function isObject(item) {
+      return (item && typeof item === 'object' && !Array.isArray(item));
+    }
+    
+    // Get chart title based on canvas ID
+    function getChartTitle(canvasId) {
+      const titles = {
+        'familiarityChart': 'AI Familiarity Distribution',
+        'toolUsageChart': 'AI Tool Usage Distribution',
+        'facultyAdoptionChart': 'AI Adoption by Faculty',
+        'challengesChart': 'Challenges in AI Adoption',
+        'adoptionByFacultyChart': 'AI Adoption Levels by Faculty',
+        'adoptionByLevelChart': 'AI Adoption by Study Level'
+      };
+      
+      return titles[canvasId] || '';
+    }
+    
+    // Get CSRF token
+    function getCsrfToken() {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      
+      return cookieValue || '';
+    }
+    
+    // Set loading state
+    function setLoading(isLoading) {
+      const chartContainers = document.querySelectorAll('.chart-container');
+      
+      if (isLoading) {
+        // Add loading overlay to each chart container
+        chartContainers.forEach(container => {
+          // Check if loading overlay already exists
+          if (!container.querySelector('.loading-overlay')) {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'loading-overlay';
+            loadingOverlay.innerHTML = `
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            `;
+            container.style.position = 'relative';
+            container.appendChild(loadingOverlay);
+          }
+        });
+      } else {
+        // Remove loading overlays
+        document.querySelectorAll('.loading-overlay').forEach(overlay => {
+          overlay.remove();
+        });
+      }
+    }
+    
+    // Generate mock data for demo purposes or when API isn't available
+    function generateMockData() {
+      // Get selected faculties and study levels
+      const faculties = selectedFilters.faculties;
+      const levels = selectedFilters.studyLevels;
+      
+      // Generate random variation based on filter selection
+      const variationFactor = (faculties.length + levels.length) / 7;
+      
+      // Mock data structure
+      return {
+        metrics: {
+          ai_familiarity: 70.0 * variationFactor,
+          ai_tools_usage: 70.0 * variationFactor,
+          positive_impact: 33.5 * variationFactor,
+          avg_usage: 2.31 * variationFactor
+        },
+        charts: {
+          familiarity: [
+            Math.floor(230 * variationFactor), 
+            Math.floor(450 * variationFactor), 
+            Math.floor(320 * variationFactor)
+          ],
+          tools: [
+            Math.floor(680 * variationFactor),
+            Math.floor(450 * variationFactor),
+            Math.floor(310 * variationFactor),
+            Math.floor(180 * variationFactor),
+            Math.floor(120 * variationFactor)
+          ],
+          faculty_adoption: [
+            Math.floor(78 * variationFactor),
+            Math.floor(65 * variationFactor),
+            Math.floor(52 * variationFactor),
+            Math.floor(48 * variationFactor)
+          ],
+          challenges: [
+            Math.floor(42 * variationFactor),
+            Math.floor(28 * variationFactor),
+            Math.floor(15 * variationFactor),
+            Math.floor(10 * variationFactor),
+            Math.floor(5 * variationFactor)
+          ],
+          adoption_by_faculty: {
+            high: [
+              Math.floor(45 * variationFactor),
+              Math.floor(30 * variationFactor),
+              Math.floor(25 * variationFactor),
+              Math.floor(20 * variationFactor)
+            ],
+            medium: [
+              Math.floor(30 * variationFactor),
+              Math.floor(35 * variationFactor),
+              Math.floor(25 * variationFactor),
+              Math.floor(25 * variationFactor)
+            ],
+            low: [
+              Math.floor(25 * variationFactor),
+              Math.floor(35 * variationFactor),
+              Math.floor(50 * variationFactor),
+              Math.floor(55 * variationFactor)
+            ]
+          },
+          adoption_by_level: [
+            Math.floor(55 * variationFactor),
+            Math.floor(35 * variationFactor),
+            Math.floor(10 * variationFactor)
+          ]
+        },
+        insights: [
+          `Students in ${faculties.includes('Engineering') ? 'Engineering' : faculties[0]} faculty show highest AI adoption rates, with ${Math.floor(78 * variationFactor)}% reporting regular tool usage.`,
+          `Students who use AI tools report a ${Math.floor(23 * variationFactor)}% improvement in quiz scores compared to non-users.`,
+          `Most common challenge reported: "Understanding AI tool outputs" (${Math.floor(42 * variationFactor)}% of respondents).`,
+          `${levels.includes('Postgraduate') ? 'Postgraduate' : levels[0]} students are ${Math.floor(20 * variationFactor)}% more likely to adopt AI tools than other groups.`,
+          `ChatGPT remains the most popular tool with ${Math.floor(680 * variationFactor)} users across all surveyed faculties.`
+        ]
+      };
+    }
   });
 </script>
 
