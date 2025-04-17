@@ -992,7 +992,7 @@ def make_prediction_view(request):
         if 'explanation' in result and result['explanation']:
             result['used_openrouter'] = True
         
-        return redirect('prediction_result')
+        return redirect('quiz:prediction_result')
     
     # For GET requests
     context = {
