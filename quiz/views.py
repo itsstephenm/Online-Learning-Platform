@@ -324,7 +324,30 @@ def delete_course_view(request, pk):
 
 @login_required(login_url='adminlogin')
 def admin_question_view(request):
-    return render(request, 'quiz/admin_question.html')
+    # Get question statistics for the dashboard
+    total_question = models.Question.objects.count()
+    total_course = models.Course.objects.count()
+    
+    # Get counts by question type
+    mcq_count = models.Question.objects.filter(question_type='multiple_choice').count()
+    checkbox_count = models.Question.objects.filter(question_type='checkbox').count()
+    short_answer_count = models.Question.objects.filter(question_type='short_answer').count()
+    
+    # Get AI generated vs manually created counts
+    ai_generated = models.Question.objects.filter(is_ai_generated=True).count()
+    manual_created = total_question - ai_generated
+    
+    context = {
+        'total_question': total_question,
+        'total_course': total_course,
+        'mcq_count': mcq_count,
+        'checkbox_count': checkbox_count,
+        'short_answer_count': short_answer_count,
+        'ai_generated': ai_generated,
+        'manual_created': manual_created
+    }
+    
+    return render(request, 'quiz/admin_question.html', context)
 
 @login_required(login_url='adminlogin')
 def admin_add_question_view(request):
