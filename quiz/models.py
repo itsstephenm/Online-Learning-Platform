@@ -205,6 +205,7 @@ class AIAdoptionData(models.Model):
     challenges_count = models.IntegerField(default=0)
     adoption_level = models.CharField(max_length=20, default="low")  # very_low, low, medium, high, very_high
     source = models.CharField(max_length=50, default="manual")
+    upload_batch = models.ForeignKey('CSVUpload', on_delete=models.SET_NULL, null=True, blank=True, related_name='adoption_data')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -218,7 +219,16 @@ class AIModel(models.Model):
     training_data = models.ForeignKey(AIAdoptionData, on_delete=models.CASCADE, related_name='models')
     algorithm = models.CharField(max_length=100)
     accuracy = models.FloatField()
+    precision = models.FloatField(default=0.0)
+    recall = models.FloatField(default=0.0)
+    f1_score = models.FloatField(default=0.0)
+    roc_auc = models.FloatField(null=True, blank=True)
     parameters = models.JSONField(default=dict)
+    feature_importance = models.JSONField(default=dict, help_text="Feature importance as a JSON dictionary")
+    confusion_matrix = models.JSONField(default=dict, help_text="Confusion matrix as a JSON array of arrays")
+    roc_curve_data = models.JSONField(default=dict, help_text="ROC curve data points")
+    training_records_count = models.PositiveIntegerField(default=0)
+    features_count = models.PositiveIntegerField(default=0)
     model_file_path = models.CharField(max_length=255)
     is_active = models.BooleanField(default=False)
     
@@ -229,6 +239,35 @@ class AIModel(models.Model):
         # Delete the model file when deleting the model object
         if os.path.exists(self.model_file_path):
             os.remove(self.model_file_path)
+        super().delete(*args, **kwargs)
+
+class CSVUpload(models.Model):
+    """Model to track CSV file uploads for AI adoption data"""
+    STATUS_CHOICES = (
+        ('processing', 'Processing'),
+        ('success', 'Success'),
+        ('error', 'Error'),
+    )
+    
+    filename = models.CharField(max_length=255)
+    original_filename = models.CharField(max_length=255)
+    file_path = models.CharField(max_length=255, null=True, blank=True)
+    record_count = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+    error_message = models.TextField(null=True, blank=True)
+    processing_time = models.FloatField(null=True, blank=True, help_text="Processing time in seconds")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='csv_uploads')
+    trained_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_uploads')
+    
+    def __str__(self):
+        return f"{self.original_filename} ({self.record_count} records, {self.status})"
+    
+    def delete(self, *args, **kwargs):
+        # Delete the file when deleting the upload object
+        if self.file_path and os.path.exists(self.file_path):
+            os.remove(self.file_path)
         super().delete(*args, **kwargs)
 
 class AIPrediction(models.Model):
