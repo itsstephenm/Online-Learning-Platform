@@ -74,10 +74,43 @@
           </form>
           
           <div id="upload-progress" class="mt-3 d-none">
-            <div class="progress">
+            <div class="progress mb-2">
               <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
             </div>
-            <p class="mt-2 text-center">Processing data, please wait...</p>
+            <p class="mt-2 text-center" id="progress-message">Uploading file, please wait...</p>
+          </div>
+          
+          <!-- Multi-step Progress Indicator -->
+          <div id="processing-steps" class="mt-3 d-none">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="card mb-2" id="step-upload">
+                  <div class="card-body p-2 text-center">
+                    <i class="fas fa-upload fa-lg mb-2"></i>
+                    <h6 class="mb-0">Upload</h6>
+                    <small class="text-muted" id="upload-status">In progress...</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card mb-2" id="step-clean">
+                  <div class="card-body p-2 text-center">
+                    <i class="fas fa-broom fa-lg mb-2"></i>
+                    <h6 class="mb-0">Clean Data</h6>
+                    <small class="text-muted" id="clean-status">Waiting...</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card mb-2" id="step-train">
+                  <div class="card-body p-2 text-center">
+                    <i class="fas fa-cogs fa-lg mb-2"></i>
+                    <h6 class="mb-0">Train Model</h6>
+                    <small class="text-muted" id="train-status">Waiting...</small>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div id="upload-result" class="mt-3 d-none">
@@ -187,12 +220,20 @@ $(document).ready(function() {
     $('#upload-form').on('submit', function(e) {
         e.preventDefault();
         
-        // Show progress bar
+        // Show progress indicators
         $('#upload-btn').prop('disabled', true);
         $('#upload-progress').removeClass('d-none');
+        $('#processing-steps').removeClass('d-none');
         $('#upload-result').addClass('d-none');
         
+        // Style the upload step as active
+        $('#step-upload').addClass('bg-info text-white');
+        $('#upload-status').removeClass('text-muted').addClass('text-white').text('In progress...');
+        $('#progress-message').text('Uploading file, please wait...');
+        
         var formData = new FormData(this);
+        const cleanData = $('#clean-data').is(':checked');
+        const trainModel = $('#train-model').is(':checked');
         
         $.ajax({
             url: $(this).attr('action'),
@@ -202,62 +243,169 @@ $(document).ready(function() {
             contentType: false,
             headers: {'X-Requested-With': 'XMLHttpRequest'},
             success: function(response) {
-                $('#upload-progress').addClass('d-none');
+                // Mark upload as complete
+                $('#step-upload').removeClass('bg-info').addClass('bg-success');
+                $('#upload-status').text('Complete');
                 
                 if (response.status === 'success') {
-                    // Update stats
-                    $('#total-records').text(response.total_records);
-                    $('#model-count').text(response.model_count);
-                    $('#best-accuracy').text(response.best_accuracy);
-                    $('#last-upload').text(response.last_upload);
-                    
-                    // Show result
-                    $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-danger').addClass('alert-success');
-                    $('#result-message').text('CSV file processed successfully.');
-                    $('#records-processed').text(response.records);
-                    $('#processing-time').text(response.processing_time.toFixed(2));
-                    
-                    if (response.model_trained) {
-                        $('#model-accuracy').text((response.accuracy * 100).toFixed(2) + '%');
+                    // If clean data option is selected
+                    if (cleanData) {
+                        // Update cleaning step to active
+                        $('#step-clean').addClass('bg-info text-white');
+                        $('#clean-status').removeClass('text-muted').addClass('text-white').text('In progress...');
+                        $('#progress-message').text('Cleaning and standardizing data...');
+                        
+                        // Simulate cleaning progress (in a real app, you would poll the server for status)
+                        setTimeout(function() {
+                            // Mark cleaning as complete
+                            $('#step-clean').removeClass('bg-info').addClass('bg-success');
+                            $('#clean-status').text('Complete');
+                            
+                            // If train model option is selected
+                            if (trainModel) {
+                                // Update training step to active
+                                $('#step-train').addClass('bg-info text-white');
+                                $('#train-status').removeClass('text-muted').addClass('text-white').text('In progress...');
+                                $('#progress-message').text('Training AI model, this may take a few minutes...');
+                                
+                                // Simulate training progress (in a real app, you would poll the server for status)
+                                setTimeout(function() {
+                                    // Mark training as complete
+                                    $('#step-train').removeClass('bg-info').addClass('bg-success');
+                                    $('#train-status').text('Complete');
+                                    $('#progress-message').text('Processing complete!');
+                                    
+                                    // Show final result after brief delay
+                                    setTimeout(function() {
+                                        showFinalResult(response);
+                                    }, 1000);
+                                }, cleanData ? 2500 : 500); // Longer delay to simulate training time
+                            } else {
+                                // If no training, show result after cleaning
+                                $('#step-train').addClass('bg-secondary text-white');
+                                $('#train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
+                                $('#progress-message').text('Processing complete!');
+                                
+                                setTimeout(function() {
+                                    showFinalResult(response);
+                                }, 1000);
+                            }
+                        }, 1500); // Delay to simulate cleaning time
+                    } else if (trainModel) {
+                        // If clean data is skipped but train model is selected
+                        $('#step-clean').addClass('bg-secondary text-white');
+                        $('#clean-status').removeClass('text-muted').addClass('text-white').text('Skipped');
+                        
+                        // Update training step to active
+                        $('#step-train').addClass('bg-info text-white');
+                        $('#train-status').removeClass('text-muted').addClass('text-white').text('In progress...');
+                        $('#progress-message').text('Training AI model, this may take a few minutes...');
+                        
+                        // Simulate training progress
+                        setTimeout(function() {
+                            // Mark training as complete
+                            $('#step-train').removeClass('bg-info').addClass('bg-success');
+                            $('#train-status').text('Complete');
+                            $('#progress-message').text('Processing complete!');
+                            
+                            // Show final result after brief delay
+                            setTimeout(function() {
+                                showFinalResult(response);
+                            }, 1000);
+                        }, 2500); // Delay to simulate training time
                     } else {
-                        $('#model-accuracy').text('N/A (No model trained)');
+                        // If both cleaning and training are skipped
+                        $('#step-clean, #step-train').addClass('bg-secondary text-white');
+                        $('#clean-status, #train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
+                        $('#progress-message').text('Processing complete!');
+                        
+                        // Show final result after brief delay
+                        setTimeout(function() {
+                            showFinalResult(response);
+                        }, 1000);
                     }
-                    
-                    // Show insights
-                    if (response.insights && response.insights.length > 0) {
-                        $('#insights-container').show();
-                        var $insightsList = $('#insights-list').empty();
-                        response.insights.forEach(function(insight) {
-                            $insightsList.append($('<li>').text(insight));
-                        });
-                    } else {
-                        $('#insights-container').hide();
-                    }
-                    
-                    // Refresh upload history
-                    refreshUploadHistory();
-                    
-                    // Reset form
-                    $('#upload-form')[0].reset();
-                    $('.custom-file-label').html('Choose CSV file');
                 } else {
                     // Show error
-                    $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-success').addClass('alert-danger');
-                    $('#result-message').text('Error: ' + response.message);
-                    $('#insights-container').hide();
+                    showError(response);
                 }
-                
-                $('#upload-btn').prop('disabled', false);
             },
             error: function(xhr, status, error) {
-                $('#upload-progress').addClass('d-none');
-                $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-success').addClass('alert-danger');
-                $('#result-message').text('Error: ' + error);
-                $('#insights-container').hide();
-                $('#upload-btn').prop('disabled', false);
+                showError({message: 'Error: ' + error});
             }
         });
     });
+    
+    // Function to display the final result
+    function showFinalResult(response) {
+        $('#upload-progress').addClass('d-none');
+        
+        // Update stats
+        $('#total-records').text(response.total_records);
+        $('#model-count').text(response.model_count);
+        $('#best-accuracy').text(response.best_accuracy);
+        $('#last-upload').text(response.last_upload);
+        
+        // Show confetti animation for successful upload
+        showConfetti();
+        
+        // Show result
+        $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-danger').addClass('alert-success');
+        $('#result-message').text('CSV file processed successfully.');
+        $('#records-processed').text(response.records);
+        $('#processing-time').text(response.processing_time.toFixed(2));
+        
+        if (response.model_trained) {
+            $('#model-accuracy').text((response.accuracy * 100).toFixed(2) + '%');
+        } else {
+            $('#model-accuracy').text('N/A (No model trained)');
+        }
+        
+        // Show insights
+        if (response.insights && response.insights.length > 0) {
+            $('#insights-container').show();
+            var $insightsList = $('#insights-list').empty();
+            response.insights.forEach(function(insight) {
+                $insightsList.append($('<li>').text(insight));
+            });
+        } else {
+            $('#insights-container').hide();
+        }
+        
+        // Refresh upload history
+        refreshUploadHistory();
+        
+        // Reset form
+        $('#upload-form')[0].reset();
+        $('.custom-file-label').html('Choose CSV file');
+        $('#upload-btn').prop('disabled', false);
+    }
+    
+    // Function to display error message
+    function showError(response) {
+        $('#upload-progress').addClass('d-none');
+        $('#processing-steps').addClass('d-none');
+        $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-success').addClass('alert-danger');
+        $('#result-message').text('Error: ' + response.message);
+        $('#insights-container').hide();
+        $('#upload-btn').prop('disabled', false);
+    }
+    
+    // Function to display confetti animation
+    function showConfetti() {
+        // Only add this if you have included a confetti library
+        if (typeof confetti !== 'undefined') {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+    }
+    
+    // Add the confetti.js library dynamically
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+    document.head.appendChild(script);
     
     // Refresh upload history
     function refreshUploadHistory() {
