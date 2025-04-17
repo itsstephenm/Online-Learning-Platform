@@ -60,4 +60,9 @@ urlpatterns = [
     path('admin/ai-adoption/delete-model/<int:model_id>/', views.delete_model_view, name='delete_model_view'),
     path('admin/ai-adoption/predict-api/', views.ai_predict_view, name='ai_predict'),
     path('admin/ai-adoption/delete-dataset/<int:dataset_id>/', views.delete_dataset_view, name='delete_dataset_view'),
+    
+    path('ai-upload-data/', views.ai_upload_data_view, name='ai_upload_data'),
+    path('api/upload-csv/', views.upload_csv, name='upload_csv'),
+    path('api/upload-history/', views.upload_history_view, name='upload_history'),
+    path('api/delete-upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
 ] 
