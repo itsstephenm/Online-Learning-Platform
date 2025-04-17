@@ -812,9 +812,11 @@ ORDER BY count DESC;</textarea>
           
           // Create the chart
           const chartCtx = document.getElementById('responseChart').getContext('2d');
+          const chartType = data.chart_type || 'bar';
+          
           new Chart(chartCtx, {
-            type: '{{ query_result.chart_type|default:"bar" }}',
-            data: {{ query_result.chart|safe }},
+            type: chartType,
+            data: data.chart,
             options: {
               responsive: true,
               maintainAspectRatio: false,
