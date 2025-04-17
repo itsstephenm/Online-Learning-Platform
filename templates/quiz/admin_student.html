@@ -79,25 +79,25 @@
             <div class="row">
               <div class="col-md-3 mb-4 mb-md-0">
                 <div class="performance-card">
-                  <div class="performance-value text-primary">85%</div>
+                  <div class="performance-value text-primary">{{ avg_score }}%</div>
                   <div class="performance-label">Average Score</div>
                 </div>
               </div>
               <div class="col-md-3 mb-4 mb-md-0">
                 <div class="performance-card">
-                  <div class="performance-value text-success">92%</div>
+                  <div class="performance-value text-success">{{ attendance_rate }}%</div>
                   <div class="performance-label">Attendance Rate</div>
                 </div>
               </div>
               <div class="col-md-3 mb-4 mb-md-0">
                 <div class="performance-card">
-                  <div class="performance-value text-info">78%</div>
+                  <div class="performance-value text-info">{{ completion_rate }}%</div>
                   <div class="performance-label">Course Completion</div>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="performance-card">
-                  <div class="performance-value text-warning">65%</div>
+                  <div class="performance-value text-warning">{{ participation_rate }}%</div>
                   <div class="performance-label">Participation Rate</div>
                 </div>
               </div>
@@ -124,42 +124,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>#STU001</td>
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <div class="avatar-sm bg-primary text-white me-3">JS</div>
-                      <div>John Smith</div>
-                    </div>
-                  </td>
-                  <td>Computer Science</td>
-                  <td>88/100</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>#STU002</td>
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <div class="avatar-sm bg-info text-white me-3">MP</div>
-                      <div>Mary Parker</div>
-                    </div>
-                  </td>
-                  <td>Mathematics</td>
-                  <td>92/100</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>#STU003</td>
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <div class="avatar-sm bg-success text-white me-3">RJ</div>
-                      <div>Robert Johnson</div>
-                    </div>
-                  </td>
-                  <td>Physics</td>
-                  <td>78/100</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
+                {% if recent_students %}
+                  {% for student in recent_students %}
+                    <tr>
+                      <td>#STU{{ student.id }}</td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar-sm bg-{{ student.avatar_color }} text-white me-3">{{ student.initials }}</div>
+                          <div>{{ student.get_name }}</div>
+                        </div>
+                      </td>
+                      <td>{{ student.course_name }}</td>
+                      <td>{{ student.marks }}</td>
+                      <td><span class="badge bg-{{ student.status_color }}">{{ student.status }}</span></td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center">No recent students available</td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
