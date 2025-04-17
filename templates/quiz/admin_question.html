@@ -13,7 +13,7 @@
     
     <!-- Question Stats -->
     <div class="row">
-      <div class="col-md-4 mb-4">
+      <div class="col-md-3 mb-4">
         <a href="admin-view-question" class="text-decoration-none">
           <div class="card stat-card bg-gradient-primary">
             <div class="card-body">
@@ -27,7 +27,7 @@
         </a>
       </div>
       
-      <div class="col-md-4 mb-4">
+      <div class="col-md-3 mb-4">
         <a href="admin-view-course" class="text-decoration-none">
           <div class="card stat-card bg-gradient-warning">
             <div class="card-body">
@@ -41,18 +41,70 @@
         </a>
       </div>
       
-      <div class="col-md-4 mb-4">
-        <a href="admin-view-student-marks" class="text-decoration-none">
-          <div class="card stat-card bg-gradient-success">
-            <div class="card-body">
-              <div class="stat-icon">
-                <i class="fas fa-chart-line"></i>
+      <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-gradient-success">
+          <div class="card-body">
+            <div class="stat-icon">
+              <i class="fas fa-robot"></i>
+            </div>
+            <h3 class="stat-count">{{ai_generated}}</h3>
+            <p class="stat-label">AI Generated Questions</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-gradient-info">
+          <div class="card-body">
+            <div class="stat-icon">
+              <i class="fas fa-user-edit"></i>
+            </div>
+            <h3 class="stat-count">{{manual_created}}</h3>
+            <p class="stat-label">Manually Created</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Question Type Distribution -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h3 class="section-subtitle">Question Type Distribution</h3>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-4 text-center">
+                <div class="question-type-stat">
+                  <div class="question-type-icon bg-primary mx-auto mb-3">
+                    <i class="fas fa-list-ol"></i>
+                  </div>
+                  <h4 class="question-type-count">{{mcq_count}}</h4>
+                  <p class="question-type-label">Multiple Choice Questions</p>
+                </div>
               </div>
-              <h3 class="stat-count"><i class="far fa-smile"></i></h3>
-              <p class="stat-label">Student Results</p>
+              
+              <div class="col-md-4 mb-4 text-center">
+                <div class="question-type-stat">
+                  <div class="question-type-icon bg-warning mx-auto mb-3">
+                    <i class="fas fa-check-square"></i>
+                  </div>
+                  <h4 class="question-type-count">{{checkbox_count}}</h4>
+                  <p class="question-type-label">Checkbox Questions</p>
+                </div>
+              </div>
+              
+              <div class="col-md-4 mb-4 text-center">
+                <div class="question-type-stat">
+                  <div class="question-type-icon bg-success mx-auto mb-3">
+                    <i class="fas fa-edit"></i>
+                  </div>
+                  <h4 class="question-type-count">{{short_answer_count}}</h4>
+                  <p class="question-type-label">Short Answer Questions</p>
+                </div>
+              </div>
             </div>
           </div>
-        </a>
+        </div>
       </div>
     </div>
     
