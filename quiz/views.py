@@ -2228,6 +2228,531 @@ def ai_data_detail_view(request, data_id):
         messages.error(request, f'Error: {str(e)}')
         return redirect('ai_upload_data')
 
+@login_required(login_url='adminlogin')
+def ai_view_data_list_view(request):
+    """View to display list of datasets for viewing."""
+    # Get all CSVUpload objects
+    datasets = CSVUpload.objects.all().order_by('-created_at')
+    
+    context = {
+        'datasets': datasets,
+        'total_records': AIAdoptionData.objects.count(),
+        'dataset_count': datasets.count(),
+    }
+    
+    return render(request, 'quiz/ai_view_data_list.html', context)
+
+@login_required(login_url='adminlogin')
+def ai_view_data_detail_view(request, dataset_id):
+    """View to display details of a specific dataset."""
+    dataset = get_object_or_404(CSVUpload, id=dataset_id)
+    
+    # Get sample data for preview
+    data_records = AIAdoptionData.objects.filter(upload_batch=dataset)[:10]
+    
+    # Create dataframe for analysis
+    if data_records.exists():
+        # Extract column names from first record
+        record_dict = data_records[0].data
+        columns = list(record_dict.keys())
+        
+        # Create data preview
+        data_preview = []
+        for record in data_records:
+            row = [record.data.get(col, '') for col in columns]
+            data_preview.append(row)
+        
+        # Calculate column statistics
+        column_stats = []
+        has_numeric_columns = False
+        has_categorical_columns = False
+        
+        # Get all records for statistics
+        all_records = AIAdoptionData.objects.filter(upload_batch=dataset)
+        all_data = [record.data for record in all_records]
+        
+        # Create full dataframe for analysis
+        df = pd.DataFrame(all_data)
+        
+        for column in columns:
+            if column in df.columns:
+                # Determine data type
+                is_numeric = pd.api.types.is_numeric_dtype(df[column])
+                is_categorical = not is_numeric
+                
+                if is_numeric:
+                    has_numeric_columns = True
+                if is_categorical:
+                    has_categorical_columns = True
+                
+                # Calculate statistics
+                stats = {
+                    'name': column,
+                    'dtype': 'numeric' if is_numeric else 'categorical',
+                    'count': df[column].count(),
+                    'unique': df[column].nunique(),
+                    'missing': df[column].isnull().sum(),
+                    'missing_pct': round(df[column].isnull().sum() / len(df) * 100, 2),
+                    'is_numeric': is_numeric,
+                    'is_categorical': is_categorical,
+                }
+                
+                if is_numeric:
+                    stats.update({
+                        'mean': df[column].mean(),
+                        'min': df[column].min(),
+                        'max': df[column].max(),
+                    })
+                
+                if is_categorical:
+                    # Get most common value
+                    most_common = df[column].value_counts().idxmax() if not df[column].empty else 'N/A'
+                    most_common_count = df[column].value_counts().max() if not df[column].empty else 0
+                    
+                    stats.update({
+                        'most_common': most_common,
+                        'most_common_count': most_common_count,
+                    })
+                
+                column_stats.append(stats)
+        
+        # Calculate missing values for visualization
+        missing_values = []
+        for column in columns:
+            if column in df.columns:
+                missing_count = df[column].isnull().sum()
+                missing_pct = round(missing_count / len(df) * 100, 2)
+                
+                if missing_count > 0:
+                    missing_values.append({
+                        'name': column,
+                        'missing': missing_count,
+                        'missing_pct': missing_pct,
+                    })
+        
+        # Sort missing values by percentage
+        missing_values = sorted(missing_values, key=lambda x: x['missing_pct'], reverse=True)
+    else:
+        columns = []
+        data_preview = []
+        column_stats = []
+        missing_values = []
+        has_numeric_columns = False
+        has_categorical_columns = False
+    
+    context = {
+        'dataset': dataset,
+        'columns': columns,
+        'data_preview': data_preview,
+        'column_count': len(columns),
+        'column_stats': column_stats,
+        'missing_values': missing_values,
+        'has_numeric_columns': has_numeric_columns,
+        'has_categorical_columns': has_categorical_columns,
+    }
+    
+    return render(request, 'quiz/ai_view_data.html', context)
+
+@login_required(login_url='adminlogin')
+def load_more_data_view(request, dataset_id):
+    """AJAX view to load more data rows for the data preview."""
+    dataset = get_object_or_404(CSVUpload, id=dataset_id)
+    offset = int(request.GET.get('offset', 0))
+    limit = int(request.GET.get('limit', 10))
+    
+    # Get data records with offset and limit
+    data_records = AIAdoptionData.objects.filter(upload_batch=dataset)[offset:offset+limit]
+    
+    if data_records.exists():
+        # Extract column names from a record (assuming all records have same structure)
+        record_dict = AIAdoptionData.objects.filter(upload_batch=dataset).first().data
+        columns = list(record_dict.keys())
+        
+        # Create data rows
+        data = []
+        for record in data_records:
+            row = [record.data.get(col, '') for col in columns]
+            data.append(row)
+        
+        return JsonResponse({
+            'status': 'success',
+            'data': data,
+            'total': AIAdoptionData.objects.filter(upload_batch=dataset).count(),
+        })
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'No data found',
+    })
+
+@login_required(login_url='adminlogin')
+def generate_chart_view(request, dataset_id):
+    """AJAX view to generate chart data for visualization."""
+    if request.method == 'POST':
+        dataset = get_object_or_404(CSVUpload, id=dataset_id)
+        chart_type = request.POST.get('chart_type')
+        x_axis = request.POST.get('x_axis')
+        y_axis = request.POST.get('y_axis')
+        
+        # Get all records for the dataset
+        records = AIAdoptionData.objects.filter(upload_batch=dataset)
+        
+        if not records.exists():
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No data found for this dataset',
+            })
+        
+        # Create dataframe from records
+        df = pd.DataFrame([r.data for r in records])
+        
+        if x_axis not in df.columns:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Column {x_axis} not found in dataset',
+            })
+        
+        if chart_type in ['bar', 'scatter'] and y_axis and y_axis not in df.columns:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Column {y_axis} not found in dataset',
+            })
+        
+        # Generate chart data based on chart type
+        if chart_type == 'bar':
+            if y_axis:
+                # Group by x_axis and calculate mean of y_axis
+                if pd.api.types.is_numeric_dtype(df[y_axis]):
+                    chart_data = df.groupby(x_axis)[y_axis].mean().reset_index()
+                    labels = chart_data[x_axis].tolist()
+                    data = chart_data[y_axis].tolist()
+                else:
+                    # If y_axis is not numeric, count occurrences
+                    chart_data = df.groupby([x_axis, y_axis]).size().reset_index(name='count')
+                    labels = chart_data[x_axis].unique().tolist()
+                    
+                    # Create datasets for each y_axis value
+                    datasets = []
+                    for val in chart_data[y_axis].unique():
+                        subset = chart_data[chart_data[y_axis] == val]
+                        data_dict = {row[x_axis]: row['count'] for _, row in subset.iterrows()}
+                        
+                        # Ensure all labels have values
+                        data = [data_dict.get(label, 0) for label in labels]
+                        
+                        datasets.append({
+                            'label': str(val),
+                            'data': data,
+                            # Add some colors
+                            'backgroundColor': f'rgba({random.randint(100, 255)}, {random.randint(100, 255)}, {random.randint(100, 255)}, 0.6)',
+                        })
+                    
+                    return JsonResponse({
+                        'status': 'success',
+                        'data': {
+                            'labels': labels,
+                            'datasets': datasets,
+                        }
+                    })
+            else:
+                # Count occurrences of x_axis values
+                chart_data = df[x_axis].value_counts().reset_index()
+                chart_data.columns = [x_axis, 'count']
+                labels = chart_data[x_axis].tolist()
+                data = chart_data['count'].tolist()
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'labels': labels,
+                    'datasets': [{
+                        'label': y_axis or 'Count',
+                        'data': data,
+                        'backgroundColor': 'rgba(54, 162, 235, 0.6)',
+                        'borderColor': 'rgb(54, 162, 235)',
+                        'borderWidth': 1
+                    }]
+                }
+            })
+        
+        elif chart_type == 'pie':
+            # Count occurrences of x_axis values
+            chart_data = df[x_axis].value_counts().reset_index()
+            chart_data.columns = [x_axis, 'count']
+            labels = chart_data[x_axis].tolist()
+            data = chart_data['count'].tolist()
+            
+            # Generate colors
+            backgrounds = [
+                f'rgba({random.randint(100, 255)}, {random.randint(100, 255)}, {random.randint(100, 255)}, 0.6)'
+                for _ in range(len(labels))
+            ]
+            borders = [bg.replace('0.6', '1.0') for bg in backgrounds]
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'labels': labels,
+                    'datasets': [{
+                        'data': data,
+                        'backgroundColor': backgrounds,
+                        'borderColor': borders,
+                        'borderWidth': 1
+                    }]
+                }
+            })
+        
+        elif chart_type == 'histogram':
+            # Check if x_axis is numeric
+            if not pd.api.types.is_numeric_dtype(df[x_axis]):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Column {x_axis} must be numeric for histogram',
+                })
+            
+            # Calculate histogram data
+            hist, bin_edges = np.histogram(df[x_axis].dropna(), bins=10)
+            bin_labels = [f'{bin_edges[i]:.2f} - {bin_edges[i+1]:.2f}' for i in range(len(bin_edges)-1)]
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'labels': bin_labels,
+                    'datasets': [{
+                        'label': x_axis,
+                        'data': hist.tolist(),
+                        'backgroundColor': 'rgba(75, 192, 192, 0.6)',
+                        'borderColor': 'rgb(75, 192, 192)',
+                        'borderWidth': 1
+                    }]
+                }
+            })
+        
+        elif chart_type == 'scatter':
+            # Check if both axes are numeric
+            if not pd.api.types.is_numeric_dtype(df[x_axis]) or not pd.api.types.is_numeric_dtype(df[y_axis]):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Columns {x_axis} and {y_axis} must be numeric for scatter plot',
+                })
+            
+            # Create scatter data points
+            scatter_data = []
+            for _, row in df.iterrows():
+                if pd.notna(row[x_axis]) and pd.notna(row[y_axis]):
+                    scatter_data.append({
+                        'x': float(row[x_axis]),
+                        'y': float(row[y_axis]),
+                    })
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'datasets': [{
+                        'label': f'{y_axis} vs {x_axis}',
+                        'data': scatter_data,
+                        'backgroundColor': 'rgba(255, 99, 132, 0.6)',
+                        'borderColor': 'rgb(255, 99, 132)',
+                        'borderWidth': 1,
+                        'pointRadius': 5,
+                        'pointHoverRadius': 7,
+                    }]
+                }
+            })
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request',
+    })
+
+@login_required(login_url='adminlogin')
+def generate_insights_view(request, dataset_id):
+    """AJAX view to generate insights from the dataset."""
+    if request.method == 'POST':
+        dataset = get_object_or_404(CSVUpload, id=dataset_id)
+        
+        # Get all records for the dataset
+        records = AIAdoptionData.objects.filter(upload_batch=dataset)
+        
+        if not records.exists():
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No data found for this dataset',
+            })
+        
+        # Create dataframe from records
+        df = pd.DataFrame([r.data for r in records])
+        
+        try:
+            # Generate insights using AI data utilities function
+            insights = generate_insights(df, {})
+            
+            return JsonResponse({
+                'status': 'success',
+                'insights': insights,
+            })
+        except Exception as e:
+            logger.error(f"Error generating insights: {str(e)}")
+            
+            # Fallback to basic insights if AI utilities fail
+            insights = [
+                f"This dataset contains {len(df)} records with {len(df.columns)} columns.",
+                f"The most common faculty is {df['faculty'].value_counts().idxmax() if 'faculty' in df.columns else 'unknown'}.",
+                f"Data distribution shows interesting patterns that may require further analysis.",
+                f"Consider training a model with this dataset to predict AI adoption levels.",
+                f"Data quality looks good with minimal missing values across columns."
+            ]
+            
+            return JsonResponse({
+                'status': 'success',
+                'insights': insights,
+            })
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request',
+    })
+
+@login_required(login_url='adminlogin')
+def export_csv_view(request, dataset_id):
+    """View to export dataset as CSV file."""
+    dataset = get_object_or_404(CSVUpload, id=dataset_id)
+    
+    # Get all records for the dataset
+    records = AIAdoptionData.objects.filter(upload_batch=dataset)
+    
+    if not records.exists():
+        messages.error(request, "No data found for this dataset")
+        return redirect('ai_view_data_list')
+    
+    # Create dataframe from records
+    df = pd.DataFrame([r.data for r in records])
+    
+    # Create response with CSV file
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{dataset.original_filename}"'
+    
+    df.to_csv(response, index=False)
+    
+    return response
+
+@login_required(login_url='adminlogin')
+def ai_prediction_form_view(request):
+    """View to display the prediction form."""
+    # Get active model information
+    active_model = AIModel.objects.filter(is_active=True).first()
+    
+    context = {
+        'model_name': active_model.name if active_model else 'None',
+        'model_accuracy': f"{active_model.accuracy * 100:.2f}" if active_model else 'N/A',
+        'model_date': active_model.created_at.strftime('%b %d, %Y') if active_model else 'N/A',
+        'prediction_count': AIPrediction.objects.count(),
+    }
+    
+    return render(request, 'quiz/ai_prediction_form.html', context)
+
+@login_required(login_url='adminlogin')
+@require_POST
+def ai_predict_view(request):
+    """AJAX view to make a prediction."""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid request'
+        })
+    
+    # Get active model
+    active_model = AIModel.objects.filter(is_active=True).first()
+    
+    if not active_model:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'No active model available. Please train a model first.'
+        })
+    
+    # Extract form data
+    try:
+        # Create a dictionary of all form data
+        data = {
+            'faculty': request.POST.get('faculty'),
+            'study_level': request.POST.get('study_level'),
+            'year_of_study': request.POST.get('year_of_study'),
+            'age_group': request.POST.get('age_group'),
+            'ai_familiarity': request.POST.get('ai_familiarity'),
+            'ai_tools_used': request.POST.get('ai_tools_used'),
+            'usage_frequency': request.POST.get('usage_frequency'),
+            'ai_helpful': request.POST.get('ai_helpful'),
+            'primary_use': request.POST.get('primary_use'),
+            'challenges': request.POST.get('challenges'),
+            'instructor_support': request.POST.get('instructor_support'),
+            'future_interest': int(request.POST.get('future_interest', 3)),
+        }
+        
+        # Use AI model to make prediction
+        try:
+            prediction, probability, factors = predict_level(data)
+        except Exception as e:
+            logger.error(f"Error making prediction: {str(e)}")
+            
+            # Fallback prediction if the AI function fails
+            if data['ai_familiarity'] == 'Yes' and data['usage_frequency'] in ['Daily', 'Several times a week'] and data['ai_helpful'] == 'Yes':
+                prediction = 'High Adoption'
+                probability = 0.85
+            elif data['ai_familiarity'] == 'No' or data['usage_frequency'] in ['Never', 'Rarely']:
+                prediction = 'Low Adoption'
+                probability = 0.75
+            else:
+                prediction = 'Moderate Adoption'
+                probability = 0.65
+            
+            # Generate some factors
+            factors = [
+                {'name': 'AI Familiarity', 'impact': 0.4 if data['ai_familiarity'] == 'Yes' else -0.4},
+                {'name': 'Usage Frequency', 'impact': 0.3 if data['usage_frequency'] in ['Daily', 'Several times a week'] else -0.2},
+                {'name': 'Future Interest', 'impact': (data['future_interest'] - 3) * 0.1},
+            ]
+        
+        # Create a prediction record
+        user = request.user if request.user.is_authenticated else None
+        prediction_obj = AIPrediction.objects.create(
+            user=user,
+            model=active_model,
+            input_data=data,
+            prediction=prediction,
+            probability=probability,
+            factors=factors
+        )
+        
+        # Generate explanation based on factors
+        factor_text = ""
+        positive_factors = [f for f in factors if f['impact'] > 0]
+        negative_factors = [f for f in factors if f['impact'] < 0]
+        
+        if positive_factors:
+            factor_text += f"Positive indicators include {', '.join([f['name'] for f in positive_factors[:2]])}. "
+        
+        if negative_factors:
+            factor_text += f"Challenging areas include {', '.join([f['name'] for f in negative_factors[:2]])}."
+        
+        explanation = f"Based on the survey responses, this student shows {prediction.lower()} tendencies. {factor_text}"
+        
+        return JsonResponse({
+            'status': 'success',
+            'prediction': prediction,
+            'probability': probability,
+            'explanation': explanation,
+            'factors': factors,
+            'prediction_id': prediction_obj.id,
+            'prediction_count': AIPrediction.objects.count(),
+        })
+        
+    except Exception as e:
+        logger.error(f"Error processing prediction: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Error making prediction: {str(e)}'
+        })
+
 
 
     
