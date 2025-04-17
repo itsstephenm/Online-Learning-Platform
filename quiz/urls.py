@@ -64,5 +64,5 @@ urlpatterns = [
     
     # History and delete URLs
     path('admin/ai-adoption/upload-history/', views.upload_history_view, name='upload_history'),
-    path('admin/ai-adoption/delete-upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
+    path('admin/ai-adoption/delete-upload/<int:upload_id>/', views.delete_upload_view, name='delete_upload'),
 ] 
