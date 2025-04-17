@@ -156,10 +156,11 @@
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Student AI Adoption Data</h5>
                 <div>
-                  <button class="btn btn-sm btn-outline-primary me-2">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-primary me-2" id="filterData">
                     <i class="fas fa-filter me-1"></i> Filter
                   </button>
-                  <button class="btn btn-sm btn-outline-success">
+                  <button class="btn btn-sm btn-outline-success" id="exportData">
                     <i class="fas fa-download me-1"></i> Export
                   </button>
                 </div>
@@ -181,63 +182,57 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>gmail.com</td>
-                        <td>Undergraduate</td>
-                        <td>Engineering</td>
-                        <td>High</td>
-                        <td>Yes</td>
-                        <td>ChatGPT, GitHub Copilot</td>
-                        <td>Daily</td>
-                        <td>Yes</td>
-                        <td><span class="badge bg-success">Very High</span></td>
-                      </tr>
-                      <tr>
-                        <td>yahoo.com</td>
-                        <td>Masters</td>
-                        <td>Business</td>
-                        <td>Medium</td>
-                        <td>Yes</td>
-                        <td>ChatGPT</td>
-                        <td>Weekly</td>
-                        <td>Yes</td>
-                        <td><span class="badge bg-primary">High</span></td>
-                      </tr>
-                      <tr>
-                        <td>outlook.com</td>
-                        <td>PhD</td>
-                        <td>Sciences</td>
-                        <td>Very High</td>
-                        <td>Yes</td>
-                        <td>ChatGPT, Stable Diffusion, Midjourney</td>
-                        <td>Daily</td>
-                        <td>Yes</td>
-                        <td><span class="badge bg-success">Very High</span></td>
-                      </tr>
-                      <tr>
-                        <td>gmail.com</td>
-                        <td>Undergraduate</td>
-                        <td>Humanities</td>
-                        <td>Low</td>
-                        <td>No</td>
-                        <td>-</td>
-                        <td>-</td>
-                        <td>No</td>
-                        <td><span class="badge bg-warning">Low</span></td>
-                      </tr>
-                      <tr>
-                        <td>hotmail.com</td>
-                        <td>Masters</td>
-                        <td>Education</td>
-                        <td>Medium</td>
-                        <td>Yes</td>
-                        <td>ChatGPT, Grammarly</td>
-                        <td>Monthly</td>
-                        <td>Maybe</td>
-                        <td><span class="badge bg-info">Medium</span></td>
-                      </tr>
+                      {% if adoption_data %}
+                        {% for data in adoption_data %}
+                          <tr>
+                            <td>{{ data.email_domain|default:"N/A" }}</td>
+                            <td>{{ data.level_of_study }}</td>
+                            <td>{{ data.faculty }}</td>
+                            <td>
+                              {% if data.ai_familiarity == 1 %}Very Low
+                              {% elif data.ai_familiarity == 2 %}Low
+                              {% elif data.ai_familiarity == 3 %}Medium
+                              {% elif data.ai_familiarity == 4 %}High
+                              {% elif data.ai_familiarity == 5 %}Very High
+                              {% else %}{{ data.ai_familiarity }}
+                              {% endif %}
+                            </td>
+                            <td>{{ data.uses_ai_tools }}</td>
+                            <td>{{ data.tools_used|truncatechars:30|default:"N/A" }}</td>
+                            <td>{{ data.usage_frequency }}</td>
+                            <td>{{ data.improves_learning }}</td>
+                            <td>
+                              {% if data.adoption_level == 'very_high' %}
+                                <span class="badge bg-success">Very High</span>
+                              {% elif data.adoption_level == 'high' %}
+                                <span class="badge bg-primary">High</span>
+                              {% elif data.adoption_level == 'medium' %}
+                                <span class="badge bg-info">Medium</span>
+                              {% elif data.adoption_level == 'low' %}
+                                <span class="badge bg-warning">Low</span>
+                              {% elif data.adoption_level == 'very_low' %}
+                                <span class="badge bg-danger">Very Low</span>
+                              {% else %}
+                                <span class="badge bg-secondary">{{ data.adoption_level }}</span>
+                              {% endif %}
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      {% else %}
+                        <tr>
+                          <td colspan="9" class="text-center">No adoption data available. Add some data to see it here.</td>
+                        </tr>
+                      {% endif %}
                     </tbody>
                   </table>
+                  
+                  {% if adoption_data_count > 5 %}
+                    <div class="text-center mt-3">
+                      <a href="/admin/quiz/aiadoptiondata/" class="btn btn-outline-primary">
+                        View All {{ adoption_data_count }} Records
+                      </a>
+                    </div>
+                  {% endif %}
                 </div>
               </div>
             </div>
