@@ -132,9 +132,13 @@
                 <button type="submit" class="btn btn-primary" id="upload-btn">
                   <i class="fas fa-upload"></i> Upload & Process
                 </button>
-                <a href="{% url 'upload_csv_view' %}" class="btn btn-outline-secondary ml-2" id="direct-upload-link">
-                  <i class="fas fa-external-link-alt"></i> Standard Form Upload
-                </a>
+                <form action="{% url 'upload_csv_view' %}" method="post" enctype="multipart/form-data" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="csv_file" id="standard-form-file">
+                  <button type="submit" class="btn btn-outline-secondary ml-2" id="direct-upload-btn">
+                    <i class="fas fa-external-link-alt"></i> Standard Form Upload
+                  </button>
+                </form>
               </div>
             </div>
           </form>
