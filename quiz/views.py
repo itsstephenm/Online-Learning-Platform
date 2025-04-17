@@ -1775,8 +1775,8 @@ def ai_upload_data_view(request):
     return render(request, 'quiz/ai_upload_data.html', context)
 
 @login_required
-def upload_csv(request):
-    """Handle CSV file upload with options to clean data and train model."""
+def upload_csv_ai(request):
+    """Handle CSV file upload for AI prediction system."""
     if request.method == 'POST' and request.FILES.get('csv_file'):
         csv_file = request.FILES['csv_file']
         clean_data = request.POST.get('clean_data') == 'on'

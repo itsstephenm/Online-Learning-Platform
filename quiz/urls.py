@@ -9,7 +9,7 @@ urlpatterns = [
     path('ai_adoption_dashboard/', views.ai_adoption_dashboard_view, name='ai_adoption_dashboard'),  # New dashboard URL
     
     # AI Prediction System URLs
-    path('ai/upload/', views.upload_csv, name='upload_csv'),
+    path('ai/upload/', views.upload_csv_ai, name='upload_csv_ai'),
     path('ai/train/', views.train_ai_model, name='train_ai_model'),
     path('ai/predict/', views.predict_adoption_level, name='predict_adoption'),
     path('ai/prediction/<int:prediction_id>/', views.prediction_result, name='prediction_result'),
