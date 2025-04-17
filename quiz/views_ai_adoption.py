@@ -108,10 +108,10 @@ def upload_csv_view(request):
     try:
         csv_file = request.FILES.get('csv_file')
         if not csv_file:
-            return JsonResponse({'success': False, 'error': 'No file uploaded'})
+            return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
         
         if not csv_file.name.endswith('.csv'):
-            return JsonResponse({'success': False, 'error': 'File must be a CSV'})
+            return JsonResponse({'status': 'error', 'message': 'File must be a CSV'})
         
         # Create upload record
         upload_record = CSVUpload.objects.create(
@@ -208,13 +208,13 @@ def upload_csv_view(request):
             result = train_ai_model(upload_record.id)
             if not result['success']:
                 return JsonResponse({
-                    'success': True,
+                    'status': 'success',
                     'upload_id': upload_record.id,
                     'warning': f"Upload successful but model training failed: {result['error']}"
                 })
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
             'upload_id': upload_record.id,
             'message': 'Data uploaded and processed successfully'
         })
@@ -226,8 +226,8 @@ def upload_csv_view(request):
             upload_record.error_message = str(e)
             upload_record.save()
         return JsonResponse({
-            'success': False,
-            'error': str(e)
+            'status': 'error',
+            'message': str(e)
         })
 
 @login_required(login_url='adminlogin')
@@ -274,8 +274,8 @@ def train_model_view(request):
                     'status': 'success',
                     'model_id': results['model_id'],
                     'accuracy': results['accuracy'],
-                    'training_time': results['training_time'],
-                    'algorithm': results['algorithm']
+                    'training_time': results.get('training_time', 0),
+                    'algorithm': results.get('algorithm', algorithm)
                 })
             else:
                 messages.success(
