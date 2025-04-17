@@ -352,244 +352,109 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Define URLs using data attributes
-    const uploadForm = document.getElementById('uploadForm');
-    const urls = {
-        uploadCsv: uploadForm.action,
-        trainModel: document.getElementById('direct-train-form').action,
-        uploadHistory: "{% url 'upload_history' %}",
-        deleteBase: "{% url 'delete_upload' 0 %}"
+    // API endpoints
+    const API = {
+        upload: "{% url 'upload_csv_view' %}",
+        history: "{% url 'upload_history' %}",
+        delete: "{% url 'delete_upload' 0 %}".replace('$id', '$id'),
+        viewData: "{% url 'ai_data_detail' 0 %}".replace('$id', '$id'),
     };
 
-    // Get CSRF token
+    // CSRF token for AJAX requests
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    // File input change handler
-    document.getElementById('csv-file').addEventListener('change', function(e) {
+    
+    // Upload form and related elements
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('csv-file');
+    const cleanDataCheckbox = document.getElementById('clean-data');
+    const trainModelCheckbox = document.getElementById('train-model');
+    const uploadBtn = document.getElementById('upload-btn');
+    
+    // Progress indicators
+    const progressContainer = document.getElementById('upload-progress-container');
+    const overallProgress = document.getElementById('overall-progress');
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const cleanProgressBar = document.getElementById('clean-progress-bar');
+    const trainProgressBar = document.getElementById('train-progress-bar');
+    const uploadStatus = document.getElementById('upload-status');
+    const cleanStatus = document.getElementById('clean-status');
+    const trainStatus = document.getElementById('train-status');
+    
+    // Result elements
+    const resultContainer = document.getElementById('upload-result');
+    const resultIcon = document.getElementById('result-icon');
+    const resultTitle = document.getElementById('result-title');
+    const resultMessage = document.getElementById('result-message');
+    const recordsProcessed = document.getElementById('records-processed');
+    const processingTime = document.getElementById('processing-time');
+    const modelAccuracy = document.getElementById('model-accuracy');
+    const insightsContainer = document.getElementById('insights-container');
+    const insightsList = document.getElementById('insights-list');
+    const viewDataButton = document.getElementById('view-data-button');
+    const uploadAnotherButton = document.getElementById('upload-another');
+    
+    // Track upload ID for view data button
+    let currentUploadId = null;
+    
+    // File input change handler - update label with selected filename
+    fileInput.addEventListener('change', function(e) {
         const fileName = e.target.value.split('\\').pop();
-        e.target.nextElementSibling.textContent = fileName;
+        this.nextElementSibling.textContent = fileName || 'Choose CSV file';
+        
+        // Validate file type
+        if (fileName && !fileName.toLowerCase().endsWith('.csv')) {
+            showNotification('Please select a CSV file', 'warning');
+            fileInput.value = '';
+            this.nextElementSibling.textContent = 'Choose CSV file';
+        }
     });
-
+    
     // Form submission handler
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // Reset UI state
-        resetUIState();
+        // Validate form
+        if (!fileInput.files || !fileInput.files[0]) {
+            showNotification('Please select a file to upload', 'warning');
+            return;
+        }
+        
+        // Reset upload process state
+        resetUploadState();
+        
+        // Start upload process
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('csv_file', file);
+        formData.append('clean_data', cleanDataCheckbox.checked);
+        formData.append('train_model', trainModelCheckbox.checked);
         
         // Show progress indicators
-        showProgressIndicators();
+        showProgressUI();
         
-        // Send form data
-        const formData = new FormData(this);
-        formData.set('clean_data', document.getElementById('clean-data').checked.toString());
-        formData.set('train_model', document.getElementById('train-model').checked.toString());
+        // Simulate upload progress
+        startProgressSimulation();
         
-        fetch(urls.uploadCsv, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                showFinalResult(data);
-            } else {
-                showError(data);
-            }
-        })
-        .catch(error => {
-            console.error('Upload error:', error);
-            showError({message: 'Error: ' + error.message});
-        })
-        .finally(() => {
-            document.getElementById('upload-btn').disabled = false;
-        });
+        // Send the upload request
+        uploadFile(formData);
     });
-
-    // Helper functions
-    function resetUIState() {
-        const elements = ['step-upload', 'step-clean', 'step-train'].map(id => document.getElementById(id));
-        elements.forEach(el => {
-            el.classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white', 'step-active');
-        });
-        
-        ['upload-status', 'clean-status', 'train-status'].forEach(id => {
-            const el = document.getElementById(id);
-            el.classList.remove('text-white');
-            el.classList.add('text-muted');
-            el.textContent = id === 'upload-status' ? 'In progress...' : 'Waiting...';
-        });
-    }
-
-    function showProgressIndicators() {
-        document.getElementById('upload-btn').disabled = true;
-        document.getElementById('upload-progress-container').classList.remove('d-none');
-        document.getElementById('upload-result').classList.add('d-none');
-        
-        const uploadStep = document.getElementById('step-upload');
-        uploadStep.classList.add('bg-info', 'text-white', 'step-active');
-        
-        const uploadStatus = document.getElementById('upload-status');
-        uploadStatus.classList.remove('text-muted');
-        uploadStatus.classList.add('text-white');
-        
-        document.getElementById('upload-progress-bar').style.width = '0%';
-        document.getElementById('clean-progress-bar').style.width = '0%';
-        document.getElementById('train-progress-bar').style.width = '0%';
-    }
-
-    function showFinalResult(response) {
-        // Update stats
-        if (response.total_records !== undefined && 
-            response.model_count !== undefined && 
-            response.best_accuracy !== undefined && 
-            response.last_upload !== undefined) {
-            updateStats(response);
-        } else {
-            // If stats are not directly provided, request a refresh of the stats
-            refreshUploadHistory();
+    
+    // Handle "Upload Another" button
+    uploadAnotherButton.addEventListener('click', function() {
+        // Reset UI and form
+        resultContainer.classList.add('d-none');
+        fileInput.value = '';
+        fileInput.nextElementSibling.textContent = 'Choose CSV file';
+        uploadBtn.disabled = false;
+    });
+    
+    // Handle "View Data" button
+    viewDataButton.addEventListener('click', function() {
+        if (currentUploadId) {
+            window.location.href = API.viewData.replace('$id', currentUploadId);
         }
-        
-        // Show success animation
-        if (typeof confetti === 'function') {
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-            });
-        }
-        
-        // Update UI
-        const resultDiv = document.getElementById('upload-result');
-        resultDiv.classList.remove('d-none');
-        resultDiv.querySelector('.card').classList.remove('border-danger');
-        resultDiv.querySelector('.card').classList.add('border-success');
-        
-        document.getElementById('result-icon').classList.remove('fa-times-circle', 'text-danger');
-        document.getElementById('result-icon').classList.add('fa-check-circle', 'text-success');
-        document.getElementById('result-title').textContent = 'Success';
-        document.getElementById('result-message').textContent = response.message || 'CSV file processed successfully.';
-        
-        // Update elements only if they exist in the DOM
-        const recordsProcessed = document.getElementById('records-processed');
-        if (recordsProcessed) {
-            recordsProcessed.textContent = response.records || response.record_count || 'N/A';
-        }
-        
-        const processingTime = document.getElementById('processing-time');
-        if (processingTime && response.processing_time !== undefined) {
-            processingTime.textContent = response.processing_time.toFixed(2);
-        }
-        
-        const modelAccuracy = document.getElementById('model-accuracy');
-        if (modelAccuracy) {
-            modelAccuracy.textContent = response.model_trained ? 
-                (response.accuracy * 100).toFixed(2) + '%' : 'N/A (No model trained)';
-        }
-        
-        // Show insights
-        const insightsContainer = document.getElementById('insights-container');
-        const insightsList = document.getElementById('insights-list');
-        
-        if (insightsList && response.insights?.length) {
-            insightsList.innerHTML = '';
-            response.insights.forEach(insight => {
-                const li = document.createElement('li');
-                li.textContent = insight;
-                insightsList.appendChild(li);
-            });
-            insightsContainer.style.display = 'block';
-        } else if (insightsContainer) {
-            insightsContainer.style.display = 'none';
-        }
-        
-        // Reset form
-        uploadForm.reset();
-        const fileLabel = document.querySelector('.custom-file-label');
-        if (fileLabel) {
-            fileLabel.textContent = 'Choose CSV file';
-        }
-        refreshUploadHistory();
-    }
-
-    function showError(response) {
-        document.getElementById('upload-progress-container').classList.add('d-none');
-        document.getElementById('upload-result').classList.add('d-none');
-        
-        const resultDiv = document.getElementById('upload-result');
-        resultDiv.querySelector('.card').classList.remove('border-success');
-        resultDiv.querySelector('.card').classList.add('border-danger');
-        
-        const resultIcon = document.getElementById('result-icon');
-        resultIcon.classList.remove('fa-check-circle', 'text-success');
-        resultIcon.classList.add('fa-times-circle', 'text-danger');
-        
-        const errorMsg = response.message || response.error || 'Unknown error occurred';
-        document.getElementById('result-title').textContent = 'Error';
-        document.getElementById('result-message').textContent = 'Error: ' + errorMsg;
-        document.getElementById('insights-container').style.display = 'none';
-        console.error('Error details:', response);
-    }
-
-    function updateStats(response) {
-        document.getElementById('total-records').textContent = response.total_records;
-        document.getElementById('model-count').textContent = response.model_count;
-        document.getElementById('best-accuracy').textContent = response.best_accuracy;
-        document.getElementById('last-upload').textContent = response.last_upload;
-    }
-
-    function refreshUploadHistory() {
-        fetch(urls.uploadHistory, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                dataTable.clear();
-                
-                if (data.history?.length) {
-                    data.history.forEach(upload => {
-                        const statusBadge = getStatusBadge(upload.status);
-                        const viewUrl = "{% url 'ai_data_detail' 0 %}".replace('0', upload.id);
-                        
-                        dataTable.row.add([
-                            upload.filename,
-                            upload.record_count,
-                            statusBadge,
-                            upload.created_at,
-                            getActionButtons(upload.id, viewUrl)
-                        ]);
-                    });
-                }
-                
-                dataTable.draw();
-            }
-        });
-    }
-
-    function getStatusBadge(status) {
-        const badgeClass = status === 'completed' ? 'success' : 
-                          status === 'failed' ? 'danger' : 'warning';
-        return `<span class="badge badge-${badgeClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-    }
-
-    function getActionButtons(id, viewUrl) {
-        return `
-            <a href="${viewUrl}" class="btn btn-sm btn-info">
-                <i class="fas fa-eye"></i> View
-            </a>
-            <button class="btn btn-sm btn-danger delete-upload" data-id="${id}">
-                <i class="fas fa-trash"></i>
-            </button>
-        `;
-    }
-
+    });
+    
     // Delete functionality
     let deleteUploadId = null;
     
@@ -600,11 +465,15 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
         }
     });
-
+    
     document.getElementById('confirmDelete').addEventListener('click', function() {
         if (!deleteUploadId) return;
         
-        const deleteUrl = urls.deleteBase.replace('0', deleteUploadId);
+        const deleteUrl = API.delete.replace('$id', deleteUploadId);
+        
+        // Disable delete button and show loading
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
         
         fetch(deleteUrl, {
             method: 'POST',
@@ -613,27 +482,523 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
+        .then(handleResponse)
         .then(data => {
             if (data.status === 'success') {
-                refreshUploadHistory();
+                // Show success message
+                showNotification('Upload deleted successfully', 'success');
+                
+                // Update stats and refresh table
                 updateStats(data);
+                refreshUploadHistory();
             } else {
-                alert('Error deleting upload: ' + (data.message || 'Unknown error'));
+                showNotification('Error deleting upload: ' + (data.message || 'Unknown error'), 'danger');
             }
         })
         .catch(error => {
             console.error('Delete error:', error);
-            alert('Error deleting upload: ' + error.message);
+            showNotification('Error deleting upload: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            // Re-enable delete button
+            document.getElementById('confirmDelete').disabled = false;
+            document.getElementById('confirmDelete').innerHTML = 'Delete';
+            
+            // Hide modal
+            bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
         });
+    });
+    
+    /**
+     * Core upload functionality
+     */
+    function uploadFile(formData) {
+        fetch(API.upload, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                // Don't set Content-Type header, browser will set it with boundary for multipart/form-data
+            }
+        })
+        .then(handleResponse)
+        .then(data => {
+            // Stop progress simulation
+            clearAllProgressIntervals();
+            
+            if (data.status === 'success') {
+                // Update UI for upload success
+                updateUploadProgress(100, 'Completed');
+                updateCleanProgress(100, 'Completed');
+                
+                if (trainModelCheckbox.checked) {
+                    updateTrainProgress(100, 'Completed');
+                } else {
+                    updateTrainProgress(0, 'Skipped');
+                }
+                
+                updateOverallProgress(100);
+                
+                // Store the upload ID for view data button
+                currentUploadId = data.upload_id;
+                
+                // Show success result after a brief delay
+                setTimeout(() => {
+                    showUploadSuccess(data);
+                    
+                    // Refresh table data
+                    refreshUploadHistory();
+                    
+                    // Update stats
+                    if (data.total_records !== undefined) {
+                        updateStats(data);
+                    } else {
+                        // If stats aren't included, fetch them
+                        fetchLatestStats();
+                    }
+                    
+                    // Show confetti on success
+                    if (typeof confetti === 'function') {
+                        confetti({
+                            particleCount: 100,
+                            spread: 70,
+                            origin: { y: 0.6 }
+                        });
+                    }
+                }, 500);
+            } else {
+                // Handle error
+                showUploadError(data);
+            }
+        })
+        .catch(error => {
+            // Stop progress simulation
+            clearAllProgressIntervals();
+            
+            // Show error state
+            console.error('Upload failed:', error);
+            showUploadError({ message: error.message || 'Network error occurred' });
+        })
+        .finally(() => {
+            // Re-enable upload button
+            uploadBtn.disabled = false;
+        });
+    }
+    
+    /**
+     * Helper functions
+     */
+    
+    // Handle fetch response and check for errors
+    function handleResponse(response) {
+        if (!response.ok) {
+            // Try to get error message from response
+            return response.json()
+                .catch(() => {
+                    // If we can't parse JSON, throw with status text
+                    throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+                })
+                .then(errorData => {
+                    // If we got JSON with error, throw that
+                    throw new Error(errorData.message || errorData.error || `HTTP error ${response.status}`);
+                });
+        }
+        return response.json();
+    }
+    
+    // Reset upload process state
+    function resetUploadState() {
+        // Reset progress indicators
+        updateUploadProgress(0, 'Pending');
+        updateCleanProgress(0, 'Pending');
+        updateTrainProgress(0, 'Pending');
+        updateOverallProgress(0);
         
-        bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
-    });
-
-    // Direct upload button handler
-    document.getElementById('direct-upload-link').addEventListener('click', function() {
-        uploadForm.removeEventListener('submit', arguments.callee);
-    });
+        // Reset UI elements
+        document.getElementById('step-upload').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
+        document.getElementById('step-clean').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
+        document.getElementById('step-train').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
+        
+        // Clear any existing intervals
+        clearAllProgressIntervals();
+    }
+    
+    // Progress interval IDs
+    let uploadInterval, cleanInterval, trainInterval, overallInterval;
+    
+    // Clear all progress simulation intervals
+    function clearAllProgressIntervals() {
+        [uploadInterval, cleanInterval, trainInterval, overallInterval].forEach(interval => {
+            if (interval) clearInterval(interval);
+        });
+    }
+    
+    // Start simulating progress for better user experience
+    function startProgressSimulation() {
+        let uploadProgress = 0;
+        let cleanProgress = 0;
+        let trainProgress = 0;
+        let overallProgress = 0;
+        
+        // Simulate upload progress (0-90%)
+        uploadInterval = setInterval(() => {
+            if (uploadProgress < 90) {
+                uploadProgress += (90 - uploadProgress) / 10;
+                updateUploadProgress(uploadProgress, 'Uploading...');
+            } else {
+                clearInterval(uploadInterval);
+            }
+        }, 300);
+        
+        // Simulate data cleaning progress starting after upload reaches 30%
+        setTimeout(() => {
+            updateCleanProgress(0, 'Starting...');
+            document.getElementById('step-clean').classList.add('bg-info', 'text-white');
+            
+            cleanInterval = setInterval(() => {
+                if (cleanProgress < 90) {
+                    cleanProgress += (90 - cleanProgress) / 10;
+                    updateCleanProgress(cleanProgress, 'Processing...');
+                } else {
+                    clearInterval(cleanInterval);
+                }
+            }, 400);
+        }, 1500);
+        
+        // Simulate model training progress if checkbox is checked
+        if (trainModelCheckbox.checked) {
+            setTimeout(() => {
+                updateTrainProgress(0, 'Starting...');
+                document.getElementById('step-train').classList.add('bg-info', 'text-white');
+                
+                trainInterval = setInterval(() => {
+                    if (trainProgress < 90) {
+                        trainProgress += (90 - trainProgress) / 15;
+                        updateTrainProgress(trainProgress, 'Training...');
+                    } else {
+                        clearInterval(trainInterval);
+                    }
+                }, 500);
+            }, 3000);
+        }
+        
+        // Overall progress updates
+        overallInterval = setInterval(() => {
+            const progressValues = [uploadProgress];
+            if (cleanProgress > 0) progressValues.push(cleanProgress);
+            if (trainProgress > 0 && trainModelCheckbox.checked) progressValues.push(trainProgress);
+            
+            // Calculate weighted average based on what steps are active
+            const weightedSum = progressValues.reduce((acc, val) => acc + val, 0);
+            const newOverall = weightedSum / progressValues.length;
+            
+            updateOverallProgress(newOverall);
+            
+            if (newOverall >= 90) {
+                clearInterval(overallInterval);
+            }
+        }, 300);
+    }
+    
+    // Update progress UI elements
+    function updateUploadProgress(percent, statusText) {
+        percent = Math.min(Math.max(0, percent), 100);
+        uploadProgressBar.style.width = `${percent}%`;
+        uploadProgressBar.setAttribute('aria-valuenow', percent);
+        uploadStatus.textContent = statusText;
+        
+        // Update card appearance based on progress
+        const uploadCard = document.getElementById('step-upload');
+        uploadCard.classList.remove('bg-secondary', 'bg-success');
+        
+        if (percent === 0) {
+            uploadCard.classList.remove('bg-info', 'text-white');
+        } else if (percent < 100) {
+            uploadCard.classList.add('bg-info', 'text-white');
+        } else {
+            uploadCard.classList.remove('bg-info');
+            uploadCard.classList.add('bg-success', 'text-white');
+        }
+    }
+    
+    function updateCleanProgress(percent, statusText) {
+        percent = Math.min(Math.max(0, percent), 100);
+        cleanProgressBar.style.width = `${percent}%`;
+        cleanProgressBar.setAttribute('aria-valuenow', percent);
+        cleanStatus.textContent = statusText;
+        
+        // Update card appearance based on progress
+        const cleanCard = document.getElementById('step-clean');
+        cleanCard.classList.remove('bg-secondary', 'bg-success');
+        
+        if (percent === 0) {
+            cleanCard.classList.remove('bg-info', 'text-white');
+        } else if (percent < 100) {
+            cleanCard.classList.add('bg-info', 'text-white');
+        } else if (statusText === 'Skipped') {
+            cleanCard.classList.remove('bg-info');
+            cleanCard.classList.add('bg-secondary', 'text-white');
+        } else {
+            cleanCard.classList.remove('bg-info');
+            cleanCard.classList.add('bg-success', 'text-white');
+        }
+    }
+    
+    function updateTrainProgress(percent, statusText) {
+        percent = Math.min(Math.max(0, percent), 100);
+        trainProgressBar.style.width = `${percent}%`;
+        trainProgressBar.setAttribute('aria-valuenow', percent);
+        trainStatus.textContent = statusText;
+        
+        // Update card appearance based on progress
+        const trainCard = document.getElementById('step-train');
+        trainCard.classList.remove('bg-secondary', 'bg-success');
+        
+        if (percent === 0 && statusText === 'Skipped') {
+            trainCard.classList.remove('bg-info');
+            trainCard.classList.add('bg-secondary', 'text-white');
+        } else if (percent === 0) {
+            trainCard.classList.remove('bg-info', 'text-white');
+        } else if (percent < 100) {
+            trainCard.classList.add('bg-info', 'text-white');
+        } else {
+            trainCard.classList.remove('bg-info');
+            trainCard.classList.add('bg-success', 'text-white');
+        }
+    }
+    
+    function updateOverallProgress(percent) {
+        percent = Math.min(Math.max(0, percent), 100);
+        const roundedPercent = Math.round(percent);
+        overallProgress.style.width = `${percent}%`;
+        overallProgress.setAttribute('aria-valuenow', percent);
+        overallProgress.textContent = `${roundedPercent}%`;
+    }
+    
+    // Show progress UI
+    function showProgressUI() {
+        uploadBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        resultContainer.classList.add('d-none');
+        
+        // Start with upload step active
+        document.getElementById('step-upload').classList.add('bg-info', 'text-white');
+        uploadStatus.textContent = 'Uploading...';
+    }
+    
+    // Show success result
+    function showUploadSuccess(data) {
+        progressContainer.classList.add('d-none');
+        resultContainer.classList.remove('d-none');
+        
+        // Update result container styling
+        const resultCard = resultContainer.querySelector('.card');
+        resultCard.classList.remove('border-danger');
+        resultCard.classList.add('border-success');
+        
+        // Update result content
+        resultIcon.classList.remove('fa-times-circle', 'text-danger');
+        resultIcon.classList.add('fa-check-circle', 'text-success');
+        resultTitle.textContent = 'Success';
+        resultMessage.textContent = data.message || 'CSV file processed successfully';
+        
+        // Update metrics
+        recordsProcessed.textContent = data.record_count || data.records || '0';
+        processingTime.textContent = (data.processing_time !== undefined) ? 
+            `${data.processing_time.toFixed(1)}s` : '—';
+        
+        modelAccuracy.textContent = data.model_trained ? 
+            `${(data.accuracy * 100).toFixed(1)}%` : 'N/A';
+        
+        // Update insights
+        if (data.insights && Array.isArray(data.insights) && data.insights.length > 0) {
+            insightsList.innerHTML = '';
+            data.insights.forEach(insight => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.textContent = insight;
+                insightsList.appendChild(li);
+            });
+            insightsContainer.style.display = 'block';
+        } else {
+            insightsContainer.style.display = 'none';
+        }
+        
+        // Enable view data button if we have upload ID
+        if (data.upload_id) {
+            viewDataButton.disabled = false;
+        } else {
+            viewDataButton.disabled = true;
+        }
+    }
+    
+    // Show error result
+    function showUploadError(data) {
+        progressContainer.classList.add('d-none');
+        resultContainer.classList.remove('d-none');
+        
+        // Update result container styling
+        const resultCard = resultContainer.querySelector('.card');
+        resultCard.classList.remove('border-success');
+        resultCard.classList.add('border-danger');
+        
+        // Update result content
+        resultIcon.classList.remove('fa-check-circle', 'text-success');
+        resultIcon.classList.add('fa-times-circle', 'text-danger');
+        resultTitle.textContent = 'Error';
+        resultMessage.textContent = data.message || data.error || 'An unknown error occurred';
+        
+        // Hide insights
+        insightsContainer.style.display = 'none';
+        
+        // Disable view data button
+        viewDataButton.disabled = true;
+        
+        // Reset metrics
+        recordsProcessed.textContent = '0';
+        processingTime.textContent = '—';
+        modelAccuracy.textContent = 'N/A';
+    }
+    
+    // Show a notification toast
+    function showNotification(message, type) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'position-fixed bottom-0 right-0 p-3';
+            toastContainer.style.zIndex = '1050';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = `toast bg-${type} text-white`;
+        toast.id = toastId;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.setAttribute('data-delay', '5000');
+        
+        toast.innerHTML = `
+            <div class="toast-header bg-${type} text-white">
+                <strong class="mr-auto">Notification</strong>
+                <button type="button" class="ml-2 mb-1 close text-white" data-dismiss="toast" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        
+        // Add toast to container
+        toastContainer.appendChild(toast);
+        
+        // Initialize and show toast
+        const toastElement = new bootstrap.Toast(toast);
+        toastElement.show();
+        
+        // Remove after hiding
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+    
+    // Update stats cards
+    function updateStats(data) {
+        if (data.total_records !== undefined) {
+            document.getElementById('total-records').textContent = data.total_records;
+        }
+        
+        if (data.model_count !== undefined) {
+            document.getElementById('model-count').textContent = data.model_count;
+        }
+        
+        if (data.best_accuracy !== undefined) {
+            document.getElementById('best-accuracy').textContent = data.best_accuracy;
+        }
+        
+        if (data.last_upload !== undefined) {
+            document.getElementById('last-upload').textContent = data.last_upload;
+        }
+    }
+    
+    // Fetch latest stats
+    function fetchLatestStats() {
+        fetch(API.history, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(handleResponse)
+        .then(data => {
+            if (data.status === 'success' && data.stats) {
+                updateStats(data.stats);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching stats:', error);
+        });
+    }
+    
+    // Refresh upload history table
+    function refreshUploadHistory() {
+        fetch(API.history, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(handleResponse)
+        .then(data => {
+            if (data.status === 'success') {
+                dataTable.clear();
+                
+                if (data.history?.length) {
+                    data.history.forEach(upload => {
+                        dataTable.row.add([
+                            upload.filename,
+                            upload.record_count,
+                            getStatusBadge(upload.status),
+                            upload.created_at,
+                            getActionButtons(upload.id)
+                        ]);
+                    });
+                }
+                
+                dataTable.draw();
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing history:', error);
+        });
+    }
+    
+    // Generate status badge HTML
+    function getStatusBadge(status) {
+        const badgeClass = status === 'completed' ? 'success' : 
+                          status === 'failed' ? 'danger' : 'warning';
+        return `<span class="badge badge-${badgeClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+    }
+    
+    // Generate action buttons HTML
+    function getActionButtons(id) {
+        const viewUrl = API.viewData.replace('$id', id);
+        return `
+            <a href="${viewUrl}" class="btn btn-sm btn-info">
+                <i class="fas fa-eye"></i> View
+            </a>
+            <button class="btn btn-sm btn-danger delete-upload" data-id="${id}">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+    }
+    
+    // Initialize the page
+    refreshUploadHistory();
 });
 </script>
 {% endblock %} 
