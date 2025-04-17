@@ -137,7 +137,7 @@
           </form>
           
           <!-- Add separate standard form with correct action URL -->
-          <form action="{% url 'upload_csv_view' %}" method="post" enctype="multipart/form-data" class="d-none" id="direct-upload-form">
+          <form action="{% url 'upload_csv_view' %}" method="GET" enctype="multipart/form-data" class="d-none" id="direct-upload-form">
             {% csrf_token %}
             <input type="file" name="csv_file" id="standard-form-file">
             <input type="hidden" name="clean_data" id="standard-form-clean" value="true">
