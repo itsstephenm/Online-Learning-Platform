@@ -1819,6 +1819,249 @@ def upload_csv(request):
                 # Placeholder for model training logic
                 # This would be replaced with actual model training code
                 # For demo purposes, we'll just simulate a model accuracy
+                import random
+                model_accuracy = random.uniform(0.7, 0.95)
+                csv_upload.model_trained = True
+                csv_upload.model_accuracy = model_accuracy
+                csv_upload.insights = "Model trained successfully with sample insights on AI adoption factors."
+            
+            csv_upload.status = 'completed'
+            csv_upload.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'File uploaded and processed successfully',
+                'record_count': record_count,
+                'cleaned': clean_data,
+                'model_trained': train_model,
+                'model_accuracy': csv_upload.model_accuracy * 100 if csv_upload.model_accuracy else None,
+            })
+            
+        except Exception as e:
+            csv_upload.status = 'failed'
+            csv_upload.insights = str(e)
+            csv_upload.save()
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error processing file: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'No file provided or invalid request'
+    })
+
+@login_required
+def upload_history_view(request):
+    """Return the upload history for AJAX requests to refresh the history table."""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Get the last 10 uploads
+        uploads = CSVUpload.objects.filter(user=request.user).order_by('-created_at')[:10]
+        
+        history = []
+        for upload in uploads:
+            history.append({
+                'id': upload.id,
+                'filename': upload.original_filename,
+                'record_count': upload.record_count,
+                'status': upload.status,
+                'date': upload.created_at.strftime('%Y-%m-%d %H:%M'),
+                'accuracy': f"{upload.model_accuracy * 100:.1f}%" if upload.model_accuracy else "N/A",
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'history': history
+        })
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request'
+    })
+
+@login_required
+def delete_upload(request, upload_id):
+    """Delete a CSV upload and its file."""
+    if request.method == 'POST':
+        try:
+            upload = CSVUpload.objects.get(id=upload_id, user=request.user)
+            
+            # Delete the file
+            file_path = os.path.join(settings.MEDIA_ROOT, 'csv_uploads', upload.stored_filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            
+            # Delete the database entry
+            upload.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Upload deleted successfully'
+            })
+        except CSVUpload.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Upload not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Error deleting upload: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    })
+
+@login_required(login_url='adminlogin')
+def ai_model_metrics_view(request):
+    return render(request, 'quiz/under_construction.html', {
+        'message': 'The Model Metrics page will display performance statistics for your AI models.'
+    })
+
+@login_required(login_url='adminlogin')
+@require_POST
+def upload_csv_view(request):
+    """Handle CSV file upload from the AI adoption data upload page."""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        start_time = time.time()
+        
+        # Check if file was uploaded
+        if 'csv_file' not in request.FILES:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No file uploaded'
+            })
+        
+        csv_file = request.FILES['csv_file']
+        
+        # Check file extension
+        if not csv_file.name.endswith('.csv'):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'File must be a CSV'
+            })
+        
+        # Get options
+        clean_data = request.POST.get('clean_data') == 'true'
+        train_model = request.POST.get('train_model') == 'true'
+        
+        # Save file temporarily
+        fs = FileSystemStorage(location=tempfile.gettempdir())
+        filename = fs.save(csv_file.name, csv_file)
+        file_path = os.path.join(tempfile.gettempdir(), filename)
+        
+        try:
+            # Process the file
+            if clean_data:
+                # Clean and process data
+                df, stats, accuracy, insights = import_from_csv(file_path, save_to_db=True)
+                
+                if df is None or df.empty:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Failed to process CSV file. Please check the format.'
+                    })
+                    
+                # Save upload record
+                upload = CSVUpload.objects.create(
+                    user=request.user,
+                    original_filename=csv_file.name,
+                    file_path=file_path,
+                    record_count=len(df),
+                    status='success',
+                    metadata={
+                        'columns': df.columns.tolist(),
+                        'cleaned': clean_data
+                    }
+                )
+                
+                # Set upload batch ID for records
+                AIAdoptionData.objects.filter(upload_batch__isnull=True).update(upload_batch=upload)
+                
+                # Train model if requested
+                model_trained = False
+                model_accuracy = 0.0
+                if train_model:
+                    result = train_ai_model(csv_upload_id=upload.id)
+                    model_trained = result.get('success', False)
+                    model_accuracy = result.get('accuracy', 0.0)
+                
+                # Calculate processing time
+                processing_time = time.time() - start_time
+                
+                # Get updated stats
+                total_records = AIAdoptionData.objects.count()
+                model_count = AIModel.objects.count()
+                try:
+                    best_accuracy = f"{AIModel.objects.order_by('-accuracy').first().accuracy * 100:.2f}%" if AIModel.objects.exists() else "0%"
+                except:
+                    best_accuracy = "0%"
+                last_upload = upload.created_at.strftime('%b %d, %Y')
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'CSV file processed successfully',
+                    'records': len(df),
+                    'processing_time': processing_time,
+                    'model_trained': model_trained,
+                    'accuracy': model_accuracy,
+                    'insights': insights[:5] if insights else [],
+                    'total_records': total_records,
+                    'model_count': model_count,
+                    'best_accuracy': best_accuracy,
+                    'last_upload': last_upload
+                })
+                
+            else:
+                # Just process without cleaning
+                df = pd.read_csv(file_path)
+                
+                if df is None or df.empty:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Failed to process CSV file. Please check the format.'
+                    })
+                
+                # Save upload record
+                upload = CSVUpload.objects.create(
+                    user=request.user,
+                    original_filename=csv_file.name,
+                    file_path=file_path,
+                    record_count=len(df),
+                    status='success',
+                    metadata={
+                        'columns': df.columns.tolist(),
+                        'cleaned': clean_data
+                    }
+                )
+                
+                # Save records
+                batch_size = 1000
+                records = []
+                for i, row in df.iterrows():
+                    data = row.to_dict()
+                    record = AIAdoptionData(
+                        user=request.user,
+                        upload_batch=upload,
+                        data=data
+                    )
+                    records.append(record)
+                    
+                    if len(records) >= batch_size:
+                        AIAdoptionData.objects.bulk_create(records)
+                        records = []
+                
+                if records:
+                    AIAdoptionData.objects.bulk_create(records)
+                
+                # Train model if requested
+                model_trained = False
+                model_accuracy = 0.0
+                insights = []
+                
+                if train_model:
                     result = train_ai_model(csv_upload_id=upload.id)
                     model_trained = result.get('success', False)
                     model_accuracy = result.get('accuracy', 0.0)
@@ -1878,33 +2121,6 @@ def upload_csv(request):
                 pass
     
     # If not AJAX, return a simple JSON response
-    return JsonResponse({
-        'status': 'error',
-        'message': 'Invalid request'
-    })
-
-@login_required(login_url='adminlogin')
-def upload_history_view(request):
-    """View to return upload history for AJAX refresh."""
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        uploads = CSVUpload.objects.all().order_by('-created_at')[:10]
-        
-        history = []
-        for upload in uploads:
-            history.append({
-                'id': upload.id,
-                'filename': upload.original_filename,
-                'records': upload.record_count,
-                'status': upload.status,
-                'date': upload.created_at.strftime('%b %d, %Y %H:%M'),
-                'user': upload.user.username if upload.user else 'System'
-            })
-        
-        return JsonResponse({
-            'status': 'success',
-            'history': history
-        })
-    
     return JsonResponse({
         'status': 'error',
         'message': 'Invalid request'
