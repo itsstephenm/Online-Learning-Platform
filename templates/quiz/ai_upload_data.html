@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultContainer.classList.add('d-none');
         
         // Set upload status
-        updateProgressUI('upload', 0, 'Starting...');
+        updateUploadProgress(10, 'Starting...');
         
         // Send the upload request
         fetch(API.upload, {
@@ -463,20 +463,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.status === 'success') {
                 // Update UI for success
-                updateProgressUI('upload', 100, 'Completed');
-                updateProgressUI('clean', 100, 'Completed');
+                updateUploadProgress(100, 'Completed');
+                updateCleanProgress(100, 'Completed');
                 
                 if (trainModelCheckbox.checked) {
-                    updateProgressUI('train', 100, 'Completed');
+                    updateTrainProgress(100, 'Completed');
                 } else {
-                    updateProgressUI('train', 0, 'Skipped');
+                    updateTrainProgress(0, 'Skipped');
                 }
                 
                 // Store the upload ID
                 currentUploadId = data.upload_id;
                 
                 // Show success UI
-                showSuccessUI(data, uploadTime);
+                showUploadSuccess(data, uploadTime);
                 
                 // Refresh history and stats
                 refreshUploadHistory();
@@ -491,12 +491,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 // Show error UI
-                showErrorUI(data);
+                showUploadError(data);
             }
         })
         .catch(error => {
             console.error('Upload error:', error);
-            showErrorUI({ message: error.message });
+            showUploadError({ message: error.message });
         })
         .finally(() => {
             // Re-enable upload button
@@ -516,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle "View Data" button
     document.getElementById('view-data-button').addEventListener('click', function() {
         if (currentUploadId) {
-            window.location.href = API.viewData.replace('$id', currentUploadId);
+            window.location.href = API.viewData.replace('0', currentUploadId);
         }
     });
     
@@ -852,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Show success result
-    function showUploadSuccess(data) {
+    function showUploadSuccess(data, uploadTime) {
         progressContainer.classList.add('d-none');
         resultContainer.classList.remove('d-none');
         
@@ -869,8 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update metrics
         recordsProcessed.textContent = data.record_count || data.records || '0';
-        processingTime.textContent = (data.processing_time !== undefined) ? 
-            `${data.processing_time.toFixed(1)}s` : '—';
+        processingTime.textContent = uploadTime;
         
         modelAccuracy.textContent = data.model_trained ? 
             `${(data.accuracy * 100).toFixed(1)}%` : 'N/A';
