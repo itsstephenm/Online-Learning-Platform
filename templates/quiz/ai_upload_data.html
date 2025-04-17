@@ -534,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('confirmDelete').addEventListener('click', function() {
         if (!deleteUploadId) return;
         
-        const deleteUrl = API.delete.replace('$id', deleteUploadId);
+        const deleteUrl = API.delete.replace('0', deleteUploadId);
         
         // Disable delete button and show loading
         this.disabled = true;
@@ -547,22 +547,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(handleResponse)
+        .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                // Show success message
-                showNotification('Upload deleted successfully', 'success');
-                
                 // Update stats and refresh table
                 updateStats(data);
                 refreshUploadHistory();
             } else {
-                showNotification('Error deleting upload: ' + (data.message || 'Unknown error'), 'danger');
+                alert('Error deleting upload: ' + (data.message || 'Unknown error'));
             }
         })
         .catch(error => {
             console.error('Delete error:', error);
-            showNotification('Error deleting upload: ' + error.message, 'danger');
+            alert('Error deleting upload: ' + error.message);
         })
         .finally(() => {
             // Re-enable delete button
@@ -696,17 +693,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset upload process state
     function resetUploadState() {
         // Reset progress indicators
-        updateProgressUI('upload', 0, 'Pending');
-        updateProgressUI('clean', 0, 'Pending');
-        updateProgressUI('train', 0, 'Pending');
+        updateUploadProgress(0, 'Pending');
+        updateCleanProgress(0, 'Pending');
+        updateTrainProgress(0, 'Pending');
         
         // Reset UI elements
         document.getElementById('step-upload').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
         document.getElementById('step-clean').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
         document.getElementById('step-train').classList.remove('bg-info', 'bg-success', 'bg-secondary', 'text-white');
         
-        // Clear any existing intervals
-        clearAllProgressIntervals();
+        // Reset overall progress
+        overallProgress.style.width = '0%';
+        overallProgress.setAttribute('aria-valuenow', 0);
+        overallProgress.textContent = '0%';
+    }
+    
+    // Update progress UI for a specific step
+    function updateProgressUI(step, percent, statusText) {
+        if (step === 'upload') {
+            updateUploadProgress(percent, statusText);
+        } else if (step === 'clean') {
+            updateCleanProgress(percent, statusText);
+        } else if (step === 'train') {
+            updateTrainProgress(percent, statusText);
+        }
     }
     
     // Progress interval IDs
