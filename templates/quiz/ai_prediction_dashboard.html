@@ -303,7 +303,11 @@
                                       grid: { display: false }
                                     }
                                   },
-                                  plugins: { legend: { display: false } }
+                                  plugins: { 
+                                    legend: { 
+                                      display: false 
+                                    } 
+                                  }
                                 }
                               });
                             });
@@ -807,34 +811,26 @@ ORDER BY count DESC;</textarea>
           // Create the chart
           const chartCtx = document.getElementById('responseChart').getContext('2d');
           new Chart(chartCtx, {
-            type: data.chart_type || 'bar',
-            data: data.chart,
+            type: '{{ query_result.chart_type|default:"bar" }}',
+            data: {{ query_result.chart|safe }},
             options: {
               responsive: true,
               maintainAspectRatio: false,
               scales: {
                 y: {
                   beginAtZero: true,
-                  ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)'
-                  },
-                  grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
-                  }
+                  ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                  grid: { color: 'rgba(255, 255, 255, 0.1)' }
                 },
                 x: {
-                  ticks: {
-                    color: 'rgba(255, 255, 255, 0.7)'
-                  },
-                  grid: {
-                    display: false
-                  }
+                  ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                  grid: { display: false }
                 }
               },
-              plugins: {
-                legend: {
-                  display: false
-                }
+              plugins: { 
+                legend: { 
+                  display: false 
+                } 
               }
             }
           });
