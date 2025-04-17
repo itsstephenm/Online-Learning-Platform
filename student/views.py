@@ -164,127 +164,131 @@ def start_sequential_exam_view(request, pk):
 @user_passes_test(is_student)
 @csrf_protect
 def calculate_marks_view(request):
-    if request.COOKIES.get('course_id') is not None:
-        course_id = request.COOKIES.get('course_id')
-        course = QMODEL.Course.objects.get(id=course_id)
+    if request.COOKIES.get('exam_total_time'):
+        total_time = int(request.COOKIES.get('exam_total_time'))
+    else:
+        total_time = 0
+    
+    course = QMODEL.Course.objects.get(id=request.COOKIES.get('course_id'))
+    total_marks = 0
+    questions = QMODEL.Question.objects.all().filter(course=course)
+    adaptive_settings = None
+    try:
+        adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
+    except QMODEL.AdaptiveQuizSettings.DoesNotExist:
+        pass
+
+    results = []
+    total_correct_answers = 0
+    total_attempted = 0
+    
+    for i in range(len(questions)):
+        attempted = False
+        question = questions[i]
+        time_spent = 0
         
-        total_marks = 0
-        total_correct_answers = 0
-        total_incorrect_answers = 0
-        questions = QMODEL.Question.objects.all().filter(course=course)
+        # Get time spent on this question if available
+        question_time_cookie = request.COOKIES.get(f'q_{question.id}_final_time')
+        if question_time_cookie:
+            time_spent = int(question_time_cookie)
         
-        # Get total exam time
-        total_time = int(request.COOKIES.get('exam_total_time', 0))
-        
-        # Store question attempts
-        question_attempts = []
-        
-        student = models.Student.objects.get(user_id=request.user.id)
-        
-        # Check if course has adaptive settings
-        try:
-            adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
-            is_adaptive = adaptive_settings.is_adaptive
-        except QMODEL.AdaptiveQuizSettings.DoesNotExist:
-            is_adaptive = False
-        
-        for i in range(len(questions)):
-            question = questions[i]
+        # Process based on question type
+        if question.question_type == 'multiple_choice':
+            # Handle regular multiple choice (radio buttons)
             selected_ans = request.COOKIES.get(str(i+1))
-            actual_answer = question.answer
-            is_correct = selected_ans == actual_answer
-            
-            # Get the time spent on this question
-            time_spent = int(request.COOKIES.get(f'q_{question.id}_final_time', 0))
-            
-            # Create QuestionAttempt object
-            if selected_ans:  # Only track if the student selected an answer
-                attempt = QMODEL.QuestionAttempt(
-                    student=student,
-                    question=question,
-                    answer_selected=selected_ans,
-                    is_correct=is_correct,
-                    time_taken=time_spent
-                )
-                question_attempts.append(attempt)
-                
-                if is_correct:
+            if selected_ans:
+                attempted = True
+                if selected_ans == question.answer:
+                    total_marks += question.marks
                     total_correct_answers += 1
-                    total_marks = total_marks + question.marks
-                else:
-                    total_incorrect_answers += 1
         
-        # Save the result
-        result = QMODEL.Result()
-        result.marks = total_marks
-        result.exam = course
-        result.student = student
-        result.save()
+        elif question.question_type == 'checkbox':
+            # Handle checkbox/multiple answer questions
+            checkbox_selection = request.COOKIES.get(f'checkbox_{question.id}')
+            if checkbox_selection:
+                attempted = True
+                try:
+                    selected_options = json.loads(checkbox_selection)
+                    # Compare with the expected multiple answers
+                    expected_answers = question.multiple_answers.split(',')
+                    
+                    # Convert option values (Option1, Option2) to expected format if needed
+                    selected_options_normalized = [opt.replace('Option', '') for opt in selected_options]
+                    
+                    # Check if selections match expected answers
+                    if sorted(selected_options_normalized) == sorted(expected_answers):
+                        total_marks += question.marks
+                        total_correct_answers += 1
+                except json.JSONDecodeError:
+                    # Handle invalid JSON
+                    pass
         
-        # Save all question attempts and generate AI feedback
-        saved_attempts = []
-        for attempt in question_attempts:
-            attempt.save()
-            saved_attempts.append(attempt)
-            
-            # Generate AI feedback for this attempt
-            # Note: This is done asynchronously to avoid slow page load
-            try:
-                from .ai_utils import get_ai_feedback
-                
-                # We'll generate feedback in the background to avoid delaying the page load
-                # In a production app, this would be done with Celery or similar
-                # For now, we'll do it in memory but not wait for the result
-                import threading
-                thread = threading.Thread(target=get_ai_feedback, args=(attempt,))
-                thread.daemon = True
-                thread.start()
-            except Exception as e:
-                logger.error(f"Error scheduling feedback generation: {str(e)}")
+        elif question.question_type == 'short_answer':
+            # Handle short answer questions
+            short_answer = request.COOKIES.get(f'{i+1}_short')
+            if short_answer:
+                attempted = True
+                # Use regex pattern matching for short answers
+                if question.short_answer_pattern:
+                    import re
+                    pattern = re.compile(question.short_answer_pattern, re.IGNORECASE)
+                    if pattern.match(short_answer):
+                        total_marks += question.marks
+                        total_correct_answers += 1
+                # Fallback to exact match if no pattern specified
+                elif short_answer.lower().strip() == question.answer.lower().strip():
+                    total_marks += question.marks
+                    total_correct_answers += 1
         
-        # Update student skill level if adaptive quizzing is enabled
-        if is_adaptive and saved_attempts:
-            from quiz.adaptive_quiz_utils import update_skill_level
-            
-            try:
-                # Update skill level based on all attempts in this quiz
-                update_skill_level(student, course, saved_attempts)
-                logger.info(f"Updated skill level for student {student.id} in course {course.id}")
-            except Exception as e:
-                logger.error(f"Error updating skill level: {str(e)}")
-        
-        # Save the analytics data
-        if total_time > 0:
-            avg_time_per_question = total_time / len(questions) if len(questions) > 0 else 0
-            
-            analytics = QMODEL.ResultAnalytics(
-                result=result,
-                total_time=total_time,
-                average_time_per_question=avg_time_per_question,
-                correct_answers=total_correct_answers,
-                incorrect_answers=total_incorrect_answers
-            )
-            analytics.save()
-        
-        # Generate content recommendations based on performance
-        try:
-            from .ai_utils import generate_content_recommendations
-            
-            # We'll generate recommendations in the background
-            import threading
-            thread = threading.Thread(target=generate_content_recommendations, args=(student, course))
-            thread.daemon = True
-            thread.start()
-        except Exception as e:
-            logger.error(f"Error scheduling recommendation generation: {str(e)}")
-        
-        # Save attempts and result ID in session for viewing feedback later
-        request.session['last_result_id'] = result.id
-        request.session['last_attempt_ids'] = [attempt.id for attempt in saved_attempts]
-
-        return HttpResponseRedirect('view-result')
-
-
+        # Track question attempt data
+        if attempted:
+            total_attempted += 1
+            # Store the attempt data for this question
+            results.append({
+                'question': question,
+                'selected_answer': selected_ans if question.question_type == 'multiple_choice' else 
+                                 checkbox_selection if question.question_type == 'checkbox' else 
+                                 short_answer,
+                'time_spent': time_spent,
+                'is_correct': selected_ans == question.answer if question.question_type == 'multiple_choice' else False
+            })
+    
+    # Compute success metrics
+    success_rate = (total_correct_answers / len(questions)) * 100 if len(questions) > 0 else 0
+    attempt_rate = (total_attempted / len(questions)) * 100 if len(questions) > 0 else 0
+    
+    # Create and save the Result object
+    student = models.Student.objects.get(user_id=request.user.id)
+    result = QMODEL.Result()
+    result.marks = total_marks
+    result.exam = course
+    result.student = student
+    result.save()
+    
+    # Save individual question attempts if the model exists
+    for res in results:
+        question_attempt = QMODEL.QuestionAttempt(
+            student=student,
+            question=res['question'],
+            result=result,
+            selected_answer=res['selected_answer'],
+            time_spent=res['time_spent']
+        )
+        question_attempt.save()
+    
+    # Clear cookies
+    response = render(request, 'student/check_marks.html', {'course': course, 'total_marks': total_marks, 
+                                                          'total_time': total_time, 'success_rate': success_rate, 
+                                                          'adaptive_settings': adaptive_settings})
+    for i in range(len(questions)):
+        response.delete_cookie(str(i+1))
+    
+    # Clear other cookies related to the exam
+    response.delete_cookie('course_id')
+    response.delete_cookie('exam_total_time')
+    
+    # Render the results page
+    return response
 
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
