@@ -73,7 +73,7 @@
           <h5>Upload Survey Data</h5>
         </div>
         <div class="card-body">
-          <form id="upload-form" enctype="multipart/form-data" method="post" action="{% url 'upload_csv_view' %}">
+          <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_csv_ai' %}">
             {% csrf_token %}
             <div class="custom-file mb-3">
               <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required>
@@ -215,9 +215,8 @@
                   </td>
                   <td>{{ upload.created_at|date:"M d, Y H:i" }}</td>
                   <td>
-                    <a href="/quiz/admin/ai-adoption/data-detail/{{ upload.id }}/" class="btn btn-sm btn-info">
-                      <i class="fas fa-eye"></i>
-                    </a>
+                    <a href="{% url 'ai_view_data_list' %}?upload={{ upload.id }}" class="btn btn-sm btn-info view-data" data-id="{{ upload.id }}">
+                      <i class="fas fa-eye"></i> View</a>
                     <button class="btn btn-sm btn-danger delete-upload" data-id="{{ upload.id }}">
                       <i class="fas fa-trash"></i>
                     </button>
@@ -265,7 +264,7 @@
 $(document).ready(function() {
     // Define direct URLs as fallbacks
     const urls = {
-        uploadCsv: '{% url "upload_csv_view" %}' || '/quiz/admin/ai-adoption/upload-csv/',
+        uploadCsv: '{% url "upload_csv_ai" %}' || '/quiz/admin/ai-adoption/upload-csv/',
         trainModel: '{% url "train_model_view" %}' || '/quiz/admin/ai-adoption/train-model/',
         uploadHistory: '{% url "upload_history" %}' || '/quiz/admin/ai-adoption/upload-history/',
         deleteBase: '{% url "delete_upload" 0 %}' || '/quiz/admin/ai-adoption/delete-upload/0/'
@@ -309,7 +308,7 @@ $(document).ready(function() {
     });
     
     // Handle form submission via AJAX
-    $('#upload-form').on('submit', function(e) {
+    $('#uploadForm').on('submit', function(e) {
         e.preventDefault();
         
         // Reset previous state
@@ -348,7 +347,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: urls.uploadCsv,
+            url: "{% url 'upload_csv_ai' %}",
             type: 'POST',
             data: formData,
             processData: false,
@@ -567,7 +566,7 @@ $(document).ready(function() {
         refreshUploadHistory();
         
         // Reset form
-        $('#upload-form')[0].reset();
+        $('#uploadForm')[0].reset();
         $('.custom-file-label').html('Choose CSV file');
         $('#upload-btn').prop('disabled', false);
     }
@@ -690,7 +689,7 @@ $(document).ready(function() {
                                 '<td>' + statusBadge + '</td>' +
                                 '<td>' + upload.date + '</td>' +
                                 '<td>' +
-                                '<a href="/quiz/admin/ai-adoption/data-detail/' + upload.id + '/" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a> ' +
+                                '<a href="{% url 'ai_view_data_list' %}?upload=' + upload.id + '" class="btn btn-sm btn-info view-data" data-id="' + upload.id + '"><i class="fas fa-eye"></i> View</a> ' +
                                 '<button class="btn btn-sm btn-danger delete-upload" data-id="' + upload.id + '"><i class="fas fa-trash"></i></button>' +
                                 '</td>' +
                                 '</tr>'
@@ -752,7 +751,7 @@ $(document).ready(function() {
     // Direct upload button bypasses AJAX
     $('#direct-upload-btn').on('click', function() {
         // This will allow the form to submit normally without AJAX
-        $('#upload-form').off('submit');
+        $('#uploadForm').off('submit');
     });
 });
 </script>
