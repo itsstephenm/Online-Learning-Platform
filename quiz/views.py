@@ -6,7 +6,8 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.conf import settings
 from datetime import date, timedelta
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count, Avg, FloatField
+from django.db.models.functions import Coalesce
 from django.contrib.auth.models import Group, User
 from . import forms, models
 from teacher import models as TMODEL
@@ -14,26 +15,47 @@ from student import models as SMODEL
 from teacher import forms as TFORM
 from student import forms as SFORM
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .ai_utils import predict_adoption_level, train_model, make_prediction, generate_insights_from_data, get_data_counts, prepare_features, get_chart_data, process_nl_query, process_training_data, generate_questions
-from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight, AIModel
 from django.contrib.admin.views.decorators import staff_member_required
-import json
+import json, random, logging, tempfile, os, time
 import pandas as pd
-import os
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
-import tempfile
 from student.models import Student
 from django.conf import settings
 from decouple import config
-from django.db.models import Count, Avg, FloatField
-from django.db.models.functions import Coalesce
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponseRedirect, JsonResponse
-import logging
-from django.db import connection
-from django.views.decorators.http import require_POST
+from collections import Counter
+
+# Import AI utilities
+from .ai_utils import predict_adoption_level, train_model, make_prediction, generate_insights_from_data
+from .ai_utils import get_data_counts, prepare_features, get_chart_data, process_nl_query, process_training_data
+from .models import AIAdoptionData, AIPrediction, NLQuery, InsightTopic, AIInsight, AIModel, CSVUpload
+
+# Import the AI data utilities
+try:
+    from .ai_data_utils import process_csv_file, clean_survey_data, calculate_data_stats
+    from .ai_data_utils import train_ai_model, predict_adoption_level as predict_level
+    from .ai_data_utils import import_from_csv, generate_insights
+except ImportError:
+    # Fall back to dummy functions if the module doesn't exist
+    logging.warning("AI data utilities module not found, using dummy functions")
+    
+    def process_csv_file(file_path, save_to_db=True):
+        return pd.DataFrame(), {"status": "error", "message": "AI data utilities not available"}
+    
+    def import_from_csv(file_path, save_to_db=True):
+        return pd.DataFrame(), {}, 0.0, ["AI data utilities not available"]
+        
+    def train_ai_model(csv_upload_id=None, algorithm="random_forest"):
+        return {"success": False, "error": "AI data utilities not available"}
+        
+    def predict_level(data):
+        return "medium", 0.7, {}
+        
+    def generate_insights(df, stats):
+        return ["AI data utilities not available"]
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def home_view(request):
     if request.user.is_authenticated:

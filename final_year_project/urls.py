@@ -55,4 +55,10 @@ urlpatterns = [
 
     # Include quiz URLs with namespace
     path('quiz/', include('quiz.urls', namespace='quiz')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+    # Add AI prediction URLs
+    path('quiz/', include('quiz.ai_prediction_urls')),
+]
+
+# Serve media files in development
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
