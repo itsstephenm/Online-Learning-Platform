@@ -554,9 +554,22 @@ $(document).ready(function() {
         $('#processing-steps').addClass('d-none');
         $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-success').addClass('alert-danger');
         $('#result-icon').removeClass('fa-check-circle text-success').addClass('fa-times-circle text-danger');
-        $('#result-message').text('Error: ' + response.message);
+        
+        let errorMsg = 'Unknown error occurred';
+        if (response) {
+            if (response.message) {
+                errorMsg = response.message;
+            } else if (response.error) {
+                errorMsg = response.error;
+            } else if (typeof response === 'string') {
+                errorMsg = response;
+            }
+        }
+        
+        $('#result-message').text('Error: ' + errorMsg);
         $('#insights-container').hide();
         $('#upload-btn').prop('disabled', false);
+        console.error('Error details:', response);
     }
     
     // Function to display confetti animation
