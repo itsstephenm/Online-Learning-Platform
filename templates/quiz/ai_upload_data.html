@@ -193,7 +193,11 @@
                 <i class="fas fa-check-circle fa-2x mr-3" id="result-icon"></i>
                 <div>
                   <p class="mb-1"><strong>Success!</strong> <span id="result-message"></span></p>
-                  <ul id="insights-list"></ul>
+                  <div class="mt-2">
+                    <p class="mb-0"><strong>Records Processed:</strong> <span id="records-processed">0</span></p>
+                    <p class="mb-0"><strong>Processing Time:</strong> <span id="processing-time">0</span> seconds</p>
+                    <p class="mb-0"><strong>Model Accuracy:</strong> <span id="model-accuracy">N/A</span></p>
+                  </div>
                 </div>
               </div>
               <div id="insights-container" class="mt-2">
@@ -390,7 +394,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showFinalResult(response) {
         // Update stats
-        updateStats(response);
+        if (response.total_records !== undefined && 
+            response.model_count !== undefined && 
+            response.best_accuracy !== undefined && 
+            response.last_upload !== undefined) {
+            updateStats(response);
+        } else {
+            // If stats are not directly provided, request a refresh of the stats
+            refreshUploadHistory();
+        }
         
         // Show success animation
         if (typeof confetti === 'function') {
@@ -409,17 +421,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('result-icon').classList.remove('fa-times-circle', 'text-danger');
         document.getElementById('result-icon').classList.add('fa-check-circle', 'text-success');
-        document.getElementById('result-message').textContent = 'CSV file processed successfully.';
-        document.getElementById('records-processed').textContent = response.records;
-        document.getElementById('processing-time').textContent = response.processing_time.toFixed(2);
-        document.getElementById('model-accuracy').textContent = response.model_trained ? 
-            (response.accuracy * 100).toFixed(2) + '%' : 'N/A (No model trained)';
+        document.getElementById('result-message').textContent = response.message || 'CSV file processed successfully.';
+        
+        // Update elements only if they exist in the DOM
+        const recordsProcessed = document.getElementById('records-processed');
+        if (recordsProcessed) {
+            recordsProcessed.textContent = response.records || response.record_count || 'N/A';
+        }
+        
+        const processingTime = document.getElementById('processing-time');
+        if (processingTime && response.processing_time !== undefined) {
+            processingTime.textContent = response.processing_time.toFixed(2);
+        }
+        
+        const modelAccuracy = document.getElementById('model-accuracy');
+        if (modelAccuracy) {
+            modelAccuracy.textContent = response.model_trained ? 
+                (response.accuracy * 100).toFixed(2) + '%' : 'N/A (No model trained)';
+        }
         
         // Show insights
         const insightsContainer = document.getElementById('insights-container');
         const insightsList = document.getElementById('insights-list');
         
-        if (response.insights?.length) {
+        if (insightsList && response.insights?.length) {
             insightsList.innerHTML = '';
             response.insights.forEach(insight => {
                 const li = document.createElement('li');
@@ -427,13 +452,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 insightsList.appendChild(li);
             });
             insightsContainer.style.display = 'block';
-        } else {
+        } else if (insightsContainer) {
             insightsContainer.style.display = 'none';
         }
         
         // Reset form
         uploadForm.reset();
-        document.querySelector('.custom-file-label').textContent = 'Choose CSV file';
+        const fileLabel = document.querySelector('.custom-file-label');
+        if (fileLabel) {
+            fileLabel.textContent = 'Choose CSV file';
+        }
         refreshUploadHistory();
     }
 
