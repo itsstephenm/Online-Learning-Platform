@@ -1049,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Generate action buttons HTML
     function getActionButtons(id) {
-        const viewUrl = API.viewData.replace('$id', id);
+        const viewUrl = API.viewData.replace('0', id);
         return `
             <a href="${viewUrl}" class="btn btn-sm btn-info">
                 <i class="fas fa-eye"></i> View
