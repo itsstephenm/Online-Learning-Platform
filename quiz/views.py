@@ -1756,13 +1756,20 @@ def ai_upload_data_view(request):
     total_records = CSVUpload.objects.aggregate(Sum('record_count'))['record_count__sum'] or 0
     model_count = CSVUpload.objects.filter(model_trained=True).count()
     best_accuracy = CSVUpload.objects.filter(model_accuracy__isnull=False).aggregate(Max('model_accuracy'))['model_accuracy__max'] or 0
-    last_upload = CSVUpload.objects.order_by('-created_at').first()
+    last_upload_obj = CSVUpload.objects.order_by('-created_at').first()
+    
+    # Format the last upload date or set a default value
+    if last_upload_obj and hasattr(last_upload_obj, 'created_at'):
+        last_upload = last_upload_obj.created_at.strftime('%b %d, %Y')
+    else:
+        last_upload = "None"
     
     context = {
         'total_records': total_records,
         'model_count': model_count,
-        'best_accuracy': best_accuracy * 100 if best_accuracy else 0,  # Convert to percentage
+        'best_accuracy': f"{best_accuracy * 100:.2f}%" if best_accuracy else "0%",
         'last_upload': last_upload,
+        'upload_history': CSVUpload.objects.all().order_by('-created_at')[:10],
     }
     
     return render(request, 'quiz/ai_upload_data.html', context)
