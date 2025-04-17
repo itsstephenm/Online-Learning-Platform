@@ -1,0 +1,108 @@
+{% extends 'quiz/adminbase.html' %}
+{% load widget_tweaks %}
+{% block content %}
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <style>
+       <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  a:link {
+        text-decoration: none;
+      }
+    
+  </style>
+</head>
+<h2 style="text-align:center; color:blue;">AI QUESTION GENERATOR</h2>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Generate Questions with AI</h4>
+                </div>
+                <div class="panel-body">
+                    <p>Use AI to automatically generate questions for your course. Choose the question types, difficulty level, and number of questions to generate.</p>
+                    
+                    <form method="POST" autocomplete="off">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="course_id">Select Course</label>
+                            <select name="course_id" class="form-control" required>
+                                <option value="">-- Select Course --</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Question Types (Select at least one)</label>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="question_types" value="multiple_choice" checked> Multiple Choice
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="question_types" value="checkbox"> Checkbox (Multiple Answers)
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="question_types" value="short_answer"> Short Answer
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="difficulty">Difficulty Level</label>
+                            <select name="difficulty" class="form-control">
+                                <option value="easy">Easy</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="num_questions">Number of Questions</label>
+                            <input type="number" name="num_questions" class="form-control" value="5" min="1" max="20">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Generate Questions</button>
+                        <a href="{% url 'admin-question' %}" class="btn btn-default">Cancel</a>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h4 class="panel-title">How It Works</h4>
+                </div>
+                <div class="panel-body">
+                    <p>The AI question generator creates questions based on the course name and difficulty level you select. It uses templates and patterns to generate questions that are relevant to your course.</p>
+                    
+                    <h5><strong>Question Types:</strong></h5>
+                    <ul>
+                        <li><strong>Multiple Choice:</strong> Questions with one correct answer out of four options.</li>
+                        <li><strong>Checkbox:</strong> Questions with multiple correct answers that students must select.</li>
+                        <li><strong>Short Answer:</strong> Questions that require students to enter text answers, matched against keywords.</li>
+                    </ul>
+                    
+                    <h5><strong>Difficulty Levels:</strong></h5>
+                    <ul>
+                        <li><strong>Easy:</strong> Basic concept questions, suitable for beginners.</li>
+                        <li><strong>Medium:</strong> Intermediate questions that test understanding of course concepts.</li>
+                        <li><strong>Hard:</strong> Advanced questions that test deeper knowledge and application.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br><br><br>
+{% endblock content %} 
