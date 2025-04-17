@@ -100,30 +100,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Computer Science</td>
-                  <td><span class="badge bg-primary rounded-pill">12</span></td>
-                  <td>₹45,000</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>Mathematics</td>
-                  <td><span class="badge bg-primary rounded-pill">8</span></td>
-                  <td>₹42,000</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>Physics</td>
-                  <td><span class="badge bg-primary rounded-pill">6</span></td>
-                  <td>₹40,000</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>Chemistry</td>
-                  <td><span class="badge bg-primary rounded-pill">5</span></td>
-                  <td>₹38,000</td>
-                  <td><span class="badge bg-success">Active</span></td>
-                </tr>
+                {% if departments %}
+                  {% for department in departments %}
+                    <tr>
+                      <td>{{ department.name }}</td>
+                      <td><span class="badge bg-primary rounded-pill">{{ department.teacher_count }}</span></td>
+                      <td>₹{{ department.avg_salary }}</td>
+                      <td><span class="badge bg-{{ department.status_color }}">{{ department.status }}</span></td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center">No department data available</td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>

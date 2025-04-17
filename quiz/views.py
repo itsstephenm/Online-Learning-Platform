@@ -27,6 +27,8 @@ import tempfile
 from student.models import Student
 from django.conf import settings
 from decouple import config
+from django.db.models import Count, Avg
+from django.db.models.functions import Coalesce
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -72,10 +74,31 @@ def admin_dashboard_view(request):
 
 @login_required(login_url='adminlogin')
 def admin_teacher_view(request):
+    # Get department information with teacher counts and average salaries
+    departments = TMODEL.Department.objects.annotate(
+        teacher_count=Count('teacher'),
+        avg_salary=Coalesce(Avg('teacher__salary'), 0)
+    )
+    
+    # Format department data for the template
+    department_data = []
+    for dept in departments:
+        status = 'Active' if dept.status else 'Inactive'
+        status_color = 'success' if dept.status else 'danger'
+        
+        department_data.append({
+            'name': dept.name,
+            'teacher_count': dept.teacher_count,
+            'avg_salary': f"{int(dept.avg_salary):,}" if dept.avg_salary else '0',
+            'status': status,
+            'status_color': status_color
+        })
+    
     context = {
         'total_teacher': TMODEL.Teacher.objects.filter(status=True).count(),
         'pending_teacher': TMODEL.Teacher.objects.filter(status=False).count(),
         'salary': TMODEL.Teacher.objects.filter(status=True).aggregate(Sum('salary'))['salary__sum'],
+        'departments': department_data,
     }
     return render(request, 'quiz/admin_teacher.html', context)
 
