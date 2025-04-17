@@ -107,26 +107,24 @@ def ai_model_metrics_view(request):
 def upload_csv_view(request):
     """View for processing CSV uploads with improved error handling"""
     try:
+        # Start timing for performance tracking
+        start_time = time.time()
+        
         # Check if this is a standard form submission or AJAX
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
         
         # Get the CSV file from the request
         csv_file = request.FILES.get('csv_file')
         
-        # For standard form submissions with a hidden field
-        if not csv_file and request.POST.get('csv_file'):
-            # This is the workaround for standard form submission where we couldn't pass the file
-            return render(request, 'quiz/ai_upload_data.html', {
-                'error': 'Please use the AJAX upload button for now. Standard form upload requires additional configuration.'
-            })
-            
+        # Validate file exists
         if not csv_file:
             if is_ajax:
-                return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+                return JsonResponse({'status': 'error', 'message': 'No file uploaded. Please select a CSV file.'})
             else:
-                messages.error(request, 'No file uploaded')
+                messages.error(request, 'No file uploaded. Please select a CSV file.')
                 return redirect('ai_upload_data')
         
+        # Validate file type
         if not csv_file.name.endswith('.csv'):
             if is_ajax:
                 return JsonResponse({'status': 'error', 'message': 'File must be a CSV'})
@@ -142,144 +140,260 @@ def upload_csv_view(request):
             status='processing'
         )
         
-        # Read CSV
-        df = pd.read_csv(csv_file)
-        
-        # Column mapping
-        column_mapping = {
-            'Email Address': 'email',
-            'Faculty': 'faculty',
-            'Level of Study': 'level_of_study',
-            'How familiar are you with AI tools?': 'ai_familiarity',
-            'Do you use AI tools for learning?': 'uses_ai_tools',
-            'Which AI tools do you use?': 'tools_used',
-            'How often do you use AI tools?': 'usage_frequency',
-            'What challenges do you face using AI tools?': 'challenges',
-            'Any suggestions for improving AI tools?': 'suggestions',
-            'Does AI improve your learning?': 'improves_learning'
-        }
-        
-        # Rename columns
-        df = df.rename(columns=column_mapping)
-        
-        # Clean and transform data
-        df['email_domain'] = df['email'].apply(lambda x: x.split('@')[1] if isinstance(x, str) and '@' in x else '')
-        
-        # Map AI familiarity to 1-5 scale
-        familiarity_mapping = {
-            'Not at all familiar': 1,
-            'Slightly familiar': 2,
-            'Moderately familiar': 3,
-            'Very familiar': 4,
-            'Extremely familiar': 5
-        }
-        df['ai_familiarity'] = df['ai_familiarity'].map(familiarity_mapping)
-        
-        # Map usage frequency
-        frequency_mapping = {
-            'Never': 'never',
-            'Rarely': 'rarely',
-            'Sometimes': 'sometimes',
-            'Often': 'often',
-            'Very often': 'very_often'
-        }
-        df['usage_frequency'] = df['usage_frequency'].map(frequency_mapping)
-        
-        # Clean yes/no responses
-        df['uses_ai_tools'] = df['uses_ai_tools'].str.lower().map({'yes': True, 'no': False})
-        df['improves_learning'] = df['improves_learning'].str.lower().apply(
-            lambda x: 'yes' if 'yes' in str(x) else ('no' if 'no' in str(x) else 'maybe')
-        )
-        
-        # Save records
-        records = []
-        for _, row in df.iterrows():
-            record = AIAdoptionData(
-                email_domain=row['email_domain'],
-                faculty=row['faculty'],
-                level_of_study=row['level_of_study'],
-                ai_familiarity=row['ai_familiarity'],
-                uses_ai_tools=row['uses_ai_tools'],
-                tools_used=row['tools_used'],
-                usage_frequency=row['usage_frequency'],
-                challenges=row['challenges'],
-                suggestions=row['suggestions'],
-                improves_learning=row['improves_learning'],
-                upload_batch=upload_record
-            )
-            records.append(record)
-        
-        # Bulk create records
-        AIAdoptionData.objects.bulk_create(records)
-        
-        # Update upload record
-        upload_record.record_count = len(records)
-        upload_record.status = 'completed'
-        upload_record.insights = {
-            'total_records': len(records),
-            'ai_users': df['uses_ai_tools'].sum(),
-            'avg_familiarity': df['ai_familiarity'].mean(),
-            'improves_learning_yes': (df['improves_learning'] == 'yes').sum(),
-            'improves_learning_no': (df['improves_learning'] == 'no').sum(),
-            'improves_learning_maybe': (df['improves_learning'] == 'maybe').sum()
-        }
-        upload_record.save()
-        
-        # Train model if requested
-        if request.POST.get('train_model') == 'true':
-            result = train_ai_model(upload_record.id)
-            if not result['success']:
-                if is_ajax:
-                    return JsonResponse({
-                        'status': 'success',
-                        'upload_id': upload_record.id,
-                        'warning': f"Upload successful but model training failed: {result['error']}"
-                    })
-                else:
-                    messages.warning(request, f"Upload successful but model training failed: {result['error']}")
-        
-        # Get updated stats
-        total_records = AIAdoptionData.objects.count()
-        model_count = AIModel.objects.count()
+        # Log the upload
+        logger.info(f"Processing CSV upload: {csv_file.name} (ID: {upload_record.id})")
         
         try:
-            best_model = AIModel.objects.all().order_by('-accuracy').first()
-            best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
-        except:
-            best_accuracy = "0%"
-        
-        try:
-            last_upload = CSVUpload.objects.all().order_by('-created_at').first()
-            last_upload_date = last_upload.created_at.strftime("%b %d, %Y") if last_upload else "None"
-        except:
-            last_upload_date = "None"
+            # Read CSV
+            df = pd.read_csv(csv_file)
             
-        if is_ajax:
-            return JsonResponse({
-                'status': 'success',
-                'upload_id': upload_record.id,
-                'message': 'Data uploaded and processed successfully',
-                'record_count': len(records),
-                'total_records': total_records,
-                'model_count': model_count,
-                'best_accuracy': best_accuracy,
-                'last_upload': last_upload_date
-            })
-        else:
-            messages.success(request, 'Data uploaded and processed successfully')
-            return redirect('ai_upload_data')
-        
+            # Validate file has data
+            if len(df) == 0:
+                upload_record.status = 'failed'
+                upload_record.error_message = 'CSV file is empty'
+                upload_record.save()
+                
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': 'The uploaded CSV file is empty.'})
+                else:
+                    messages.error(request, 'The uploaded CSV file is empty.')
+                    return redirect('ai_upload_data')
+            
+            # Process the column mapping
+            column_mapping = {
+                'email_domain': 'email_domain',
+                'faculty': 'faculty',
+                'level_of_study': 'level_of_study',
+                'ai_familiarity': 'ai_familiarity',
+                'uses_ai_tools': 'uses_ai_tools',
+                'tools_used': 'tools_used',
+                'usage_frequency': 'usage_frequency',
+                'challenges': 'challenges',
+                'suggestions': 'suggestions',
+                'improves_learning': 'improves_learning',
+                # Add mappings for common variations
+                'Email Address': 'email',
+                'Faculty': 'faculty',
+                'Level of Study': 'level_of_study',
+                'How familiar are you with AI tools?': 'ai_familiarity',
+                'Do you use AI tools for learning?': 'uses_ai_tools',
+                'Which AI tools do you use?': 'tools_used',
+                'How often do you use AI tools?': 'usage_frequency',
+                'What challenges do you face using AI tools?': 'challenges',
+                'Any suggestions for improving AI tools?': 'suggestions',
+                'Does AI improve your learning?': 'improves_learning'
+            }
+            
+            # Check if we need to rename columns
+            rename_cols = {}
+            for col_name, mapped_name in column_mapping.items():
+                if col_name in df.columns and col_name != mapped_name:
+                    rename_cols[col_name] = mapped_name
+            
+            # Rename columns if needed
+            if rename_cols:
+                df = df.rename(columns=rename_cols)
+            
+            # Process clean_data parameter
+            clean_data = request.POST.get('clean_data', 'false').lower() in ('true', 'on', 'yes', '1')
+            
+            # Clean and transform data if requested
+            if clean_data:
+                # Handle email_domain if email column exists and email_domain doesn't
+                if 'email' in df.columns and 'email_domain' not in df.columns:
+                    df['email_domain'] = df['email'].apply(
+                        lambda x: x.split('@')[1] if isinstance(x, str) and '@' in x else ''
+                    )
+                
+                # Map AI familiarity to 1-5 scale if needed
+                if 'ai_familiarity' in df.columns and df['ai_familiarity'].dtype == 'object':
+                    familiarity_mapping = {
+                        'Not at all familiar': 1,
+                        'Slightly familiar': 2,
+                        'Moderately familiar': 3,
+                        'Very familiar': 4,
+                        'Extremely familiar': 5
+                    }
+                    df['ai_familiarity'] = df['ai_familiarity'].map(familiarity_mapping).fillna(3)
+                
+                # Map usage frequency if needed
+                if 'usage_frequency' in df.columns and df['usage_frequency'].dtype == 'object':
+                    frequency_mapping = {
+                        'Never': 'never',
+                        'Rarely': 'rarely',
+                        'Monthly': 'monthly',
+                        'Weekly': 'weekly',
+                        'Daily': 'daily',
+                        'Sometimes': 'sometimes',
+                        'Often': 'often',
+                        'Very often': 'very_often'
+                    }
+                    df['usage_frequency'] = df['usage_frequency'].str.lower().map(frequency_mapping).fillna('never')
+                
+                # Clean yes/no responses if needed
+                if 'uses_ai_tools' in df.columns:
+                    df['uses_ai_tools'] = df['uses_ai_tools'].astype(str).str.lower().apply(
+                        lambda x: True if x in ('yes', 'true', 'y', '1', 'on') else False
+                    )
+                
+                if 'improves_learning' in df.columns:
+                    df['improves_learning'] = df['improves_learning'].astype(str).str.lower().apply(
+                        lambda x: 'yes' if x in ('yes', 'true', 'y', '1', 'on') 
+                            else ('no' if x in ('no', 'false', 'n', '0', 'off') else 'maybe')
+                    )
+            
+            # Save records
+            records = []
+            for _, row in df.iterrows():
+                # Use get() to handle missing columns
+                record = AIAdoptionData(
+                    email_domain=row.get('email_domain', ''),
+                    faculty=row.get('faculty', ''),
+                    level_of_study=row.get('level_of_study', ''),
+                    ai_familiarity=row.get('ai_familiarity', 3),
+                    uses_ai_tools=row.get('uses_ai_tools', False),
+                    tools_used=row.get('tools_used', ''),
+                    usage_frequency=row.get('usage_frequency', 'never'),
+                    challenges=row.get('challenges', ''),
+                    suggestions=row.get('suggestions', ''),
+                    improves_learning=row.get('improves_learning', 'maybe'),
+                    upload_batch=upload_record
+                )
+                records.append(record)
+            
+            # Bulk create records
+            AIAdoptionData.objects.bulk_create(records)
+            
+            # Update upload record
+            upload_record.record_count = len(records)
+            upload_record.status = 'completed'
+            
+            # Create insights data
+            ai_users = len([r for r in records if r.uses_ai_tools])
+            avg_familiarity = sum(r.ai_familiarity for r in records) / len(records) if records else 0
+            
+            upload_record.insights = {
+                'total_records': len(records),
+                'ai_users': ai_users,
+                'avg_familiarity': avg_familiarity,
+                'improves_learning_yes': len([r for r in records if r.improves_learning == 'yes']),
+                'improves_learning_no': len([r for r in records if r.improves_learning == 'no']),
+                'improves_learning_maybe': len([r for r in records if r.improves_learning == 'maybe'])
+            }
+            upload_record.save()
+            
+            # Extract useful insights for display
+            insights = [
+                f"Total records: {len(records)}",
+                f"AI tool users: {ai_users} ({ai_users/len(records)*100:.1f}%)" if records else "No records",
+                f"Average AI familiarity: {avg_familiarity:.1f}/5.0" if records else "No data"
+            ]
+            
+            # Train model if requested
+            train_model = request.POST.get('train_model', 'false').lower() in ('true', 'on', 'yes', '1')
+            
+            model_trained = False
+            model_accuracy = 0
+            
+            if train_model:
+                try:
+                    result = train_ai_model(upload_record.id)
+                    if result['success']:
+                        model_trained = True
+                        model_accuracy = result['accuracy']
+                        logger.info(f"Successfully trained model for upload {upload_record.id}")
+                        insights.append(f"Model trained with accuracy: {model_accuracy:.2f}")
+                    else:
+                        error_msg = f"Upload successful but model training failed: {result.get('error')}"
+                        logger.warning(f"Training failed for upload {upload_record.id}: {result.get('error')}")
+                        if is_ajax:
+                            # Continue processing even if training failed
+                            pass
+                        else:
+                            messages.warning(request, error_msg)
+                except Exception as e:
+                    logger.error(f"Error training model: {str(e)}", exc_info=True)
+                    if not is_ajax:
+                        messages.warning(request, f"Upload successful but model training failed: {str(e)}")
+            
+            # Calculate processing time
+            processing_time = time.time() - start_time
+            
+            # Get updated stats
+            total_records = AIAdoptionData.objects.count()
+            model_count = AIModel.objects.count()
+            
+            try:
+                best_model = AIModel.objects.all().order_by('-accuracy').first()
+                best_accuracy = f"{best_model.accuracy * 100:.1f}%" if best_model else "0%"
+            except:
+                best_accuracy = "0%"
+            
+            try:
+                last_upload = CSVUpload.objects.all().order_by('-created_at').first()
+                last_upload_date = last_upload.created_at.strftime("%b %d, %Y") if last_upload else "None"
+            except:
+                last_upload_date = "None"
+            
+            # Return appropriate response based on request type
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'success',
+                    'upload_id': upload_record.id,
+                    'message': 'Data uploaded and processed successfully',
+                    'record_count': len(records),
+                    'processing_time': processing_time,
+                    'model_trained': model_trained,
+                    'accuracy': model_accuracy,
+                    'insights': insights,
+                    'total_records': total_records,
+                    'model_count': model_count,
+                    'best_accuracy': best_accuracy,
+                    'last_upload': last_upload_date
+                })
+            else:
+                messages.success(request, 'Data uploaded and processed successfully')
+                return redirect('ai_upload_data')
+                
+        except pd.errors.EmptyDataError:
+            upload_record.status = 'failed'
+            upload_record.error_message = 'CSV file is empty'
+            upload_record.save()
+            logger.error(f"Empty CSV file uploaded (ID: {upload_record.id})")
+            
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'The uploaded CSV file is empty.'})
+            else:
+                messages.error(request, 'The uploaded CSV file is empty.')
+                return redirect('ai_upload_data')
+                
+        except pd.errors.ParserError as e:
+            upload_record.status = 'failed'
+            upload_record.error_message = f'CSV parsing error: {str(e)}'
+            upload_record.save()
+            logger.error(f"CSV parsing error (ID: {upload_record.id}): {str(e)}")
+            
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': f'Error parsing CSV file: {str(e)}'})
+            else:
+                messages.error(request, f'Error parsing CSV file: {str(e)}')
+                return redirect('ai_upload_data')
+            
     except Exception as e:
-        logger.error(f"Error in upload_csv_view: {str(e)}")
+        # Log the error
+        logger.error(f"Error in upload_csv_view: {str(e)}", exc_info=True)
+        
+        # Update upload record if it was created
         if 'upload_record' in locals():
             upload_record.status = 'failed'
             upload_record.error_message = str(e)
             upload_record.save()
-            
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        if is_ajax:
             return JsonResponse({
                 'status': 'error',
-                'message': str(e)
+                'message': f'An unexpected error occurred: {str(e)}'
             })
         else:
             messages.error(request, f'Error: {str(e)}')
