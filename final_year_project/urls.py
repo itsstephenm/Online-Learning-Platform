@@ -48,6 +48,7 @@ urlpatterns = [
     path('view-question/<int:pk>', views.view_question_view, name='view-question'),
     path('delete-question/<int:pk>', views.delete_question_view, name='delete-question'),
     path('update-question/<int:pk>', views.update_question_view, name='update-question'),
+    path('admin-generate-questions', views.admin_generate_questions_view, name='admin-generate-questions'),
     
     # AI Prediction Dashboard
     path('ai-prediction-dashboard', views.ai_prediction_dashboard_view, name='ai-prediction-dashboard'),
