@@ -2365,9 +2365,35 @@ def ai_data_detail_view(request, data_id):
 
 @login_required(login_url='adminlogin')
 def ai_view_data_list_view(request):
-    return render(request, 'quiz/under_construction.html', {
-        'message': 'The Data Viewer will allow you to browse and analyze your uploaded datasets.'
-    })
+    # Get all uploads
+    uploads = CSVUpload.objects.all().order_by('-created_at')
+    
+    # Get total records in the system
+    total_records = AIAdoptionData.objects.count()
+    
+    # Get summary stats for each faculty
+    faculty_stats = AIAdoptionData.objects.values('faculty').annotate(
+        count=Count('id'),
+        avg_familiarity=Avg('ai_familiarity'),
+        tools_users=Count('id', filter=Q(uses_ai_tools='yes'))
+    ).order_by('-count')[:5]
+    
+    # Calculate percentage of users who use AI tools
+    for stat in faculty_stats:
+        stat['tools_percentage'] = (stat['tools_users'] / stat['count']) * 100 if stat['count'] > 0 else 0
+    
+    # Get latest upload date
+    latest_upload = uploads.first()
+    latest_upload_date = latest_upload.created_at if latest_upload else None
+    
+    context = {
+        'uploads': uploads,
+        'total_records': total_records,
+        'faculty_stats': faculty_stats,
+        'latest_upload_date': latest_upload_date
+    }
+    
+    return render(request, 'quiz/ai_view_data_list.html', context)
 
 @login_required(login_url='adminlogin')
 def ai_view_data_detail_view(request, dataset_id):
