@@ -324,12 +324,15 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: $(this).attr('action'),
+            url: '{% url "upload_csv_view" %}',
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
-            headers: {'X-Requested-With': 'XMLHttpRequest'},
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             success: function(response) {
                 // Mark upload as complete
                 $('#step-upload').removeClass('bg-info step-active').addClass('bg-success');
@@ -577,10 +580,10 @@ $(document).ready(function() {
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Training...');
         
         $.ajax({
-            url: '/quiz/admin/ai-adoption/train-model/',
+            url: '{% url "train_model_view" %}',
             type: 'POST',
             headers: {
-                'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                 'X-Requested-With': 'XMLHttpRequest'
             },
             data: {
@@ -589,7 +592,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === 'success') {
                     // Update model count
-                    var currentCount = parseInt($('#model-count').text());
+                    var currentCount = parseInt($('#model-count').text()) || 0;
                     $('#model-count').text(currentCount + 1);
                     
                     // Update best accuracy if this model is better
@@ -602,12 +605,13 @@ $(document).ready(function() {
                     // Show success message
                     alert('Model trained successfully with accuracy: ' + newAccuracy + '%');
                 } else {
-                    alert('Error training model: ' + response.message);
+                    alert('Error training model: ' + (response.message || 'Unknown error'));
                 }
                 
                 $btn.prop('disabled', false).html('<i class="fas fa-cogs"></i> Train Model on Existing Data');
             },
             error: function(xhr, status, error) {
+                console.error('Training error:', xhr.responseText);
                 alert('Error training model: ' + error);
                 $btn.prop('disabled', false).html('<i class="fas fa-cogs"></i> Train Model on Existing Data');
             }
@@ -666,10 +670,10 @@ $(document).ready(function() {
     $('#confirmDelete').on('click', function() {
         if (deleteUploadId) {
             $.ajax({
-                url: '/quiz/admin/ai-adoption/delete-upload/' + deleteUploadId + '/',
+                url: '{% url "delete_upload" 0 %}'.replace('0', deleteUploadId),
                 type: 'POST',
                 headers: {
-                    'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 success: function(response) {
@@ -687,7 +691,13 @@ $(document).ready(function() {
                                 $('#last-upload').text(response.last_upload || 'None');
                             }
                         });
+                    } else {
+                        alert('Error deleting upload: ' + (response.message || 'Unknown error'));
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Delete error:', xhr.responseText);
+                    alert('Error deleting upload: ' + error);
                 }
             });
             
