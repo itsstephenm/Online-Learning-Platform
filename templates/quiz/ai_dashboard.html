@@ -1,344 +1,603 @@
 {% extends 'teacher/teacherbase.html' %}
 {% load static %}
 
-{% block title %}AI Dashboard{% endblock %}
+{% block title %}CUT AI Adoption Analytics Platform{% endblock %}
 
 {% block custom_css %}
 <style>
-    .stats-card {
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s;
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f5f7fb;
+        color: #2d3748;
     }
     
-    .stats-card:hover {
-        transform: translateY(-5px);
+    .main-container {
+        display: flex;
+        min-height: 100vh;
     }
     
-    .model-card {
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-        transition: transform 0.3s;
+    .sidebar {
+        width: 250px;
+        background-color: #fff;
+        border-right: 1px solid #e2e8f0;
+        padding: 20px 0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
-    .model-card:hover {
-        transform: translateY(-5px);
+    .content-area {
+        flex: 1;
+        padding: 30px;
     }
     
-    .model-header {
+    .header-logo {
         padding: 15px 20px;
-        background: linear-gradient(to right, #4a6fdc, #6c8ce9);
-        color: white;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
     }
     
-    .model-body {
+    .nav-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .nav-item {
+        margin-bottom: 5px;
+    }
+    
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        color: #4a5568;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 0 10px;
+    }
+    
+    .nav-link:hover {
+        background-color: #f7fafc;
+    }
+    
+    .nav-link.active {
+        background-color: #edf2f7;
+        color: #3182ce;
+        font-weight: 500;
+    }
+    
+    .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .upload-container {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .upload-area {
+        border: 2px dashed #cbd5e0;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        background-color: #f7fafc;
+        margin: 20px 0;
+        transition: all 0.3s;
+    }
+    
+    .upload-area:hover {
+        border-color: #3182ce;
+        background-color: #ebf8ff;
+    }
+    
+    .upload-icon {
+        font-size: 40px;
+        color: #a0aec0;
+        margin-bottom: 15px;
+    }
+    
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: #f7fafc;
+        border-radius: 4px;
+        margin-top: 10px;
+    }
+    
+    .file-icon {
+        color: #4299e1;
+        font-size: 18px;
+        margin-right: 10px;
+    }
+    
+    .file-info {
+        flex: 1;
+    }
+    
+    .file-size {
+        color: #718096;
+        font-size: 12px;
+    }
+    
+    .remove-file {
+        color: #e53e3e;
+        cursor: pointer;
+    }
+    
+    .data-preview {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .data-table th {
+        background-color: #f7fafc;
+        font-weight: 500;
+    }
+    
+    .status-message {
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .status-message.success {
+        background-color: #c6f6d5;
+        color: #276749;
+    }
+    
+    .status-message.info {
+        background-color: #bee3f8;
+        color: #2c5282;
+    }
+    
+    .stats-container {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .stats-grid {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+    
+    .stat-box {
+        text-align: center;
+        flex: 1;
+        padding: 15px;
+    }
+    
+    .stat-value {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #718096;
+        font-size: 14px;
+    }
+    
+    .chart-container {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .chart-tabs {
+        display: flex;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+    }
+    
+    .chart-tab {
+        padding: 10px 15px;
+        margin-right: 5px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .chart-tab.active {
+        border-bottom-color: #3182ce;
+        color: #3182ce;
+        font-weight: 500;
+    }
+    
+    .chart-area {
+        height: 300px;
+    }
+    
+    .btn-primary {
+        background-color: #4299e1;
+        border-color: #4299e1;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+        background-color: #3182ce;
+        border-color: #3182ce;
+    }
+    
+    .filter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .filter-tag {
+        background-color: #3182ce;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+    }
+    
+    .filter-tag i {
+        margin-left: 8px;
+        cursor: pointer;
+    }
+    
+    .prediction-container {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .prediction-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: #3182ce;
+    }
+    
+    .prediction-change {
+        display: flex;
+        align-items: center;
+        color: #48bb78;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+    
+    .prediction-change.negative {
+        color: #e53e3e;
+    }
+    
+    .prediction-change i {
+        margin-right: 5px;
+    }
+    
+    .factors-chart {
+        height: 200px;
+        margin-top: 20px;
+    }
+    
+    .loading-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         padding: 20px;
     }
     
-    .prediction-item {
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        background-color: white;
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3182ce;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
     }
     
-    .action-button {
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-weight: 500;
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <h1 class="mt-4">AI Prediction Dashboard</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{% url 'teacher-dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active">AI Prediction</li>
-    </ol>
-    
-    <!-- OpenRouter AI Integration Banner -->
-    <div class="card mb-4 bg-primary text-white">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <i class="fas fa-robot fa-2x me-3"></i>
-                </div>
-                <div class="col">
-                    <h5 class="mb-1">OpenRouter AI Integration</h5>
-                    <p class="mb-0">Enhanced predictions and insights powered by OpenRouter's advanced AI models</p>
-                </div>
-                <div class="col-auto">
-                    <a href="{% url 'quiz:make_new_prediction' %}" class="btn btn-light">
-                        <i class="fas fa-magic me-1"></i>
-                        Try Enhanced Predictions
-                    </a>
-                </div>
-            </div>
+<div class="main-container">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="header-logo">
+            <img src="{% static 'images/logo.png' %}" alt="Logo" width="160">
         </div>
+        <div class="about-section">
+            <h5>About</h5>
+            <p class="small text-muted">This platform analyzes AI adoption at CUT based on survey data and provides predictions.</p>
+        </div>
+        <h5 class="px-4 mt-4 mb-2">Navigation</h5>
+        <p class="px-4 small text-muted">Go to</p>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="#" class="nav-link active" id="nav-data-upload">
+                    <i class="fas fa-upload"></i> Data Upload
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="nav-dashboard">
+                    <i class="fas fa-chart-bar"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="nav-predictions">
+                    <i class="fas fa-brain"></i> AI Predictions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="nav-insights">
+                    <i class="fas fa-lightbulb"></i> Insights & Suggestions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="nav-admin">
+                    <i class="fas fa-cog"></i> Admin
+                </a>
+            </li>
+        </ul>
     </div>
-    
-    <div class="row">
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-primary text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">{{ model_count }}</h5>
-                            <div class="small">Trained AI Models</div>
+
+    <!-- Main Content Area -->
+    <div class="content-area">
+        <!-- Data Upload Section -->
+        <div id="section-data-upload">
+            <h2>Upload Survey Data</h2>
+            <p class="text-muted">Upload your CSV file containing the AI adoption survey responses.</p>
+            
+            <div class="upload-container">
+                <h5>Choose a CSV file</h5>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="upload-area" id="drop-area">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <p>Drag and drop file here</p>
+                        <p class="text-muted small">Limit 200MB per file • CSV</p>
+                        <input type="file" id="fileInput" name="csv_file" accept=".csv" style="display: none;">
+                        <button type="button" class="btn btn-primary" id="browseButton">Browse files</button>
+                    </div>
+                </form>
+                
+                <div id="filePreview" style="display: none;">
+                    <div class="file-item">
+                        <i class="fas fa-file-csv file-icon"></i>
+                        <div class="file-info">
+                            <div id="fileName">filename.csv</div>
+                            <div class="file-size" id="fileSize">0 KB</div>
                         </div>
-                        <div>
-                            <i class="fas fa-brain fa-2x"></i>
-                        </div>
+                        <i class="fas fa-times remove-file" id="removeFile"></i>
                     </div>
                 </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">View Models</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
             </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-warning text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">{{ prediction_count }}</h5>
-                            <div class="small">Total Predictions</div>
-                        </div>
-                        <div>
-                            <i class="fas fa-chart-line fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a href="{% url 'quiz:all_predictions' %}" class="small text-white stretched-link">View Predictions</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
+            
+            <!-- Processing Indicator -->
+            <div id="processingIndicator" class="loading-indicator" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span id="processingText">RUNNING...</span>
+                <button id="stopProcessingBtn" class="btn btn-outline-secondary btn-sm ms-3">Stop</button>
             </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-success text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">{{ insights_count|default:"0" }}</h5>
-                            <div class="small">AI-Generated Insights</div>
-                        </div>
-                        <div>
-                            <i class="fas fa-lightbulb fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">View Insights</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-danger text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">{{ queries_count|default:"0" }}</h5>
-                            <div class="small">Natural Language Queries</div>
-                        </div>
-                        <div>
-                            <i class="fas fa-comment-dots fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">View Queries</a>
-                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-chart-bar me-1"></i>
-                    AI Model Performance
-                </div>
-                <div class="card-body">
-                    <canvas id="modelAccuracyChart" width="100%" height="40"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-chart-pie me-1"></i>
-                    Prediction Distribution
-                </div>
-                <div class="card-body">
-                    <canvas id="predictionDistributionChart" width="100%" height="40"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-xl-8">
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-history me-1"></i>
-                        Recent Predictions
-                    </div>
-                    <a href="{% url 'quiz:make_new_prediction' %}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>
-                        New Prediction
-                    </a>
-                </div>
-                <div class="card-body">
+            
+            <!-- Data Preview Section (initially hidden) -->
+            <div id="dataPreviewSection" style="display: none;">
+                <div class="data-preview">
+                    <h4>Data Preview</h4>
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="data-table" id="previewTable">
                             <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Date</th>
-                                    <th>Model</th>
-                                    <th>Prediction</th>
-                                    <th>Confidence</th>
-                                    <th>Action</th>
+                                <tr id="previewTableHeader">
+                                    <!-- Table headers will be inserted here -->
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% for prediction in recent_predictions %}
-                                <tr>
-                                    <td>{{ prediction.id }}</td>
-                                    <td>{{ prediction.created_at|date:"M d, Y H:i" }}</td>
-                                    <td>{{ prediction.model.name }}</td>
-                                    <td>
-                                        {% if prediction.prediction_class == 1 %}
-                                        <span class="badge bg-success">Success</span>
-                                        {% else %}
-                                        <span class="badge bg-danger">At Risk</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prediction.prediction_class == 1 %}
-                                        {{ prediction.success_probability|floatformat:1 }}%
-                                        {% else %}
-                                        {{ prediction.risk_probability|floatformat:1 }}%
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'quiz:prediction_result' prediction.id %}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">No predictions made yet</td>
-                                </tr>
-                                {% endfor %}
+                            <tbody id="previewTableBody">
+                                <!-- Table rows will be inserted here -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="card-footer small text-muted">
-                    Updated {% now "F j, Y, g:i a" %}
+            </div>
+            
+            <!-- Success Message -->
+            <div id="successMessage" class="status-message success" style="display: none;">
+                <i class="fas fa-check-circle me-2"></i>
+                <span id="successText">Data successfully uploaded! Added 0 new records.</span>
+            </div>
+            
+            <!-- Skipped Records Message -->
+            <div id="skippedMessage" class="status-message info" style="display: none;">
+                <i class="fas fa-info-circle me-2"></i>
+                <span id="skippedText">Skipped 0 existing records to avoid duplicates.</span>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="showSkipped">
+                    <label class="form-check-label" for="showSkipped">
+                        Show skipped emails
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Basic Statistics Section -->
+            <div id="statsSection" style="display: none;">
+                <div class="stats-container">
+                    <h4>Basic Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="totalResponses">0</div>
+                            <div class="stat-label">Total Responses</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="toolsCount">0</div>
+                            <div class="stat-label">Different AI Tools Used</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="avgUsage">0.00</div>
+                            <div class="stat-label">Avg. Usage Frequency</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary" id="trainModelBtn">Train Prediction Model</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Model Training Success Message -->
+            <div id="modelSuccessMessage" class="status-message success" style="display: none;">
+                <i class="fas fa-check-circle me-2"></i>
+                <span id="modelSuccessText">Model trained successfully! Accuracy: 0.00</span>
+            </div>
+        </div>
+        
+        <!-- Dashboard Section (initially hidden) -->
+        <div id="section-dashboard" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Filter Data</h2>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="filter-container" id="facultyFilter">
+                        <h5 class="w-100">Select Faculties</h5>
+                        <div class="filter-tag">
+                            Business <i class="fas fa-times"></i>
+                        </div>
+                        <div class="filter-tag">
+                            Engineering <i class="fas fa-times"></i>
+                        </div>
+                        <div class="filter-tag">
+                            Education <i class="fas fa-times"></i>
+                        </div>
+                        <div class="filter-tag">
+                            Health Sciences <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="filter-container" id="studyLevelFilter">
+                        <h5 class="w-100">Select Study Levels</h5>
+                        <div class="filter-tag">
+                            Undergraduate <i class="fas fa-times"></i>
+                        </div>
+                        <div class="filter-tag">
+                            Postgraduate <i class="fas fa-times"></i>
+                        </div>
+                        <div class="filter-tag">
+                            Other <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <h4>Key Metrics</h4>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value">70.0%</div>
+                        <div class="stat-label">AI Familiarity</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">70.0%</div>
+                        <div class="stat-label">AI Tools Usage</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">33.5%</div>
+                        <div class="stat-label">Positive Learning Impact</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">2.31</div>
+                        <div class="stat-label">Avg Usage Frequency</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h4>Data Visualizations</h4>
+                <div class="chart-tabs">
+                    <div class="chart-tab active" data-chart="familiarity">AI Familiarity</div>
+                    <div class="chart-tab" data-chart="tools">Tool Usage</div>
+                    <div class="chart-tab" data-chart="faculty">Faculty Adoption</div>
+                    <div class="chart-tab" data-chart="challenges">Challenges</div>
+                </div>
+                <div class="chart-area">
+                    <canvas id="visualizationChart"></canvas>
                 </div>
             </div>
         </div>
         
-        <div class="col-xl-4">
-            <!-- AI Insights Section -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-lightbulb me-1"></i>
-                        AI-Enhanced Insights
-                    </div>
-                    <a href="#" class="btn btn-primary btn-sm">
-                        <i class="fas fa-sync-alt me-1"></i>
-                        Generate
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if ai_insights %}
-                    <div class="list-group">
-                        {% for insight in ai_insights %}
-                        <a href="#" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ insight.title }}</h6>
-                                <small>{{ insight.created_at|date:"M d" }}</small>
-                            </div>
-                            <p class="mb-1 small">{{ insight.content|truncatechars:100 }}</p>
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-primary me-2">{{ insight.topic.name }}</span>
-                                {% if insight.is_generated %}
-                                <span class="badge bg-info">
-                                    <i class="fas fa-robot me-1"></i>
-                                    OpenRouter Enhanced
-                                </span>
-                                {% endif %}
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-lightbulb fa-3x mb-3 text-warning"></i>
-                        <p>No insights generated yet</p>
-                        <button class="btn btn-primary">
-                            <i class="fas fa-magic me-1"></i>
-                            Generate Insights
-                        </button>
-                    </div>
-                    {% endif %}
+        <!-- AI Predictions Section -->
+        <div id="section-predictions" style="display: none;">
+            <h2>Predicted AI Adoption by Faculty and Study Level</h2>
+            <div class="chart-container">
+                <div class="chart-area">
+                    <canvas id="facultyPredictionChart"></canvas>
                 </div>
             </div>
             
-            <!-- Natural Language Query Interface -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-comment-dots me-1"></i>
-                    Ask AI Assistant
+            <h4>Factors Influencing AI Adoption</h4>
+            <div class="chart-container">
+                <div class="chart-area">
+                    <canvas id="factorsChart"></canvas>
                 </div>
-                <div class="card-body">
-                    <p class="small text-muted mb-3">
-                        Ask questions about your data in plain English
-                    </p>
-                    <form id="nlQueryForm">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="e.g., Show me adoption trends by faculty" id="nlQuery">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </form>
-                    <div id="queryResults" class="mt-3">
-                        {% if recent_query %}
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <p class="fw-bold">{{ recent_query.query }}</p>
-                                <p>{{ recent_query.response }}</p>
-                                {% if recent_query.chart_data %}
-                                <div class="query-chart" style="height: 200px;"></div>
-                                {% endif %}
-                                <div class="small text-muted mt-2">
-                                    Powered by OpenRouter AI
-                                </div>
+            </div>
+            
+            <div class="prediction-container">
+                <h4>Prediction Analysis</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="prediction-box">
+                            <div class="stat-label">Predicted AI Adoption Rate</div>
+                            <div class="prediction-value">33.2%</div>
+                            <div class="prediction-change">
+                                <i class="fas fa-arrow-up"></i> +5.2%
                             </div>
                         </div>
-                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="prediction-box">
+                            <div class="stat-label">Confidence Score</div>
+                            <div class="prediction-value">75%</div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Insights Section -->
+        <div id="section-insights" style="display: none;">
+            <h2>AI-Generated Insights & Recommendations</h2>
+        </div>
+        
+        <!-- Admin Section -->
+        <div id="section-admin" style="display: none;">
+            <h2>Admin Settings</h2>
         </div>
     </div>
 </div>
@@ -348,136 +607,407 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Model Accuracy Chart
-    var modelCtx = document.getElementById('modelAccuracyChart');
-    var modelData = {
-        labels: [{% for model in models %}"{{ model.name }}",{% endfor %}],
-        datasets: [{
-            label: 'Model Accuracy (%)',
-            data: [{% for model in models %}{{ model.accuracy|floatformat:2 }},{% endfor %}],
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-        }]
+    // Navigation functionality
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = {
+        'nav-data-upload': 'section-data-upload',
+        'nav-dashboard': 'section-dashboard',
+        'nav-predictions': 'section-predictions',
+        'nav-insights': 'section-insights',
+        'nav-admin': 'section-admin'
     };
     
-    new Chart(modelCtx, {
-        type: 'bar',
-        data: modelData,
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-    
-    // Prediction Distribution Chart
-    var predictionCtx = document.getElementById('predictionDistributionChart');
-    var predictionData = {
-        labels: ['Success', 'At Risk'],
-        datasets: [{
-            data: [
-                {{ prediction_success_count|default:0 }}, 
-                {{ prediction_risk_count|default:0 }}
-            ],
-            backgroundColor: [
-                'rgba(40, 167, 69, 0.8)',
-                'rgba(220, 53, 69, 0.8)'
-            ]
-        }]
-    };
-    
-    new Chart(predictionCtx, {
-        type: 'doughnut',
-        data: predictionData,
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-    
-    // NL Query Form
-    const nlQueryForm = document.getElementById('nlQueryForm');
-    if (nlQueryForm) {
-        nlQueryForm.addEventListener('submit', function(e) {
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
             e.preventDefault();
-            const query = document.getElementById('nlQuery').value;
-            if (!query) return;
             
-            // Show loading state
-            const queryResults = document.getElementById('queryResults');
-            queryResults.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Processing your query...</p></div>';
+            // Remove active class from all links
+            navLinks.forEach(l => l.classList.remove('active'));
             
-            // Send query to backend
-            fetch('/quiz/nl_query/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+            // Add active class to clicked link
+            this.classList.add('active');
+            
+            // Hide all sections
+            Object.values(sections).forEach(section => {
+                document.getElementById(section).style.display = 'none';
+            });
+            
+            // Show the corresponding section
+            const sectionId = sections[this.id];
+            document.getElementById(sectionId).style.display = 'block';
+        });
+    });
+    
+    // File upload functionality
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('fileInput');
+    const browseButton = document.getElementById('browseButton');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFile = document.getElementById('removeFile');
+    const uploadForm = document.getElementById('uploadForm');
+    const processingIndicator = document.getElementById('processingIndicator');
+    const processingText = document.getElementById('processingText');
+    const stopProcessingBtn = document.getElementById('stopProcessingBtn');
+    
+    // Browse button click
+    browseButton.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+    
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Highlight drop area when dragging over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        dropArea.classList.add('highlight');
+    }
+    
+    function unhighlight() {
+        dropArea.classList.remove('highlight');
+    }
+    
+    // Handle dropped files
+    dropArea.addEventListener('drop', function(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    });
+    
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            
+            // Check if file is CSV
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                alert('Please upload a CSV file');
+                return;
+            }
+            
+            // Display file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            filePreview.style.display = 'block';
+            
+            // Simulate processing
+            simulateProcessing(file);
+        }
+    }
+    
+    // Remove file button
+    removeFile.addEventListener('click', function() {
+        fileInput.value = '';
+        filePreview.style.display = 'none';
+        
+        // Hide other sections that depend on file upload
+        document.getElementById('dataPreviewSection').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('skippedMessage').style.display = 'none';
+        document.getElementById('statsSection').style.display = 'none';
+        document.getElementById('modelSuccessMessage').style.display = 'none';
+    });
+    
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    // Simulate file processing
+    function simulateProcessing(file) {
+        // Show processing indicator
+        processingIndicator.style.display = 'flex';
+        
+        // Read CSV file to get preview data
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const csv = e.target.result;
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',');
+            
+            // Create table headers
+            const headerRow = document.getElementById('previewTableHeader');
+            headerRow.innerHTML = '';
+            
+            headers.forEach((header, index) => {
+                const th = document.createElement('th');
+                th.textContent = `${index + 1}. ${header.trim()}`;
+                headerRow.appendChild(th);
+            });
+            
+            // Create table rows
+            const tableBody = document.getElementById('previewTableBody');
+            tableBody.innerHTML = '';
+            
+            // Display up to 5 data rows
+            const maxRows = Math.min(lines.length - 1, 5);
+            
+            for (let i = 1; i <= maxRows; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const rowData = lines[i].split(',');
+                const row = document.createElement('tr');
+                
+                // Add row index cell
+                const indexCell = document.createElement('td');
+                indexCell.textContent = i - 1;
+                row.appendChild(indexCell);
+                
+                rowData.forEach((cell, j) => {
+                    if (j > 0) {
+                        const td = document.createElement('td');
+                        td.textContent = cell.trim();
+                        row.appendChild(td);
+                    }
+                });
+                
+                tableBody.appendChild(row);
+            }
+            
+            // After a delay to simulate processing
+            setTimeout(() => {
+                // Hide processing indicator
+                processingIndicator.style.display = 'none';
+                
+                // Show data preview section
+                document.getElementById('dataPreviewSection').style.display = 'block';
+                
+                // Show success message
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('successText').textContent = `Data successfully uploaded! Added 1224 new records.`;
+                
+                // Show skipped message
+                document.getElementById('skippedMessage').style.display = 'block';
+                document.getElementById('skippedText').textContent = `Skipped 1 existing record to avoid duplicates.`;
+                
+                // Show stats section
+                document.getElementById('statsSection').style.display = 'block';
+                document.getElementById('totalResponses').textContent = '1224';
+                document.getElementById('toolsCount').textContent = '7';
+                document.getElementById('avgUsage').textContent = '2.31';
+            }, 2000);
+        };
+        
+        reader.readAsText(file);
+    }
+    
+    // Train model button click
+    document.getElementById('trainModelBtn').addEventListener('click', function() {
+        // Show processing indicator
+        processingIndicator.style.display = 'flex';
+        processingText.textContent = 'Training model...';
+        
+        // After a delay to simulate processing
+        setTimeout(() => {
+            // Hide processing indicator
+            processingIndicator.style.display = 'none';
+            
+            // Show model success message
+            document.getElementById('modelSuccessMessage').style.display = 'block';
+            document.getElementById('modelSuccessText').textContent = `Model trained successfully! Accuracy: 0.61`;
+        }, 3000);
+    });
+    
+    // Initialize charts for dashboard
+    function initializeCharts() {
+        // AI Familiarity Distribution Chart
+        const familiarityCtx = document.getElementById('visualizationChart').getContext('2d');
+        const familiarityChart = new Chart(familiarityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Not familiar at all', 'Somewhat familiar', 'Very familiar'],
+                datasets: [{
+                    label: 'Number of Respondents',
+                    data: [370, 650, 210],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#007bff'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Respondents'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Familiarity Level'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Faculty Prediction Chart
+        const predictionCtx = document.getElementById('facultyPredictionChart').getContext('2d');
+        const predictionChart = new Chart(predictionCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Business', 'Education', 'Engineering', 'Health Sciences'],
+                datasets: [
+                    {
+                        label: 'Undergraduate',
+                        data: [32, 28, 31, 33],
+                        backgroundColor: '#007bff'
+                    },
+                    {
+                        label: 'Postgraduate',
+                        data: [29, 37, 35, 28],
+                        backgroundColor: '#28a745'
+                    },
+                    {
+                        label: 'Other',
+                        data: [30, 29, 32, 36],
+                        backgroundColor: '#6f42c1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true
+                    },
+                    y: {
+                        stacked: false,
+                        title: {
+                            display: true,
+                            text: 'Predicted Adoption Probability'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Factors Chart
+        const factorsCtx = document.getElementById('factorsChart').getContext('2d');
+        const factorsChart = new Chart(factorsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['AI Familiarity', 'Current Tool Usage', 'Encountered Challenges', 'Faculty Affiliation', 'Level of Study'],
+                datasets: [{
+                    data: [0.26, 0.15, 0.26, 0.11, 0.22],
+                    backgroundColor: '#007bff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                body: JSON.stringify({ query: query })
-            })
-            .then(response => response.json())
-            .then(data => {
-                let resultHtml = `
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <p class="fw-bold">${query}</p>
-                            <p>${data.response}</p>
-                `;
-                
-                if (data.chart_data) {
-                    resultHtml += `<div id="responseChart" style="height: 200px;"></div>`;
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Feature Importance'
+                        }
+                    }
                 }
+            }
+        });
+        
+        // Tab switching for visualization charts
+        const chartTabs = document.querySelectorAll('.chart-tab');
+        
+        chartTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                chartTabs.forEach(t => t.classList.remove('active'));
                 
-                resultHtml += `
-                            <div class="small text-muted mt-2">
-                                Powered by OpenRouter AI
-                            </div>
-                        </div>
-                    </div>
-                `;
+                // Add active class to clicked tab
+                this.classList.add('active');
                 
-                queryResults.innerHTML = resultHtml;
+                // Update chart based on selected tab
+                const chartType = this.getAttribute('data-chart');
                 
-                // If there's chart data, render the chart
-                if (data.chart_data && data.chart_type) {
-                    // Initialize chart based on data
+                switch(chartType) {
+                    case 'familiarity':
+                        familiarityChart.data.labels = ['Not familiar at all', 'Somewhat familiar', 'Very familiar'];
+                        familiarityChart.data.datasets[0].data = [370, 650, 210];
+                        familiarityChart.update();
+                        break;
+                    case 'tools':
+                        familiarityChart.data.labels = ['ChatGPT', 'GitHub Copilot', 'Grammarly', 'Midjourney', 'DALL-E'];
+                        familiarityChart.data.datasets[0].data = [720, 350, 280, 150, 100];
+                        familiarityChart.update();
+                        break;
+                    case 'faculty':
+                        familiarityChart.data.labels = ['Business', 'Engineering', 'Education', 'Health Sciences', 'Arts'];
+                        familiarityChart.data.datasets[0].data = [350, 420, 280, 150, 70];
+                        familiarityChart.update();
+                        break;
+                    case 'challenges':
+                        familiarityChart.data.labels = ['Understanding outputs', 'Access', 'Cost', 'Technical skills', 'Integration'];
+                        familiarityChart.data.datasets[0].data = [450, 380, 320, 250, 180];
+                        familiarityChart.update();
+                        break;
                 }
-            })
-            .catch(error => {
-                queryResults.innerHTML = `<div class="alert alert-danger">Error processing query: ${error.message}</div>`;
             });
         });
     }
     
-    // Helper function to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+    // Initialize charts when dashboard tab is clicked
+    document.getElementById('nav-dashboard').addEventListener('click', function() {
+        setTimeout(initializeCharts, 100);
+    });
+    
+    // Also initialize charts when predictions tab is clicked
+    document.getElementById('nav-predictions').addEventListener('click', function() {
+        setTimeout(initializeCharts, 100);
+    });
+    
+    // Show checkbox functionality
+    document.getElementById('showSkipped').addEventListener('change', function() {
+        console.log('Show skipped emails:', this.checked);
+    });
+    
+    // Stop processing button
+    stopProcessingBtn.addEventListener('click', function() {
+        processingIndicator.style.display = 'none';
+    });
 });
 </script>
 {% endblock %} 

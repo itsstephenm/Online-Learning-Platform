@@ -6,6 +6,7 @@ app_name = 'quiz'  # Add namespace
 urlpatterns = [
     # AI Dashboard URL - main entry point
     path('dashboard/', views.ai_dashboard, name='ai_dashboard'),
+    path('ai_adoption_dashboard/', views.ai_adoption_dashboard_view, name='ai_adoption_dashboard'),  # New dashboard URL
     
     # AI Prediction System URLs
     path('ai/upload/', views.upload_csv, name='upload_csv'),
@@ -33,4 +34,8 @@ urlpatterns = [
     # New API endpoints for AI dashboard
     path('get-nl-query/', views.get_nl_query_view, name='get_nl_query'),
     path('run-sql-query/', views.run_sql_query_view, name='run_sql_query'),
+    
+    # AJAX endpoints for the new dashboard
+    path('api/upload-csv/', views.ajax_upload_csv, name='ajax_upload_csv'),
+    path('api/train-model/', views.ajax_train_model, name='ajax_train_model'),
 ] 
