@@ -588,24 +588,18 @@ ORDER BY count DESC;</textarea>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Sample charts to visualize data
-    // These would be populated with real data in production
+    // Use real data from the backend for charts
     
     // AI Adoption Prediction Chart
     const adoptionCtx = document.getElementById('adoptionPredictionChart').getContext('2d');
+    const adoptionChartData = JSON.parse('{{ adoption_chart_data|safe }}');
     const adoptionChart = new Chart(adoptionCtx, {
       type: 'doughnut',
       data: {
-        labels: ['Very Low', 'Low', 'Medium', 'High', 'Very High'],
+        labels: adoptionChartData.labels,
         datasets: [{
-          data: [10, 15, 25, 30, 20],
-          backgroundColor: [
-            'rgba(220, 53, 69, 0.8)',
-            'rgba(255, 193, 7, 0.8)',
-            'rgba(23, 162, 184, 0.8)',
-            'rgba(0, 123, 255, 0.8)',
-            'rgba(40, 167, 69, 0.8)'
-          ]
+          data: adoptionChartData.data,
+          backgroundColor: adoptionChartData.backgroundColor
         }]
       },
       options: {
@@ -624,14 +618,15 @@ ORDER BY count DESC;</textarea>
     
     // Tool Usage Chart
     const toolUsageCtx = document.getElementById('toolUsageChart').getContext('2d');
+    const toolsChartData = JSON.parse('{{ tools_chart_data|safe }}');
     const toolUsageChart = new Chart(toolUsageCtx, {
       type: 'bar',
       data: {
-        labels: ['ChatGPT', 'GitHub Copilot', 'Grammarly', 'Midjourney', 'DALL-E', 'Stable Diffusion'],
+        labels: toolsChartData.labels,
         datasets: [{
           label: 'Usage Frequency',
-          data: [78, 45, 32, 25, 20, 18],
-          backgroundColor: 'rgba(36, 176, 237, 0.8)'
+          data: toolsChartData.datasets[0].data,
+          backgroundColor: toolsChartData.datasets[0].backgroundColor
         }]
       },
       options: {
@@ -666,20 +661,14 @@ ORDER BY count DESC;</textarea>
     
     // Challenges Chart
     const challengesCtx = document.getElementById('challengesChart').getContext('2d');
+    const challengeChartData = JSON.parse('{{ challenge_chart_data|safe }}');
     const challengesChart = new Chart(challengesCtx, {
       type: 'polarArea',
       data: {
-        labels: ['Understanding outputs', 'Prompt engineering', 'Accessing tools', 'Cost', 'Accuracy', 'Integration'],
+        labels: challengeChartData.labels,
         datasets: [{
-          data: [42, 35, 28, 25, 22, 18],
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-            'rgba(255, 159, 64, 0.8)'
-          ]
+          data: challengeChartData.data,
+          backgroundColor: challengeChartData.backgroundColor
         }]
       },
       options: {
@@ -698,13 +687,14 @@ ORDER BY count DESC;</textarea>
     
     // Faculty Chart
     const facultyCtx = document.getElementById('facultyChart').getContext('2d');
+    const facultyChartData = JSON.parse('{{ faculty_chart_data|safe }}');
     const facultyChart = new Chart(facultyCtx, {
       type: 'radar',
       data: {
-        labels: ['Engineering', 'Computer Science', 'Business', 'Sciences', 'Education', 'Humanities', 'Arts'],
+        labels: facultyChartData.labels,
         datasets: [{
           label: 'AI Adoption Rate',
-          data: [78, 72, 65, 58, 45, 34, 40],
+          data: facultyChartData.datasets[0].data,
           backgroundColor: 'rgba(36, 176, 237, 0.2)',
           borderColor: 'rgba(36, 176, 237, 0.8)',
           pointBackgroundColor: 'rgba(36, 176, 237, 1)',
@@ -741,56 +731,6 @@ ORDER BY count DESC;</textarea>
       }
     });
     
-    // Response Chart for Query Interface
-    const responseCtx = document.getElementById('responseChart').getContext('2d');
-    const responseChart = new Chart(responseCtx, {
-      type: 'bar',
-      data: {
-        labels: ['Engineering', 'Computer Science', 'Business', 'Sciences', 'Education', 'Arts', 'Humanities'],
-        datasets: [{
-          label: 'AI Adoption Rate (%)',
-          data: [78, 72, 65, 58, 45, 40, 34],
-          backgroundColor: [
-            'rgba(40, 167, 69, 0.8)',
-            'rgba(40, 167, 69, 0.8)',
-            'rgba(0, 123, 255, 0.8)',
-            'rgba(0, 123, 255, 0.8)',
-            'rgba(23, 162, 184, 0.8)',
-            'rgba(23, 162, 184, 0.8)',
-            'rgba(255, 193, 7, 0.8)'
-          ]
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            },
-            grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            }
-          },
-          x: {
-            ticks: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            },
-            grid: {
-              display: false
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          }
-        }
-      }
-    });
-    
     // Query interface functionality
     const queryInput = document.getElementById('nlQuery');
     const submitQuery = document.getElementById('submitQuery');
@@ -805,43 +745,169 @@ ORDER BY count DESC;</textarea>
       queryResult.classList.add('d-none');
       queryLoading.classList.remove('d-none');
       
-      // Simulate API call delay
-      setTimeout(function() {
+      // Send AJAX request to process the query
+      fetch('/get-nl-query/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ query: query })
+      })
+      .then(response => response.json())
+      .then(data => {
         // Hide loading, show result
         queryLoading.classList.add('d-none');
         queryResult.classList.remove('d-none');
         
-        // In production, this would be an actual API call
-        // to the OpenRouter endpoint with the query
-      }, 1500);
+        // Update response content
+        document.querySelector('.response-content').innerHTML = `
+          <p>${data.text || data.response || 'No response available.'}</p>
+        `;
+        
+        // If there's chart data, display it
+        if (data.chart) {
+          // Create a canvas for the chart
+          document.querySelector('.response-content').innerHTML += `
+            <div class="chart-container my-4">
+              <canvas id="responseChart"></canvas>
+            </div>
+          `;
+          
+          // Create the chart
+          const chartCtx = document.getElementById('responseChart').getContext('2d');
+          new Chart(chartCtx, {
+            type: data.chart_type || 'bar',
+            data: data.chart,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  },
+                  grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                  }
+                },
+                x: {
+                  ticks: {
+                    color: 'rgba(255, 255, 255, 0.7)'
+                  },
+                  grid: {
+                    display: false
+                  }
+                }
+              },
+              plugins: {
+                legend: {
+                  display: false
+                }
+              }
+            }
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        queryLoading.classList.add('d-none');
+        queryResult.classList.remove('d-none');
+        document.querySelector('.response-content').innerHTML = `
+          <p class="text-danger">Error processing your query. Please try again.</p>
+        `;
+      });
     });
     
     // SQL query execution
     const runQueryBtn = document.getElementById('runQuery');
     
-    runQueryBtn.addEventListener('click', function() {
-      // Here you would send the SQL query to the backend
-      // and update the table with the results
-      // For now, we just simulate a success message
-      
-      const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer)
-          toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
+    if (runQueryBtn) {
+      runQueryBtn.addEventListener('click', function() {
+        const sqlQuery = document.getElementById('sqlQuery').value;
+        
+        // Send AJAX request to execute SQL query
+        fetch('/run-sql-query/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({ query: sqlQuery })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Display results in table
+            const tableBody = document.querySelector('.table-dark tbody');
+            tableBody.innerHTML = '';
+            
+            if (data.results && data.results.length > 0) {
+              // Add column headers
+              const headerRow = document.createElement('tr');
+              Object.keys(data.results[0]).forEach(key => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+              });
+              tableBody.parentNode.querySelector('thead').innerHTML = '';
+              tableBody.parentNode.querySelector('thead').appendChild(headerRow);
+              
+              // Add data rows
+              data.results.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                  const td = document.createElement('td');
+                  td.textContent = value;
+                  tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+              });
+            } else {
+              tableBody.innerHTML = '<tr><td colspan="5">No results found</td></tr>';
+            }
+            
+            // Show success message
+            showToast('success', 'Query executed successfully');
+          } else {
+            showToast('error', data.message || 'Error executing query');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showToast('error', 'Error executing query');
+        });
       });
-      
-      Toast.fire({
-        icon: 'success',
-        title: 'Query executed successfully'
-      });
-    });
+    }
   });
+  
+  // Helper function to get CSRF token
+  function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  }
+  
+  // Helper function to show toast notifications
+  function showToast(type, message) {
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer)
+        toast.addEventListener('mouseleave', Swal.resumeTimer)
+      }
+    });
+    
+    Toast.fire({
+      icon: type,
+      title: message
+    });
+  }
 </script>
 
 {% endblock content %} 
