@@ -29,6 +29,11 @@ from django.conf import settings
 from decouple import config
 from django.db.models import Count, Avg, FloatField
 from django.db.models.functions import Coalesce
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseRedirect, JsonResponse
+import logging
+from django.db import connection
+from django.views.decorators.http import require_POST
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -1373,6 +1378,88 @@ def admin_generate_questions_view(request):
     # For GET requests, show the form
     courses = models.Course.objects.all()
     return render(request, 'quiz/admin_generate_questions.html', {'courses': courses})
+
+@require_POST
+@csrf_exempt
+def get_nl_query_view(request):
+    """
+    Process a natural language query and return a response
+    """
+    try:
+        # Parse JSON request
+        data = json.loads(request.body)
+        query = data.get('query')
+        
+        if not query:
+            return JsonResponse({'error': 'No query provided'}, status=400)
+        
+        # Process the query
+        result = process_nl_query(query)
+        
+        # Return the result
+        return JsonResponse(result)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.error(f"Error processing NL query: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@require_POST
+@csrf_exempt
+def run_sql_query_view(request):
+    """
+    Execute a SQL query and return the results
+    """
+    # Only allow in DEBUG mode for safety
+    if not settings.DEBUG:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'SQL query execution is only allowed in DEBUG mode'
+        }, status=403)
+    
+    try:
+        # Parse JSON request
+        data = json.loads(request.body)
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No query provided'
+            }, status=400)
+        
+        # Basic security check - only allow SELECT queries
+        if not query.lower().startswith('select'):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Only SELECT queries are allowed'
+            }, status=403)
+        
+        # Execute the query
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns = [col[0] for col in cursor.description]
+            results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # Return the results
+        return JsonResponse({
+            'status': 'success',
+            'results': results,
+            'count': len(results)
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error executing SQL query: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 
 
