@@ -1220,18 +1220,6 @@ def ai_model_detail(request, model_id):
     })
 
 @login_required
-def make_new_prediction(request):
-    """View for making new AI predictions"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.POST.get('data'))
-            prediction = make_prediction(data)
-            return JsonResponse({'success': True, 'prediction': prediction})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return render(request, 'quiz/make_prediction.html')
-
-@login_required
 def all_predictions(request):
     """View for displaying all predictions"""
     predictions = AIPrediction.objects.all().order_by('-created_at')
