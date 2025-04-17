@@ -100,7 +100,7 @@
         </div>
         <div class="card-body">
           <!-- Multi-stage upload form -->
-          <form id="uploadForm" method="post" enctype="multipart/form-data">
+          <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload_csv_view' %}">
             {% csrf_token %}
             <div class="custom-file mb-3">
               <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required accept=".csv">
