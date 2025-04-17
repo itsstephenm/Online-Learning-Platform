@@ -2411,11 +2411,99 @@ def generate_chart_view(request, dataset_id):
 
 @login_required(login_url='adminlogin')
 def generate_insights_view(request, dataset_id):
-    return JsonResponse({'status': 'error', 'message': 'This endpoint is under construction'})
+    """View to generate insights for a dataset"""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'})
+    
+    try:
+        # Get the upload
+        upload = CSVUpload.objects.get(id=dataset_id)
+        
+        # Get associated data records
+        data = AIAdoptionData.objects.filter(upload_batch=upload)
+        
+        if not data.exists():
+            return JsonResponse({'status': 'error', 'message': 'No data records found for this upload'})
+        
+        # Convert queryset to pandas DataFrame for processing
+        from django.forms.models import model_to_dict
+        records = [model_to_dict(record) for record in data]
+        import pandas as pd
+        df = pd.DataFrame(records)
+        
+        # Calculate basic stats
+        stats = {
+            'total_records': len(df),
+            'faculties': df['faculty'].value_counts().to_dict(),
+            'levels': df['level_of_study'].value_counts().to_dict(),
+            'ai_familiarity_avg': df['ai_familiarity'].mean(),
+            'tools_usage': (df['uses_ai_tools'] == 'yes').sum(),
+            'tools_usage_percent': (df['uses_ai_tools'] == 'yes').mean() * 100
+        }
+        
+        # Generate insights using the utility function
+        insights = generate_insights(df, stats)
+        
+        # Save insights to the upload record
+        upload.insights = '|'.join(insights[:5])  # Save top 5 insights
+        upload.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'insights': insights[:5]
+        })
+        
+    except CSVUpload.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Upload not found'})
+    
+    except Exception as e:
+        # Log the error
+        logger.error(f"Error generating insights: {str(e)}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 @login_required(login_url='adminlogin')
 def export_csv_view(request, dataset_id):
-    return HttpResponse('This endpoint is under construction', content_type='text/plain')
+    """View to export dataset as CSV"""
+    try:
+        # Get the upload
+        upload = CSVUpload.objects.get(id=dataset_id)
+        
+        # Get associated data records
+        data = AIAdoptionData.objects.filter(upload_batch=upload)
+        
+        if not data.exists():
+            messages.error(request, 'No data records found for this upload')
+            return redirect('ai_data_detail_view', data_id=dataset_id)
+        
+        # Convert queryset to pandas DataFrame
+        from django.forms.models import model_to_dict
+        records = [model_to_dict(record) for record in data]
+        import pandas as pd
+        df = pd.DataFrame(records)
+        
+        # Exclude some fields
+        if 'id' in df.columns:
+            df = df.drop(['id'], axis=1)
+        
+        # Create a response with CSV content
+        from django.http import HttpResponse
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{upload.original_filename}_export.csv"'
+        
+        # Write DataFrame to CSV
+        df.to_csv(path_or_buf=response, index=False)
+        
+        return response
+        
+    except CSVUpload.DoesNotExist:
+        messages.error(request, 'Upload not found')
+        return redirect('ai_view_data_list')
+    
+    except Exception as e:
+        # Log the error
+        logger.error(f"Error exporting CSV: {str(e)}", exc_info=True)
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('ai_data_detail_view', data_id=dataset_id)
 
 @login_required(login_url='adminlogin')
 def ai_prediction_form_view(request):
