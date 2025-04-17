@@ -250,15 +250,18 @@
               </div>
               <div class="card-body">
                 <div class="mb-4">
-                  <div class="input-group">
-                    <input type="text" class="form-control form-control-lg" placeholder="Ask a question about AI adoption trends..." id="nlQuery">
-                    <button class="btn btn-primary" type="button" id="submitQuery">
-                      <i class="fas fa-search me-2"></i>Query
-                    </button>
-                  </div>
-                  <div class="form-text text-muted">
-                    Example: "Which faculty has the highest AI adoption rate?" or "How does AI usage correlate with quiz scores?"
-                  </div>
+                  <form id="nlQueryForm" method="post">
+                    {% csrf_token %}
+                    <div class="input-group">
+                      <input type="text" class="form-control form-control-lg" placeholder="Ask a question about AI adoption trends..." id="nlQuery" name="nl_query">
+                      <button class="btn btn-primary" type="button" id="submitQuery">
+                        <i class="fas fa-search me-2"></i>Query
+                      </button>
+                    </div>
+                    <div class="form-text text-muted">
+                      Example: "Which faculty has the highest AI adoption rate?" or "Show me a chart of AI tools usage"
+                    </div>
+                  </form>
                 </div>
                 
                 <div class="query-result-area mt-4">
@@ -270,14 +273,45 @@
                     </div>
                   </div>
                   
-                  <div class="query-result p-4 rounded">
+                  <div class="query-result p-4 rounded {% if not query_result %}d-none{% endif %}">
                     <h5 class="mb-3">Response:</h5>
                     <div class="response-content">
-                      <p>Engineering faculty currently has the highest AI adoption rate at 78%, followed by Computer Science at 72%. Business students are rapidly increasing adoption with a 15% growth in the last quarter. The lowest adoption is in Humanities at 34%.</p>
-                      <div class="chart-container my-4">
-                        <canvas id="responseChart"></canvas>
-                      </div>
-                      <p class="text-muted">Based on data from 1,245 student responses across 7 faculties.</p>
+                      {% if query_result %}
+                        <p>{{ query_result.text|default:query_result.response }}</p>
+                        {% if query_result.chart %}
+                          <div class="chart-container my-4">
+                            <canvas id="responseChart"></canvas>
+                          </div>
+                          <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                              const chartCtx = document.getElementById('responseChart').getContext('2d');
+                              const chartData = {{ query_result.chart|safe }};
+                              new Chart(chartCtx, {
+                                type: '{{ query_result.chart_type|default:"bar" }}',
+                                data: chartData,
+                                options: {
+                                  responsive: true,
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    y: {
+                                      beginAtZero: true,
+                                      ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                                      grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                    },
+                                    x: {
+                                      ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                                      grid: { display: false }
+                                    }
+                                  },
+                                  plugins: { legend: { display: false } }
+                                }
+                              });
+                            });
+                          </script>
+                        {% endif %}
+                      {% else %}
+                        <p>Your query results will appear here. Try asking a question about AI adoption trends.</p>
+                      {% endif %}
                     </div>
                   </div>
                 </div>
