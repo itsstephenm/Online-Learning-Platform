@@ -11,430 +11,203 @@
       </div>
     </div>
     
-    <!-- Tabs Navigation -->
+    <!-- Filter Controls -->
     <div class="row mb-4">
-      <div class="col-12">
-        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="true">
-              <i class="fas fa-chart-line me-2"></i>Dashboard
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-explorer-tab" data-bs-toggle="tab" data-bs-target="#data-explorer" type="button" role="tab" aria-controls="data-explorer" aria-selected="false">
-              <i class="fas fa-table me-2"></i>Data Explorer
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="query-interface-tab" data-bs-toggle="tab" data-bs-target="#query-interface" type="button" role="tab" aria-controls="query-interface" aria-selected="false">
-              <i class="fas fa-search me-2"></i>Query Interface
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="database-view-tab" data-bs-toggle="tab" data-bs-target="#database-view" type="button" role="tab" aria-controls="database-view" aria-selected="false">
-              <i class="fas fa-database me-2"></i>Database View
-            </button>
-          </li>
-        </ul>
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Filter Data</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <h6>Select Faculties</h6>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-primary active">Business</button>
+                <button class="btn btn-sm btn-outline-primary active">Engineering</button>
+                <button class="btn btn-sm btn-outline-primary active">Education</button>
+                <button class="btn btn-sm btn-outline-primary active">Health Sciences</button>
+              </div>
+            </div>
+            <div class="mb-3">
+              <h6>Select Study Levels</h6>
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-primary active">Undergraduate</button>
+                <button class="btn btn-sm btn-outline-primary active">Postgraduate</button>
+                <button class="btn btn-sm btn-outline-primary active">Other</button>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary">Apply Filters</button>
+              <button class="btn btn-outline-secondary ms-2">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Key Metrics</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-info">70.0%</div>
+                  <div class="text-muted">AI Familiarity</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-success">70.0%</div>
+                  <div class="text-muted">AI Tools Usage</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-warning">33.5%</div>
+                  <div class="text-muted">Positive Learning Impact</div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="p-3 border rounded text-center">
+                  <div class="display-5 text-primary">2.31</div>
+                  <div class="text-muted">Avg Usage Frequency</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     
-    <!-- Tab Content -->
-    <div class="tab-content" id="dashboardTabsContent">
-      <!-- Dashboard Tab -->
-      <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
-        <div class="row">
-          <!-- AI Adoption Prediction -->
-          <div class="col-md-6 mb-4">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5 class="card-title mb-0">AI Adoption Prediction</h5>
-              </div>
-              <div class="card-body">
-                <div class="chart-container">
-                  <canvas id="adoptionPredictionChart"></canvas>
-                </div>
-                <div class="mt-3">
-                  <div class="d-flex justify-content-between">
-                    <span>Very Low</span>
-                    <span>Low</span>
-                    <span>Medium</span>
-                    <span>High</span>
-                    <span>Very High</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <!-- Data Visualizations -->
+    <div class="row">
+      <div class="col-12 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Data Visualizations</h5>
           </div>
-          
-          <!-- Tool Usage Frequency -->
-          <div class="col-md-6 mb-4">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5 class="card-title mb-0">Tool Usage Frequency</h5>
+          <div class="card-body">
+            <!-- Visualization Tabs -->
+            <ul class="nav nav-tabs mb-4" id="visualizationTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="ai-familiarity-tab" data-bs-toggle="tab" data-bs-target="#ai-familiarity" type="button" role="tab">
+                  AI Familiarity
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tool-usage-tab" data-bs-toggle="tab" data-bs-target="#tool-usage" type="button" role="tab">
+                  Tool Usage
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="faculty-adoption-tab" data-bs-toggle="tab" data-bs-target="#faculty-adoption" type="button" role="tab">
+                  Faculty Adoption
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="challenges-tab" data-bs-toggle="tab" data-bs-target="#challenges" type="button" role="tab">
+                  Challenges
+                </button>
+              </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="visualizationTabContent">
+              <!-- AI Familiarity Tab -->
+              <div class="tab-pane fade show active" id="ai-familiarity" role="tabpanel">
+                <div class="chart-container" style="height: 400px;">
+                  <canvas id="familiarityChart"></canvas>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="chart-container">
+              
+              <!-- Tool Usage Tab -->
+              <div class="tab-pane fade" id="tool-usage" role="tabpanel">
+                <div class="chart-container" style="height: 400px;">
                   <canvas id="toolUsageChart"></canvas>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <!-- Challenges -->
-          <div class="col-md-6 mb-4">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5 class="card-title mb-0">Common AI Challenges</h5>
+              
+              <!-- Faculty Adoption Tab -->
+              <div class="tab-pane fade" id="faculty-adoption" role="tabpanel">
+                <div class="chart-container" style="height: 400px;">
+                  <canvas id="facultyAdoptionChart"></canvas>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="chart-container">
+              
+              <!-- Challenges Tab -->
+              <div class="tab-pane fade" id="challenges" role="tabpanel">
+                <div class="chart-container" style="height: 400px;">
                   <canvas id="challengesChart"></canvas>
                 </div>
               </div>
             </div>
           </div>
-          
-          <!-- Faculty Distribution -->
-          <div class="col-md-6 mb-4">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5 class="card-title mb-0">AI Adoption by Faculty</h5>
-              </div>
-              <div class="card-body">
-                <div class="chart-container">
-                  <canvas id="facultyChart"></canvas>
-                </div>
-              </div>
-            </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- AI Adoption Prediction -->
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">AI Adoption by Faculty</h5>
           </div>
-          
-          <!-- Recent Insights -->
-          <div class="col-12 mb-4">
-            <div class="card">
-              <div class="card-header">
-                <h5 class="card-title mb-0">AI-Generated Insights</h5>
-              </div>
-              <div class="card-body">
-                <div class="insight-container">
-                  <div class="insight-item">
-                    <div class="insight-icon bg-primary">
-                      <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="insight-content">
-                      <p>Students in Engineering faculty show highest AI adoption rates, with 78% reporting regular tool usage.</p>
-                    </div>
-                  </div>
-                  <div class="insight-item">
-                    <div class="insight-icon bg-success">
-                      <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="insight-content">
-                      <p>Students who use AI tools report a 23% improvement in quiz scores compared to non-users.</p>
-                    </div>
-                  </div>
-                  <div class="insight-item">
-                    <div class="insight-icon bg-warning">
-                      <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="insight-content">
-                      <p>Most common challenge reported: "Understanding AI tool outputs" (42% of respondents).</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div class="card-body">
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="adoptionByFacultyChart"></canvas>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Data Explorer Tab -->
-      <div class="tab-pane fade" id="data-explorer" role="tabpanel" aria-labelledby="data-explorer-tab">
-        <div class="row">
-          <div class="col-12 mb-4">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Student AI Adoption Data</h5>
-                <div>
-                  {% csrf_token %}
-                  <button class="btn btn-sm btn-outline-primary me-2" id="filterData">
-                    <i class="fas fa-filter me-1"></i> Filter
-                  </button>
-                  <button class="btn btn-sm btn-outline-success" id="exportData">
-                    <i class="fas fa-download me-1"></i> Export
-                  </button>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>Email Domain</th>
-                        <th>Level of Study</th>
-                        <th>Faculty</th>
-                        <th>AI Familiarity</th>
-                        <th>Uses AI Tools</th>
-                        <th>Tools Used</th>
-                        <th>Usage Frequency</th>
-                        <th>Improves Learning</th>
-                        <th>Prediction</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% if adoption_data %}
-                        {% for data in adoption_data %}
-                          <tr>
-                            <td>{{ data.email_domain|default:"N/A" }}</td>
-                            <td>{{ data.level_of_study }}</td>
-                            <td>{{ data.faculty }}</td>
-                            <td>
-                              {% if data.ai_familiarity == 1 %}Very Low
-                              {% elif data.ai_familiarity == 2 %}Low
-                              {% elif data.ai_familiarity == 3 %}Medium
-                              {% elif data.ai_familiarity == 4 %}High
-                              {% elif data.ai_familiarity == 5 %}Very High
-                              {% else %}{{ data.ai_familiarity }}
-                              {% endif %}
-                            </td>
-                            <td>{{ data.uses_ai_tools }}</td>
-                            <td>{{ data.tools_used|truncatechars:30|default:"N/A" }}</td>
-                            <td>{{ data.usage_frequency }}</td>
-                            <td>{{ data.improves_learning }}</td>
-                            <td>
-                              {% if data.adoption_level == 'very_high' %}
-                                <span class="badge bg-success">Very High</span>
-                              {% elif data.adoption_level == 'high' %}
-                                <span class="badge bg-primary">High</span>
-                              {% elif data.adoption_level == 'medium' %}
-                                <span class="badge bg-info">Medium</span>
-                              {% elif data.adoption_level == 'low' %}
-                                <span class="badge bg-warning">Low</span>
-                              {% elif data.adoption_level == 'very_low' %}
-                                <span class="badge bg-danger">Very Low</span>
-                              {% else %}
-                                <span class="badge bg-secondary">{{ data.adoption_level }}</span>
-                              {% endif %}
-                            </td>
-                          </tr>
-                        {% endfor %}
-                      {% else %}
-                        <tr>
-                          <td colspan="9" class="text-center">No adoption data available. Add some data to see it here.</td>
-                        </tr>
-                      {% endif %}
-                    </tbody>
-                  </table>
-                  
-                  {% if adoption_data_count > 5 %}
-                    <div class="text-center mt-3">
-                      <a href="/admin/quiz/aiadoptiondata/" class="btn btn-outline-primary">
-                        View All {{ adoption_data_count }} Records
-                      </a>
-                    </div>
-                  {% endif %}
-                </div>
-              </div>
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">AI Adoption by Study Level</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="height: 300px;">
+              <canvas id="adoptionByLevelChart"></canvas>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Query Interface Tab -->
-      <div class="tab-pane fade" id="query-interface" role="tabpanel" aria-labelledby="query-interface-tab">
-        <div class="row">
-          <div class="col-12 mb-4">
-            <div class="card">
-              <div class="card-header">
-                <h5 class="card-title mb-0">Natural Language Query</h5>
-              </div>
-              <div class="card-body">
-                <div class="mb-4">
-                  <form id="nlQueryForm" method="post">
-                    {% csrf_token %}
-                    <div class="input-group">
-                      <input type="text" class="form-control form-control-lg" placeholder="Ask a question about AI adoption trends..." id="nlQuery" name="nl_query">
-                      <button class="btn btn-primary" type="button" id="submitQuery">
-                        <i class="fas fa-search me-2"></i>Query
-                      </button>
-                    </div>
-                    <div class="form-text text-muted">
-                      Example: "Which faculty has the highest AI adoption rate?" or "Show me a chart of AI tools usage"
-                    </div>
-                  </form>
-                </div>
-                
-                <div class="query-result-area mt-4">
-                  <div class="query-result-loading d-none">
-                    <div class="d-flex justify-content-center">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="query-result p-4 rounded {% if not query_result %}d-none{% endif %}">
-                    <h5 class="mb-3">Response:</h5>
-                    <div class="response-content">
-                      {% if query_result %}
-                        <p>{{ query_result.text|default:query_result.response }}</p>
-                        {% if query_result.chart %}
-                          <div class="chart-container my-4">
-                            <canvas id="responseChart"></canvas>
-                          </div>
-                          <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                              const chartCtx = document.getElementById('responseChart').getContext('2d');
-                              const chartData = JSON.parse('{{ query_result.chart|escapejs }}');
-                              const chartType = '{{ query_result.chart_type|default:"bar"|escapejs }}';
-                              
-                              new Chart(chartCtx, {
-                                type: chartType,
-                                data: chartData,
-                                options: {
-                                  responsive: true,
-                                  maintainAspectRatio: false,
-                                  scales: {
-                                    y: {
-                                      beginAtZero: true,
-                                      ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                                      grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                                    },
-                                    x: {
-                                      ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                                      grid: { display: false }
-                                    }
-                                  },
-                                  plugins: { 
-                                    legend: { 
-                                      display: false 
-                                    } 
-                                  }
-                                }
-                              });
-                            });
-                          </script>
-                        {% endif %}
-                      {% else %}
-                        <p>Your query results will appear here. Try asking a question about AI adoption trends.</p>
-                      {% endif %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    </div>
+    
+    <!-- Recent Insights -->
+    <div class="row">
+      <div class="col-12 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">AI-Generated Insights</h5>
           </div>
-        </div>
-      </div>
-      
-      <!-- Database View Tab -->
-      <div class="tab-pane fade" id="database-view" role="tabpanel" aria-labelledby="database-view-tab">
-        <div class="row">
-          <div class="col-12 mb-4">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">SQL Query Interface</h5>
-                <button class="btn btn-sm btn-outline-primary" id="runQuery">
-                  <i class="fas fa-play me-1"></i> Run Query
-                </button>
+          <div class="card-body">
+            <div class="insight-container">
+              <div class="insight-item">
+                <div class="insight-icon bg-primary">
+                  <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="insight-content">
+                  <p>Students in Engineering faculty show highest AI adoption rates, with 78% reporting regular tool usage.</p>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="mb-3">
-                  <textarea class="form-control code-editor" id="sqlQuery" rows="5">SELECT faculty, level_of_study, COUNT(*) as count, AVG(ai_familiarity) as avg_familiarity 
-FROM adoption_data 
-WHERE uses_ai_tools = 'Yes' 
-GROUP BY faculty, level_of_study 
-ORDER BY count DESC;</textarea>
+              <div class="insight-item">
+                <div class="insight-icon bg-success">
+                  <i class="fas fa-lightbulb"></i>
                 </div>
-                
-                <div class="card bg-dark mb-3">
-                  <div class="card-header text-light d-flex justify-content-between align-items-center">
-                    <div>Query Results</div>
-                    <button class="btn btn-sm btn-outline-light">
-                      <i class="fas fa-download me-1"></i> Export
-                    </button>
-                  </div>
-                  <div class="card-body p-0">
-                    <div class="table-responsive">
-                      <table class="table table-dark table-striped table-sm mb-0">
-                        <thead>
-                          <tr>
-                            <th>faculty</th>
-                            <th>level_of_study</th>
-                            <th>count</th>
-                            <th>avg_familiarity</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>Engineering</td>
-                            <td>Undergraduate</td>
-                            <td>324</td>
-                            <td>4.2</td>
-                          </tr>
-                          <tr>
-                            <td>Engineering</td>
-                            <td>Masters</td>
-                            <td>178</td>
-                            <td>4.6</td>
-                          </tr>
-                          <tr>
-                            <td>Business</td>
-                            <td>Undergraduate</td>
-                            <td>156</td>
-                            <td>3.8</td>
-                          </tr>
-                          <tr>
-                            <td>Sciences</td>
-                            <td>PhD</td>
-                            <td>134</td>
-                            <td>4.7</td>
-                          </tr>
-                          <tr>
-                            <td>Business</td>
-                            <td>Masters</td>
-                            <td>112</td>
-                            <td>4.1</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                <div class="insight-content">
+                  <p>Students who use AI tools report a 23% improvement in quiz scores compared to non-users.</p>
                 </div>
-                
-                <div class="db-schema">
-                  <h6 class="mb-3">Database Schema</h6>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="schema-table mb-3">
-                        <h6>adoption_data</h6>
-                        <ul class="list-group">
-                          <li class="list-group-item">id (INTEGER, PRIMARY KEY)</li>
-                          <li class="list-group-item">email_domain (TEXT)</li>
-                          <li class="list-group-item">level_of_study (TEXT)</li>
-                          <li class="list-group-item">faculty (TEXT)</li>
-                          <li class="list-group-item">ai_familiarity (INTEGER)</li>
-                          <li class="list-group-item">uses_ai_tools (TEXT)</li>
-                          <li class="list-group-item">tools_used (TEXT)</li>
-                          <li class="list-group-item">usage_frequency (TEXT)</li>
-                          <li class="list-group-item">improves_learning (TEXT)</li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="schema-table mb-3">
-                        <h6>prediction_results</h6>
-                        <ul class="list-group">
-                          <li class="list-group-item">id (INTEGER, PRIMARY KEY)</li>
-                          <li class="list-group-item">adoption_data_id (INTEGER, FOREIGN KEY)</li>
-                          <li class="list-group-item">prediction (TEXT)</li>
-                          <li class="list-group-item">confidence (REAL)</li>
-                          <li class="list-group-item">model_version (TEXT)</li>
-                          <li class="list-group-item">prediction_date (TIMESTAMP)</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+              <div class="insight-item">
+                <div class="insight-icon bg-warning">
+                  <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="insight-content">
+                  <p>Most common challenge reported: "Understanding AI tool outputs" (42% of respondents).</p>
                 </div>
               </div>
             </div>
@@ -510,7 +283,6 @@ ORDER BY count DESC;</textarea>
   
   .chart-container {
     position: relative;
-    height: 250px;
     width: 100%;
   }
   
@@ -542,30 +314,6 @@ ORDER BY count DESC;</textarea>
     flex: 1;
   }
   
-  .badge {
-    padding: 0.5rem 0.75rem;
-    font-weight: 500;
-    border-radius: 30px;
-  }
-  
-  .table {
-    color: rgba(255, 255, 255, 0.9);
-  }
-  
-  .table th {
-    font-weight: 600;
-    border-top: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .table td {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .table-hover tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-  
   .btn-outline-primary {
     color: #24b0ed;
     border-color: #24b0ed;
@@ -576,70 +324,49 @@ ORDER BY count DESC;</textarea>
     color: white;
   }
   
-  .btn-outline-success {
-    color: #15E8BA;
-    border-color: #15E8BA;
-  }
-  
-  .btn-outline-success:hover {
-    background-color: #15E8BA;
+  .btn-outline-primary.active {
+    background-color: #24b0ed;
     color: white;
   }
   
-  .query-result {
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .gap-2 {
+    gap: 0.5rem;
   }
   
-  .code-editor {
-    font-family: 'Courier New', monospace;
-    background-color: #272734;
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .table-dark {
-    background-color: #272734;
-    color: rgba(255, 255, 255, 0.9);
-  }
-  
-  .schema-table h6 {
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 0.5rem 1rem;
-    margin: 0;
-    border-radius: 6px 6px 0 0;
-    color: #24b0ed;
-  }
-  
-  .schema-table .list-group-item {
-    background-color: #272734;
-    color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(255, 255, 255, 0.1);
-    padding: 0.5rem 1rem;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
+  .border {
+    border-color: rgba(255, 255, 255, 0.1) !important;
   }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Use real data from the backend for charts
-    
     // Parse chart data from Django templates
     const adoptionChartData = JSON.parse('{{ adoption_chart_data|escapejs }}');
     const toolsChartData = JSON.parse('{{ tools_chart_data|escapejs }}');
     const challengeChartData = JSON.parse('{{ challenge_chart_data|escapejs }}');
     const facultyChartData = JSON.parse('{{ faculty_chart_data|escapejs }}');
     
-    // AI Adoption Prediction Chart
-    const adoptionCtx = document.getElementById('adoptionPredictionChart').getContext('2d');
-    const adoptionChart = new Chart(adoptionCtx, {
-      type: 'doughnut',
+    // AI Familiarity Chart
+    const familiarityCtx = document.getElementById('familiarityChart').getContext('2d');
+    new Chart(familiarityCtx, {
+      type: 'bar',
       data: {
-        labels: adoptionChartData.labels,
+        labels: ['Not Familiar', 'Somewhat Familiar', 'Very Familiar'],
         datasets: [{
-          data: adoptionChartData.data,
-          backgroundColor: adoptionChartData.backgroundColor
+          label: 'Number of Students',
+          data: [230, 450, 320],
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.6)',
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+          ],
+          borderColor: [
+            'rgb(255, 99, 132)',
+            'rgb(54, 162, 235)',
+            'rgb(75, 192, 192)',
+          ],
+          borderWidth: 1
         }]
       },
       options: {
@@ -647,10 +374,26 @@ ORDER BY count DESC;</textarea>
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'bottom',
+            position: 'top',
             labels: {
               color: 'rgba(255, 255, 255, 0.7)'
             }
+          },
+          title: {
+            display: true,
+            text: 'AI Familiarity Distribution',
+            color: 'rgba(255, 255, 255, 0.9)'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          },
+          x: {
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { display: false }
           }
         }
       }
@@ -658,55 +401,16 @@ ORDER BY count DESC;</textarea>
     
     // Tool Usage Chart
     const toolUsageCtx = document.getElementById('toolUsageChart').getContext('2d');
-    const toolUsageChart = new Chart(toolUsageCtx, {
+    new Chart(toolUsageCtx, {
       type: 'bar',
       data: {
-        labels: toolsChartData.labels,
+        labels: ['ChatGPT', 'Grammarly', 'GitHub Copilot', 'DALL-E', 'Midjourney'],
         datasets: [{
-          label: 'Usage Frequency',
-          data: toolsChartData.datasets[0].data,
-          backgroundColor: toolsChartData.datasets[0].backgroundColor
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            },
-            grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            }
-          },
-          x: {
-            ticks: {
-              color: 'rgba(255, 255, 255, 0.7)'
-            },
-            grid: {
-              display: false
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          }
-        }
-      }
-    });
-    
-    // Challenges Chart
-    const challengesCtx = document.getElementById('challengesChart').getContext('2d');
-    const challengesChart = new Chart(challengesCtx, {
-      type: 'polarArea',
-      data: {
-        labels: challengeChartData.labels,
-        datasets: [{
-          data: challengeChartData.data,
-          backgroundColor: challengeChartData.backgroundColor
+          label: 'Usage Count',
+          data: [680, 450, 310, 180, 120],
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgb(54, 162, 235)',
+          borderWidth: 1
         }]
       },
       options: {
@@ -714,33 +418,64 @@ ORDER BY count DESC;</textarea>
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'right',
+            position: 'top',
             labels: {
               color: 'rgba(255, 255, 255, 0.7)'
             }
+          },
+          title: {
+            display: true,
+            text: 'AI Tool Usage Distribution',
+            color: 'rgba(255, 255, 255, 0.9)'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          },
+          x: {
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { display: false }
           }
         }
       }
     });
     
-    // Faculty Chart
-    const facultyCtx = document.getElementById('facultyChart').getContext('2d');
-    const facultyChart = new Chart(facultyCtx, {
+    // Faculty Adoption Chart
+    const facultyAdoptionCtx = document.getElementById('facultyAdoptionChart').getContext('2d');
+    new Chart(facultyAdoptionCtx, {
       type: 'radar',
       data: {
-        labels: facultyChartData.labels,
+        labels: ['Engineering', 'Business', 'Health Sciences', 'Education'],
         datasets: [{
           label: 'AI Adoption Rate',
-          data: facultyChartData.datasets[0].data,
-          backgroundColor: 'rgba(36, 176, 237, 0.2)',
-          borderColor: 'rgba(36, 176, 237, 0.8)',
-          pointBackgroundColor: 'rgba(36, 176, 237, 1)',
-          pointBorderColor: '#fff'
+          data: [78, 65, 52, 48],
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgb(75, 192, 192)',
+          pointBackgroundColor: 'rgb(75, 192, 192)',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: 'rgb(75, 192, 192)'
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: 'rgba(255, 255, 255, 0.7)'
+            }
+          },
+          title: {
+            display: true,
+            text: 'AI Adoption by Faculty',
+            color: 'rgba(255, 255, 255, 0.9)'
+          }
+        },
         scales: {
           r: {
             angleLines: {
@@ -757,212 +492,159 @@ ORDER BY count DESC;</textarea>
               color: 'rgba(255, 255, 255, 0.7)'
             }
           }
-        },
+        }
+      }
+    });
+    
+    // Challenges Chart
+    const challengesCtx = document.getElementById('challengesChart').getContext('2d');
+    new Chart(challengesCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Understanding outputs', 'Cost', 'Technical skills', 'Integration', 'Reliability'],
+        datasets: [{
+          data: [42, 28, 15, 10, 5],
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.6)',
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(255, 206, 86, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(153, 102, 255, 0.6)'
+          ],
+          borderColor: [
+            'rgb(255, 99, 132)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 206, 86)',
+            'rgb(75, 192, 192)',
+            'rgb(153, 102, 255)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
+            position: 'right',
             labels: {
               color: 'rgba(255, 255, 255, 0.7)'
             }
+          },
+          title: {
+            display: true,
+            text: 'Challenges in AI Adoption',
+            color: 'rgba(255, 255, 255, 0.9)'
           }
         }
       }
     });
     
-    // Query interface functionality
-    setupQueryInterface();
+    // Adoption by Faculty Chart
+    const adoptionByFacultyCtx = document.getElementById('adoptionByFacultyChart').getContext('2d');
+    new Chart(adoptionByFacultyCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Engineering', 'Business', 'Health Sciences', 'Education'],
+        datasets: [{
+          label: 'High Adoption',
+          data: [45, 30, 25, 20],
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgb(75, 192, 192)',
+          borderWidth: 1
+        }, {
+          label: 'Medium Adoption',
+          data: [30, 35, 25, 25],
+          backgroundColor: 'rgba(255, 206, 86, 0.6)',
+          borderColor: 'rgb(255, 206, 86)',
+          borderWidth: 1
+        }, {
+          label: 'Low Adoption',
+          data: [25, 35, 50, 55],
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgb(255, 99, 132)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: 'rgba(255, 255, 255, 0.7)'
+            }
+          },
+          title: {
+            display: true,
+            text: 'AI Adoption Levels by Faculty',
+            color: 'rgba(255, 255, 255, 0.9)'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            stacked: true,
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          },
+          x: {
+            stacked: true,
+            ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+            grid: { display: false }
+          }
+        }
+      }
+    });
     
-    // SQL query execution
-    setupSqlQueryExecution();
+    // Adoption by Level Chart
+    const adoptionByLevelCtx = document.getElementById('adoptionByLevelChart').getContext('2d');
+    new Chart(adoptionByLevelCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Undergraduate', 'Postgraduate', 'Other'],
+        datasets: [{
+          data: [55, 35, 10],
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(255, 206, 86, 0.6)'
+          ],
+          borderColor: [
+            'rgb(54, 162, 235)',
+            'rgb(75, 192, 192)',
+            'rgb(255, 206, 86)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: 'rgba(255, 255, 255, 0.7)'
+            }
+          },
+          title: {
+            display: true,
+            text: 'AI Adoption by Study Level',
+            color: 'rgba(255, 255, 255, 0.9)'
+          }
+        }
+      }
+    });
+    
+    // Filter button functionality
+    document.querySelectorAll('.btn-outline-primary').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.classList.toggle('active');
+      });
+    });
   });
-  
-  // Setup query interface
-  function setupQueryInterface() {
-    const queryInput = document.getElementById('nlQuery');
-    const submitQuery = document.getElementById('submitQuery');
-    const queryResult = document.querySelector('.query-result');
-    const queryLoading = document.querySelector('.query-result-loading');
-    
-    if (!submitQuery) return;
-    
-    submitQuery.addEventListener('click', function() {
-      const query = queryInput.value.trim();
-      if (!query) return;
-      
-      // Show loading indicator
-      queryResult.classList.add('d-none');
-      queryLoading.classList.remove('d-none');
-      
-      // Send AJAX request to process the query
-      fetch('/get-nl-query/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken(),
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ query: query })
-      })
-      .then(response => response.json())
-      .then(data => {
-        // Hide loading, show result
-        queryLoading.classList.add('d-none');
-        queryResult.classList.remove('d-none');
-        
-        // Update response content
-        document.querySelector('.response-content').innerHTML = `
-          <p>${data.text || data.response || 'No response available.'}</p>
-        `;
-        
-        // If there's chart data, display it
-        if (data.chart) {
-          // Create a canvas for the chart
-          document.querySelector('.response-content').innerHTML += `
-            <div class="chart-container my-4">
-              <canvas id="responseChart"></canvas>
-            </div>
-          `;
-          
-          // Create the chart
-          const chartCtx = document.getElementById('responseChart').getContext('2d');
-          const chartType = data.chart_type || 'bar';
-          
-          new Chart(chartCtx, {
-            type: chartType,
-            data: data.chart,
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                  grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                },
-                x: {
-                  ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                  grid: { display: false }
-                }
-              },
-              plugins: { 
-                legend: { 
-                  display: false 
-                } 
-              }
-            }
-          });
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        queryLoading.classList.add('d-none');
-        queryResult.classList.remove('d-none');
-        document.querySelector('.response-content').innerHTML = `
-          <p class="text-danger">Error processing your query. Please try again.</p>
-        `;
-      });
-    });
-  }
-  
-  // Setup SQL query execution
-  function setupSqlQueryExecution() {
-    const runQueryBtn = document.getElementById('runQuery');
-    
-    if (!runQueryBtn) return;
-    
-    runQueryBtn.addEventListener('click', function() {
-      const sqlQuery = document.getElementById('sqlQuery').value;
-      
-      // Send AJAX request to execute SQL query
-      fetch('/run-sql-query/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken(),
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ query: sqlQuery })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          // Display results in table
-          const tableBody = document.querySelector('.table-dark tbody');
-          if (!tableBody) return;
-          
-          tableBody.innerHTML = '';
-          
-          if (data.results && data.results.length > 0) {
-            // Add column headers
-            const headerRow = document.createElement('tr');
-            Object.keys(data.results[0]).forEach(key => {
-              const th = document.createElement('th');
-              th.textContent = key;
-              headerRow.appendChild(th);
-            });
-            
-            const thead = tableBody.parentNode.querySelector('thead');
-            if (thead) {
-              thead.innerHTML = '';
-              thead.appendChild(headerRow);
-            }
-            
-            // Add data rows
-            data.results.forEach(row => {
-              const tr = document.createElement('tr');
-              Object.values(row).forEach(value => {
-                const td = document.createElement('td');
-                td.textContent = value;
-                tr.appendChild(td);
-              });
-              tableBody.appendChild(tr);
-            });
-          } else {
-            tableBody.innerHTML = '<tr><td colspan="5">No results found</td></tr>';
-          }
-          
-          // Show success message
-          showToast('success', 'Query executed successfully');
-        } else {
-          showToast('error', data.message || 'Error executing query');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Error executing query');
-      });
-    });
-  }
-  
-  // Helper function to get CSRF token
-  function getCsrfToken() {
-    const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
-    return tokenElement ? tokenElement.value : '';
-  }
-  
-  // Helper function to show toast notifications
-  function showToast(type, message) {
-    if (typeof Swal === 'undefined') {
-      console.log(`${type}: ${message}`);
-      return;
-    }
-    
-    const Toast = Swal.mixin({
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-      didOpen: (toast) => {
-        toast.addEventListener('mouseenter', Swal.stopTimer);
-        toast.addEventListener('mouseleave', Swal.resumeTimer);
-      }
-    });
-    
-    Toast.fire({
-      icon: type,
-      title: message
-    });
-  }
 </script>
 
 {% endblock content %} 
