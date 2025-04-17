@@ -50,7 +50,7 @@ urlpatterns = [
     path('admin/ai-adoption/predict/', views.ai_prediction_form_view, name='ai_prediction_form'),
     
     # AJAX endpoints for AI adoption system
-    path('admin/ai-adoption/upload-csv/', views.upload_csv_view, name='upload_csv_view'),
+    path('admin/ai-adoption/upload-csv/', views.upload_csv, name='upload_csv'),
     path('admin/ai-adoption/load-more-data/<int:dataset_id>/', views.load_more_data_view, name='load_more_data_view'),
     path('admin/ai-adoption/generate-chart/<int:dataset_id>/', views.generate_chart_view, name='generate_chart_view'),
     path('admin/ai-adoption/generate-insights/<int:dataset_id>/', views.generate_insights_view, name='generate_insights_view'),
@@ -61,8 +61,9 @@ urlpatterns = [
     path('admin/ai-adoption/predict-api/', views.ai_predict_view, name='ai_predict'),
     path('admin/ai-adoption/delete-dataset/<int:dataset_id>/', views.delete_dataset_view, name='delete_dataset_view'),
     
-    path('ai-upload-data/', views.ai_upload_data_view, name='ai_upload_data'),
-    path('api/upload-csv/', views.upload_csv, name='upload_csv'),
-    path('api/upload-history/', views.upload_history_view, name='upload_history'),
-    path('api/delete-upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
+    # Updated URL patterns with correct prefix
+    path('admin/ai-adoption/upload/', views.ai_upload_data_view, name='ai_upload_data'),
+    path('admin/ai-adoption/upload-csv/', views.upload_csv, name='upload_csv'),
+    path('admin/ai-adoption/upload-history/', views.upload_history_view, name='upload_history'),
+    path('admin/ai-adoption/delete-upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
 ] 
