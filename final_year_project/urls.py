@@ -54,7 +54,7 @@ urlpatterns = [
     path('ai-prediction-dashboard', views.ai_prediction_dashboard_view, name='ai-prediction-dashboard'),
 
     # Include quiz URLs with namespace
-    path('quiz/', include('quiz.urls', namespace='quiz')),
+    path('quiz/', include('quiz.urls')),
 
     # Add AI prediction URLs
     path('quiz/', include('quiz.ai_prediction_urls')),
