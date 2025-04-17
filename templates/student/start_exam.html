@@ -1,323 +1,386 @@
 {% extends 'student/studentbase.html' %}
+{% load static %}
+
 {% block content %}
-{%load static%}
 
-<head>
-  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
-  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-</head>
+<style>
+    .question-container {
+        border: 1px solid #ddd;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+    .timer-container {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        z-index: 100;
+    }
+    .question-options label {
+        display: block;
+        margin: 10px 0;
+        cursor: pointer;
+    }
+    .question-nav {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .progress-bar {
+        height: 5px;
+        background-color: #ddd;
+        margin-bottom: 15px;
+    }
+    .progress {
+        height: 100%;
+        background-color: #4CAF50;
+        width: 0%;
+        transition: width 0.3s;
+    }
+    .textarea-answer {
+        width: 100%;
+        min-height: 100px;
+        padding: 10px;
+    }
+    .checkbox-option {
+        display: block;
+        margin: 10px 0;
+        cursor: pointer;
+    }
+    .selected-option {
+        background-color: #e0f7fa;
+        padding: 8px;
+        border-radius: 4px;
+    }
+</style>
 
-<div class="jumbotron my-4">
-  <form class="form" autocomplete="off" onsubmit="return saveAns()" action="/student/calculate-marks" method="POST">
-    {% csrf_token %}
-    <h1 style="text-align: center;">{{course.course_name}}</h1>
-    {% for q in questions%}
-    <div class="question-container" id="question-{{q.id}}" data-question-id="{{q.id}}">
-      <h3 class="text-info">{{ forloop.counter }}. {{q.question}}</h3><h4 style="text-align: right;">[Marks {{q.marks}}]</h4>
-      
-      {% if q.question_type == 'multiple_choice' %}
-        <div class="form-check mx-4">
-          <input class="form-check-input question-option" type="radio" 
-                name="{{ forloop.counter }}" 
-                id="option1-{{q.id}}" 
-                value="Option1"
-                data-question-id="{{q.id}}"
-                onclick="trackSelection(this)">
-          <label class="form-check-label" for="option1-{{q.id}}">
-            {{q.option1}}
-          </label>
+<div class="container mt-4">
+    <div class="timer-container text-center mb-4">
+        <h3>Time Remaining: <span id="timer">Loading...</span></h3>
+        <div class="progress-bar">
+            <div class="progress" id="progress-bar"></div>
         </div>
-
-        <div class="form-check mx-4">
-          <input class="form-check-input question-option" type="radio" 
-                name="{{ forloop.counter }}" 
-                id="option2-{{q.id}}" 
-                value="Option2"
-                data-question-id="{{q.id}}"
-                onclick="trackSelection(this)">
-          <label class="form-check-label" for="option2-{{q.id}}">
-            {{q.option2}}
-          </label>
-        </div>
-
-        <div class="form-check mx-4">
-          <input class="form-check-input question-option" type="radio" 
-                name="{{ forloop.counter }}" 
-                id="option3-{{q.id}}" 
-                value="Option3"
-                data-question-id="{{q.id}}"
-                onclick="trackSelection(this)">
-          <label class="form-check-label" for="option3-{{q.id}}">
-            {{q.option3}}
-          </label>
-        </div>
-
-        <div class="form-check mx-4">
-          <input class="form-check-input question-option" type="radio" 
-                name="{{ forloop.counter }}" 
-                id="option4-{{q.id}}" 
-                value="Option4"
-                data-question-id="{{q.id}}"
-                onclick="trackSelection(this)">
-          <label class="form-check-label" for="option4-{{q.id}}">
-            {{q.option4}}
-          </label>
-        </div>
-      
-      {% elif q.question_type == 'checkbox' %}
-        <div class="form-check mx-4">
-          <input class="form-check-input question-checkbox" type="checkbox" 
-                name="{{ forloop.counter }}_Option1" 
-                id="option1-{{q.id}}" 
-                value="Option1"
-                data-question-id="{{q.id}}"
-                onclick="trackCheckboxSelection(this)">
-          <label class="form-check-label" for="option1-{{q.id}}">
-            {{q.option1}}
-          </label>
-        </div>
-
-        <div class="form-check mx-4">
-          <input class="form-check-input question-checkbox" type="checkbox" 
-                name="{{ forloop.counter }}_Option2" 
-                id="option2-{{q.id}}" 
-                value="Option2"
-                data-question-id="{{q.id}}"
-                onclick="trackCheckboxSelection(this)">
-          <label class="form-check-label" for="option2-{{q.id}}">
-            {{q.option2}}
-          </label>
-        </div>
-
-        <div class="form-check mx-4">
-          <input class="form-check-input question-checkbox" type="checkbox" 
-                name="{{ forloop.counter }}_Option3" 
-                id="option3-{{q.id}}" 
-                value="Option3"
-                data-question-id="{{q.id}}"
-                onclick="trackCheckboxSelection(this)">
-          <label class="form-check-label" for="option3-{{q.id}}">
-            {{q.option3}}
-          </label>
-        </div>
-
-        <div class="form-check mx-4">
-          <input class="form-check-input question-checkbox" type="checkbox" 
-                name="{{ forloop.counter }}_Option4" 
-                id="option4-{{q.id}}" 
-                value="Option4"
-                data-question-id="{{q.id}}"
-                onclick="trackCheckboxSelection(this)">
-          <label class="form-check-label" for="option4-{{q.id}}">
-            {{q.option4}}
-          </label>
-        </div>
-      
-      {% elif q.question_type == 'short_answer' %}
-        <div class="form-group mx-4">
-          <textarea class="form-control question-short-answer" 
-                  name="{{ forloop.counter }}" 
-                  id="short-answer-{{q.id}}" 
-                  rows="3"
-                  data-question-id="{{q.id}}"
-                  oninput="trackShortAnswerInput(this)"></textarea>
-        </div>
-      {% endif %}
     </div>
-    {% endfor %}
-    <input class="btn btn-info btn-lg" type="submit" value="Submit">  
-  </form>
+
+    <form method="post" id="quiz-form">
+        {% csrf_token %}
+
+        <div id="questions-container">
+            {% for q in questions %}
+            <div class="question-container" id="question-{{ forloop.counter }}" style="{% if forloop.counter > 1 and course.sequential_questions %}display: none;{% endif %}">
+                <h4>{{ forloop.counter }}. {{ q.question }}</h4>
+                
+                {% if q.question_type == 'multiple_choice' %}
+                <!-- Multiple Choice Question (Radio Buttons) -->
+                <div class="question-options">
+                    {% if q.option1 %}
+                    <label class="option-label" for="q{{ forloop.counter }}_option1">
+                        <input type="radio" id="q{{ forloop.counter }}_option1" name="{{ forloop.counter }}" value="Option1" onclick="saveAnswer({{ forloop.counter }}, 'Option1', {{ q.id }})">
+                        {{ q.option1 }}
+                    </label>
+                    {% endif %}
+                    
+                    {% if q.option2 %}
+                    <label class="option-label" for="q{{ forloop.counter }}_option2">
+                        <input type="radio" id="q{{ forloop.counter }}_option2" name="{{ forloop.counter }}" value="Option2" onclick="saveAnswer({{ forloop.counter }}, 'Option2', {{ q.id }})">
+                        {{ q.option2 }}
+                    </label>
+                    {% endif %}
+                    
+                    {% if q.option3 %}
+                    <label class="option-label" for="q{{ forloop.counter }}_option3">
+                        <input type="radio" id="q{{ forloop.counter }}_option3" name="{{ forloop.counter }}" value="Option3" onclick="saveAnswer({{ forloop.counter }}, 'Option3', {{ q.id }})">
+                        {{ q.option3 }}
+                    </label>
+                    {% endif %}
+                    
+                    {% if q.option4 %}
+                    <label class="option-label" for="q{{ forloop.counter }}_option4">
+                        <input type="radio" id="q{{ forloop.counter }}_option4" name="{{ forloop.counter }}" value="Option4" onclick="saveAnswer({{ forloop.counter }}, 'Option4', {{ q.id }})">
+                        {{ q.option4 }}
+                    </label>
+                    {% endif %}
+                </div>
+                
+                {% elif q.question_type == 'checkbox' %}
+                <!-- Checkbox Question (Multiple Answers) -->
+                <div class="question-options checkbox-options">
+                    {% if q.option1 %}
+                    <label class="checkbox-option" for="q{{ forloop.counter }}_checkbox1">
+                        <input type="checkbox" id="q{{ forloop.counter }}_checkbox1" name="checkbox_{{ q.id }}" value="Option1" onchange="saveCheckboxAnswers({{ q.id }})">
+                        {{ q.option1 }}
+                    </label>
+                    {% endif %}
+                    
+                    {% if q.option2 %}
+                    <label class="checkbox-option" for="q{{ forloop.counter }}_checkbox2">
+                        <input type="checkbox" id="q{{ forloop.counter }}_checkbox2" name="checkbox_{{ q.id }}" value="Option2" onchange="saveCheckboxAnswers({{ q.id }})">
+                        {{ q.option2 }}
+                    </label>
+                    {% endif %}
+                    
+                    {% if q.option3 %}
+                    <label class="checkbox-option" for="q{{ forloop.counter }}_checkbox3">
+                        <input type="checkbox" id="q{{ forloop.counter }}_checkbox3" name="checkbox_{{ q.id }}" value="Option3" onchange="saveCheckboxAnswers({{ q.id }})">
+                        {{ q.option3 }}
+                    </label>
+                    {% endif %}
+                    
+                    {% if q.option4 %}
+                    <label class="checkbox-option" for="q{{ forloop.counter }}_checkbox4">
+                        <input type="checkbox" id="q{{ forloop.counter }}_checkbox4" name="checkbox_{{ q.id }}" value="Option4" onchange="saveCheckboxAnswers({{ q.id }})">
+                        {{ q.option4 }}
+                    </label>
+                    {% endif %}
+                </div>
+                
+                {% elif q.question_type == 'short_answer' %}
+                <!-- Short Answer Question -->
+                <div class="short-answer-container">
+                    <textarea class="textarea-answer" id="q{{ forloop.counter }}_short" 
+                              placeholder="Type your answer here..." 
+                              oninput="saveShortAnswer({{ forloop.counter }}, {{ q.id }})"></textarea>
+                </div>
+                {% endif %}
+                
+                <div class="question-nav">
+                    {% if course.sequential_questions and course.allow_backtracking %}
+                    <button type="button" class="btn btn-secondary prev-btn" onclick="prevQuestion({{ forloop.counter }})" {% if forloop.first %}disabled{% endif %}>Previous</button>
+                    {% else %}
+                    <div></div>
+                    {% endif %}
+                    
+                    {% if course.sequential_questions %}
+                    <button type="button" class="btn btn-primary next-btn" onclick="nextQuestion({{ forloop.counter }})" {% if forloop.last %}style="display: none;"{% endif %}>Next</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4 mb-5">
+            <input type="submit" value="Submit" class="btn btn-primary btn-lg" onclick="return confirm('Are you sure you want to submit? You cannot change your answers after submission.')">
+        </div>
+    </form>
 </div>
 
-<script> 
-  // Initialize variables to track timing
-  let startTime = Date.now();
-  let questionTimings = {};
-  let questionSelections = {};
-  let currentFocusedQuestion = null;
-  let lastInteractionTime = Date.now();
-  let checkboxSelections = {};
-  
-  // Initialize timing for all questions
-  document.addEventListener("DOMContentLoaded", function () {
-    // Setup timers for each question
-    let questions = document.querySelectorAll('.question-container');
-    questions.forEach(function(question) {
-      let questionId = question.dataset.questionId;
-      questionTimings[questionId] = {
-        time: 0,
-        firstInteraction: null,
-        lastInteraction: null
-      };
-      questionSelections[questionId] = null;
-      checkboxSelections[questionId] = [];
+<script>
+    // Initialize variables
+    let totalTime = {{ course.total_time_minutes }} * 60; // Convert minutes to seconds
+    let timeLeft = totalTime;
+    let timer;
+    let questionTimers = {};
+    let currentQuestion = 1;
+    let totalQuestions = {{ questions|length }};
+    
+    // Start the main timer when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize question timers
+        {% for q in questions %}
+        questionTimers[{{ q.id }}] = {
+            startTime: Date.now(),
+            totalTime: 0
+        };
+        {% endfor %}
+        
+        // Start the main timer
+        startTimer();
+        
+        // Restore any saved answers from cookies
+        restoreSavedAnswers();
     });
     
-    // Set the first question as focused
-    if (questions.length > 0) {
-      currentFocusedQuestion = questions[0].dataset.questionId;
+    // Timer function
+    function startTimer() {
+        if (totalTime > 0) {
+            timer = setInterval(function() {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    alert("Time's up! Submitting your exam automatically.");
+                    document.getElementById('quiz-form').submit();
+                }
+            }, 1000);
+        } else {
+            document.getElementById('timer').textContent = "No time limit";
+        }
     }
     
-    // Start tracking with periodic updates
-    setInterval(updateTimings, 1000); // Update every second
-    
-    // Track when user scrolls to different questions
-    window.addEventListener('scroll', function() {
-      updateCurrentQuestion();
-      lastInteractionTime = Date.now();
-    });
-    
-    // Track user activity
-    document.addEventListener('mousemove', function() {
-      lastInteractionTime = Date.now();
-    });
-    
-    document.addEventListener('keypress', function() {
-      lastInteractionTime = Date.now();
-    });
-    
-    let csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
-    if (csrfToken) {
-      console.log("CSRF Token Found: ", csrfToken.value);
-    } else {
-      console.log("CSRF Token Missing!");
-    }
-  });
-  
-  // Track which question the user is currently focused on
-  function updateCurrentQuestion() {
-    let questions = document.querySelectorAll('.question-container');
-    let windowMiddle = window.scrollY + (window.innerHeight / 2);
-    
-    // Find the question closest to the middle of the viewport
-    let closestQuestion = null;
-    let closestDistance = Infinity;
-    
-    questions.forEach(function(question) {
-      let rect = question.getBoundingClientRect();
-      let questionMiddle = rect.top + (rect.height / 2);
-      let distance = Math.abs(questionMiddle);
-      
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestQuestion = question;
-      }
-    });
-    
-    if (closestQuestion) {
-      currentFocusedQuestion = closestQuestion.dataset.questionId;
-    }
-  }
-  
-  // Update the timing data
-  function updateTimings() {
-    // Only update if user is active (within last 30 seconds)
-    if (Date.now() - lastInteractionTime < 30000 && currentFocusedQuestion) {
-      let timing = questionTimings[currentFocusedQuestion];
-      timing.time += 1; // Increment by 1 second
-      
-      if (!timing.firstInteraction) {
-        timing.firstInteraction = Date.now();
-      }
-      timing.lastInteraction = Date.now();
-    }
-  }
-  
-  // Track when a radio option is selected
-  function trackSelection(element) {
-    let questionId = element.dataset.questionId;
-    questionSelections[questionId] = element.value;
-    
-    // Update timing data
-    lastInteractionTime = Date.now();
-    let timing = questionTimings[questionId];
-    timing.lastInteraction = Date.now();
-    
-    // Save the selection and timing
-    setCookie("q_" + questionId + "_selection", element.value, 1);
-    setCookie("q_" + questionId + "_time", timing.time, 1);
-  }
-  
-  // Track checkbox selections
-  function trackCheckboxSelection(element) {
-    let questionId = element.dataset.questionId;
-    let value = element.value;
-    let index = checkboxSelections[questionId].indexOf(value);
-    
-    // Add or remove the selection based on checkbox state
-    if (element.checked && index === -1) {
-      checkboxSelections[questionId].push(value);
-    } else if (!element.checked && index !== -1) {
-      checkboxSelections[questionId].splice(index, 1);
+    // Update the timer display
+    function updateTimerDisplay() {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        
+        document.getElementById('timer').textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        
+        // Update progress bar
+        if (totalTime > 0) {
+            let progressPercent = (1 - (timeLeft / totalTime)) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+        }
     }
     
-    // Update timing data
-    lastInteractionTime = Date.now();
-    let timing = questionTimings[questionId];
-    timing.lastInteraction = Date.now();
-    
-    // Save the selection as JSON and timing
-    setCookie("q_" + questionId + "_checkbox_selection", JSON.stringify(checkboxSelections[questionId]), 1);
-    setCookie("q_" + questionId + "_time", timing.time, 1);
-  }
-  
-  // Track short answer input
-  function trackShortAnswerInput(element) {
-    let questionId = element.dataset.questionId;
-    let value = element.value;
-    
-    // Update timing data
-    lastInteractionTime = Date.now();
-    let timing = questionTimings[questionId];
-    timing.lastInteraction = Date.now();
-    
-    // Save the short answer text and timing
-    setCookie("q_" + questionId + "_short_answer", value, 1);
-    setCookie("q_" + questionId + "_time", timing.time, 1);
-  }
-  
-  function saveAns() {  
-    // Save the final timing data for all questions
-    for (let questionId in questionTimings) {
-      setCookie("q_" + questionId + "_final_time", questionTimings[questionId].time, 1);
+    // Save radio button answers
+    function saveAnswer(questionNum, selectedOption, questionId) {
+        // Save answer to cookie
+        document.cookie = `${questionNum}=${selectedOption}; path=/;`;
+        
+        // Update time spent on this question
+        updateQuestionTime(questionId);
+        
+        // Highlight selected option
+        highlightSelectedOption(questionNum, selectedOption);
     }
     
-    // Save the total exam time
-    let totalTime = Math.floor((Date.now() - startTime) / 1000);
-    setCookie("exam_total_time", totalTime, 1);
-    
-    // Save answers for all question types
-    var radioButtons = document.querySelectorAll('input[type="radio"]:checked');
-    for (var i = 0; i < radioButtons.length; i++) {
-      setCookie(radioButtons[i].name, radioButtons[i].value, 3);
-    }
-    
-    // Save checkbox selections (multiple answers)
-    for (let questionId in checkboxSelections) {
-      if (checkboxSelections[questionId].length > 0) {
-        setCookie("checkbox_" + questionId, JSON.stringify(checkboxSelections[questionId]), 3);
-      }
+    // Save checkbox answers
+    function saveCheckboxAnswers(questionId) {
+        // Get all checkboxes for this question
+        let checkboxes = document.querySelectorAll(`input[name="checkbox_${questionId}"]:checked`);
+        
+        // Create array of selected values
+        let selectedValues = [];
+        checkboxes.forEach(function(checkbox) {
+            selectedValues.push(checkbox.value);
+        });
+        
+        // Save as JSON string in cookie
+        document.cookie = `checkbox_${questionId}=${JSON.stringify(selectedValues)}; path=/;`;
+        
+        // Update time spent on this question
+        updateQuestionTime(questionId);
     }
     
     // Save short answers
-    var shortAnswers = document.querySelectorAll('.question-short-answer');
-    for (var i = 0; i < shortAnswers.length; i++) {
-      if (shortAnswers[i].value.trim() !== '') {
-        setCookie(shortAnswers[i].name + "_short", shortAnswers[i].value, 3);
-      }
+    function saveShortAnswer(questionNum, questionId) {
+        // Get the textarea value
+        let answerText = document.getElementById(`q${questionNum}_short`).value;
+        
+        // Save to cookie
+        document.cookie = `${questionNum}_short=${encodeURIComponent(answerText)}; path=/;`;
+        
+        // Update time spent on this question
+        updateQuestionTime(questionId);
     }
     
-    return true;  // Allow the form to submit naturally
-  }
-  
-  function setCookie(cname, cvalue, exdays) {
-    var d = new Date();
-    d.setTime(d.getTime() + (exdays*24*60*60*1000));
-    var expires = "expires="+ d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-  }
-</script> 
+    // Update time spent on a question
+    function updateQuestionTime(questionId) {
+        let now = Date.now();
+        let elapsed = Math.floor((now - questionTimers[questionId].startTime) / 1000);
+        
+        questionTimers[questionId].totalTime += elapsed;
+        questionTimers[questionId].startTime = now;
+        
+        // Save time to cookie
+        document.cookie = `q_${questionId}_final_time=${questionTimers[questionId].totalTime}; path=/;`;
+    }
+    
+    // Navigate to next question in sequential mode
+    function nextQuestion(currentNum) {
+        if (currentNum < totalQuestions) {
+            document.getElementById(`question-${currentNum}`).style.display = 'none';
+            document.getElementById(`question-${currentNum + 1}`).style.display = 'block';
+            currentQuestion = currentNum + 1;
+        }
+    }
+    
+    // Navigate to previous question in sequential mode
+    function prevQuestion(currentNum) {
+        if (currentNum > 1) {
+            document.getElementById(`question-${currentNum}`).style.display = 'none';
+            document.getElementById(`question-${currentNum - 1}`).style.display = 'block';
+            currentQuestion = currentNum - 1;
+        }
+    }
+    
+    // Restore saved answers from cookies when page loads
+    function restoreSavedAnswers() {
+        // Restore radio button selections
+        {% for q in questions %}
+        {% if q.question_type == 'multiple_choice' %}
+        let savedAnswer{{ forloop.counter }} = getCookie('{{ forloop.counter }}');
+        if (savedAnswer{{ forloop.counter }}) {
+            let radioBtn = document.getElementById(`q{{ forloop.counter }}_${savedAnswer{{ forloop.counter }}}`);
+            if (radioBtn) {
+                radioBtn.checked = true;
+                highlightSelectedOption({{ forloop.counter }}, savedAnswer{{ forloop.counter }});
+            }
+        }
+        {% endif %}
+        
+        {% if q.question_type == 'checkbox' %}
+        // Restore checkbox selections
+        let savedCheckboxes{{ q.id }} = getCookie(`checkbox_{{ q.id }}`);
+        if (savedCheckboxes{{ q.id }}) {
+            try {
+                let checkboxValues = JSON.parse(savedCheckboxes{{ q.id }});
+                checkboxValues.forEach(function(value) {
+                    let checkbox = document.getElementById(`q{{ forloop.counter }}_checkbox${value.replace('Option', '')}`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            } catch (e) {
+                console.error("Error parsing saved checkboxes:", e);
+            }
+        }
+        {% endif %}
+        
+        {% if q.question_type == 'short_answer' %}
+        // Restore short answer text
+        let savedShortAnswer{{ forloop.counter }} = getCookie('{{ forloop.counter }}_short');
+        if (savedShortAnswer{{ forloop.counter }}) {
+            document.getElementById(`q{{ forloop.counter }}_short`).value = decodeURIComponent(savedShortAnswer{{ forloop.counter }});
+        }
+        {% endif %}
+        {% endfor %}
+    }
+    
+    // Helper function to get cookie value by name
+    function getCookie(name) {
+        let cookieArr = document.cookie.split(";");
+        
+        for (let i = 0; i < cookieArr.length; i++) {
+            let cookiePair = cookieArr[i].split("=");
+            
+            if (name == cookiePair[0].trim()) {
+                return cookiePair[1];
+            }
+        }
+        
+        return null;
+    }
+    
+    // Highlight selected option
+    function highlightSelectedOption(questionNum, selectedOption) {
+        // Remove highlight from all options
+        let options = document.querySelectorAll(`#question-${questionNum} .option-label`);
+        options.forEach(function(option) {
+            option.classList.remove('selected-option');
+        });
+        
+        // Add highlight to selected option
+        let selectedLabel = document.querySelector(`label[for="q${questionNum}_${selectedOption.toLowerCase()}"]`);
+        if (selectedLabel) {
+            selectedLabel.classList.add('selected-option');
+        }
+    }
+    
+    // Save final time spent on current question before submitting
+    document.getElementById('quiz-form').addEventListener('submit', function(e) {
+        // Save time for the current question
+        {% for q in questions %}
+        updateQuestionTime({{ q.id }});
+        {% endfor %}
+        
+        // Save total exam time
+        let totalTimeSpent = totalTime - timeLeft;
+        document.cookie = `exam_total_time=${totalTimeSpent}; path=/;`;
+    });
+</script>
 
-<br><br><br><br><br><br>
 {% endblock content %}
