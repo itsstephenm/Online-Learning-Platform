@@ -629,37 +629,6 @@
 <script src="{% static 'js/ai_dashboard.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Navigation functionality
-    const navLinks = document.querySelectorAll('.ai-nav-link');
-    const sections = {
-        'nav-data-upload': 'section-data-upload',
-        'nav-dashboard': 'section-dashboard',
-        'nav-predictions': 'section-predictions',
-        'nav-insights': 'section-insights',
-        'nav-admin': 'section-admin'
-    };
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all links
-            navLinks.forEach(l => l.classList.remove('active'));
-            
-            // Add active class to clicked link
-            this.classList.add('active');
-            
-            // Hide all sections
-            Object.values(sections).forEach(section => {
-                document.getElementById(section).style.display = 'none';
-            });
-            
-            // Show the corresponding section
-            const sectionId = sections[this.id];
-            document.getElementById(sectionId).style.display = 'block';
-        });
-    });
-    
     // File upload functionality
     const dropArea = document.getElementById('drop-area');
     const fileInput = document.getElementById('fileInput');
@@ -732,9 +701,93 @@ document.addEventListener('DOMContentLoaded', function() {
             fileSize.textContent = formatFileSize(file.size);
             filePreview.style.display = 'block';
             
-            // Simulate processing
-            simulateProcessing(file);
+            // Prepare for upload
+            const formData = new FormData();
+            formData.append('csv_file', file);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            // Show processing indicator
+            processingIndicator.style.display = 'flex';
+            processingText.textContent = 'Uploading...';
+            
+            // Upload file via AJAX
+            fetch('{% url "quiz:ajax_upload_csv" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide processing indicator
+                processingIndicator.style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Show data preview
+                showDataPreview(data);
+                
+                // Show success message
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('successText').textContent = `Data successfully uploaded! Added ${data.added_count} new records.`;
+                
+                // Show skipped message if any
+                if (data.skipped_count > 0) {
+                    document.getElementById('skippedMessage').style.display = 'block';
+                    document.getElementById('skippedText').textContent = `Skipped ${data.skipped_count} existing records to avoid duplicates.`;
+                }
+                
+                // Show stats section
+                document.getElementById('statsSection').style.display = 'block';
+                document.getElementById('totalResponses').textContent = data.total_count;
+                document.getElementById('toolsCount').textContent = data.tools_count;
+                document.getElementById('avgUsage').textContent = data.avg_usage.toFixed(2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                processingIndicator.style.display = 'none';
+                alert('An error occurred while uploading the file. Please try again.');
+            });
         }
+    }
+    
+    function showDataPreview(data) {
+        if (!data.preview || !data.preview.headers || !data.preview.rows) {
+            return;
+        }
+        
+        // Show data preview section
+        document.getElementById('dataPreviewSection').style.display = 'block';
+        
+        // Create table headers
+        const headerRow = document.getElementById('previewTableHeader');
+        headerRow.innerHTML = '';
+        
+        data.preview.headers.forEach((header, index) => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
+        });
+        
+        // Create table rows
+        const tableBody = document.getElementById('previewTableBody');
+        tableBody.innerHTML = '';
+        
+        data.preview.rows.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            row.forEach(cell => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            });
+            
+            tableBody.appendChild(tr);
+        });
     }
     
     // Remove file button
@@ -761,107 +814,253 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
     
-    // Simulate file processing
-    function simulateProcessing(file) {
-        // Show processing indicator
-        processingIndicator.style.display = 'flex';
-        
-        // Read CSV file to get preview data
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const csv = e.target.result;
-            const lines = csv.split('\n');
-            const headers = lines[0].split(',');
-            
-            // Create table headers
-            const headerRow = document.getElementById('previewTableHeader');
-            headerRow.innerHTML = '';
-            
-            headers.forEach((header, index) => {
-                const th = document.createElement('th');
-                th.textContent = `${index + 1}. ${header.trim()}`;
-                headerRow.appendChild(th);
-            });
-            
-            // Create table rows
-            const tableBody = document.getElementById('previewTableBody');
-            tableBody.innerHTML = '';
-            
-            // Display up to 5 data rows
-            const maxRows = Math.min(lines.length - 1, 5);
-            
-            for (let i = 1; i <= maxRows; i++) {
-                if (lines[i].trim() === '') continue;
-                
-                const rowData = lines[i].split(',');
-                const row = document.createElement('tr');
-                
-                // Add row index cell
-                const indexCell = document.createElement('td');
-                indexCell.textContent = i - 1;
-                row.appendChild(indexCell);
-                
-                rowData.forEach((cell, j) => {
-                    if (j > 0) {
-                        const td = document.createElement('td');
-                        td.textContent = cell.trim();
-                        row.appendChild(td);
-                    }
-                });
-                
-                tableBody.appendChild(row);
-            }
-            
-            // After a delay to simulate processing
-            setTimeout(() => {
-                // Hide processing indicator
-                processingIndicator.style.display = 'none';
-                
-                // Show data preview section
-                document.getElementById('dataPreviewSection').style.display = 'block';
-                
-                // Show success message
-                document.getElementById('successMessage').style.display = 'block';
-                document.getElementById('successText').textContent = `Data successfully uploaded! Added 1224 new records.`;
-                
-                // Show skipped message
-                document.getElementById('skippedMessage').style.display = 'block';
-                document.getElementById('skippedText').textContent = `Skipped 1 existing record to avoid duplicates.`;
-                
-                // Show stats section
-                document.getElementById('statsSection').style.display = 'block';
-                document.getElementById('totalResponses').textContent = '1224';
-                document.getElementById('toolsCount').textContent = '7';
-                document.getElementById('avgUsage').textContent = '2.31';
-            }, 2000);
-        };
-        
-        reader.readAsText(file);
-    }
-    
     // Train model button click
     document.getElementById('trainModelBtn').addEventListener('click', function() {
         // Show processing indicator
         processingIndicator.style.display = 'flex';
         processingText.textContent = 'Training model...';
         
-        // After a delay to simulate processing
-        setTimeout(() => {
+        // Send AJAX request to train model
+        fetch('{% url "quiz:ajax_train_model" %}', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
             // Hide processing indicator
             processingIndicator.style.display = 'none';
             
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            
             // Show model success message
             document.getElementById('modelSuccessMessage').style.display = 'block';
-            document.getElementById('modelSuccessText').textContent = `Model trained successfully! Accuracy: 0.61`;
-        }, 3000);
+            document.getElementById('modelSuccessText').textContent = `Model trained successfully! Accuracy: ${data.accuracy.toFixed(2)}`;
+            
+            // Load recent predictions
+            loadRecentPredictions();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            processingIndicator.style.display = 'none';
+            alert('An error occurred while training the model. Please try again.');
+        });
     });
     
-    // Initialize charts for dashboard
+    // Stop processing button
+    stopProcessingBtn.addEventListener('click', function() {
+        processingIndicator.style.display = 'none';
+    });
+    
+    // Load recent predictions for predictions tab
+    function loadRecentPredictions() {
+        const recentPredictionsTable = document.getElementById('recentPredictionsTable');
+        
+        if (!recentPredictionsTable) return;
+        
+        recentPredictionsTable.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
+        
+        // Fetch recent predictions
+        fetch('{% url "quiz:all_predictions" %}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            recentPredictionsTable.innerHTML = '';
+            
+            if (data.predictions && data.predictions.length > 0) {
+                data.predictions.forEach(prediction => {
+                    const row = document.createElement('tr');
+                    
+                    // Date column
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = new Date(prediction.created_at).toLocaleString();
+                    row.appendChild(dateCell);
+                    
+                    // Model column
+                    const modelCell = document.createElement('td');
+                    modelCell.textContent = prediction.model_name;
+                    row.appendChild(modelCell);
+                    
+                    // Result column
+                    const resultCell = document.createElement('td');
+                    if (prediction.prediction_class === 1) {
+                        resultCell.innerHTML = `<span class="badge bg-success">Success (${prediction.success_probability.toFixed(1)}%)</span>`;
+                    } else {
+                        resultCell.innerHTML = `<span class="badge bg-danger">Risk (${prediction.risk_probability.toFixed(1)}%)</span>`;
+                    }
+                    row.appendChild(resultCell);
+                    
+                    // Actions column
+                    const actionsCell = document.createElement('td');
+                    actionsCell.innerHTML = `<a href="{% url 'quiz:prediction_result' %}${prediction.id}/" class="btn btn-sm btn-primary">View</a>`;
+                    row.appendChild(actionsCell);
+                    
+                    recentPredictionsTable.appendChild(row);
+                });
+            } else {
+                recentPredictionsTable.innerHTML = '<tr><td colspan="4" class="text-center">No predictions found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            recentPredictionsTable.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load predictions</td></tr>';
+        });
+    }
+    
+    // Load AI models for admin tab
+    function loadAIModels() {
+        const aiModelsContainer = document.getElementById('aiModelsContainer');
+        
+        if (!aiModelsContainer) return;
+        
+        aiModelsContainer.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"></div></div>';
+        
+        fetch('/api/ai-models/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            aiModelsContainer.innerHTML = '';
+            
+            if (data.models && data.models.length > 0) {
+                const table = document.createElement('table');
+                table.className = 'table table-bordered';
+                
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+                    <tr>
+                        <th>Name</th>
+                        <th>Accuracy</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                `;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                
+                data.models.forEach(model => {
+                    const row = document.createElement('tr');
+                    
+                    // Name column
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = model.name;
+                    row.appendChild(nameCell);
+                    
+                    // Accuracy column
+                    const accuracyCell = document.createElement('td');
+                    accuracyCell.textContent = `${model.accuracy.toFixed(2)}%`;
+                    row.appendChild(accuracyCell);
+                    
+                    // Status column
+                    const statusCell = document.createElement('td');
+                    if (model.is_active) {
+                        statusCell.innerHTML = '<span class="badge bg-success">Active</span>';
+                    } else {
+                        statusCell.innerHTML = '<span class="badge bg-secondary">Inactive</span>';
+                    }
+                    row.appendChild(statusCell);
+                    
+                    // Actions column
+                    const actionsCell = document.createElement('td');
+                    const activateBtn = document.createElement('button');
+                    activateBtn.className = `btn btn-sm ${model.is_active ? 'btn-outline-secondary' : 'btn-outline-success'}`;
+                    activateBtn.textContent = model.is_active ? 'Deactivate' : 'Activate';
+                    activateBtn.onclick = function() {
+                        activateModel(model.id, !model.is_active);
+                    };
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn btn-sm btn-outline-danger ms-2';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = function() {
+                        if (confirm('Are you sure you want to delete this model?')) {
+                            deleteModel(model.id);
+                        }
+                    };
+                    
+                    actionsCell.appendChild(activateBtn);
+                    actionsCell.appendChild(deleteBtn);
+                    row.appendChild(actionsCell);
+                    
+                    tbody.appendChild(row);
+                });
+                
+                table.appendChild(tbody);
+                aiModelsContainer.appendChild(table);
+            } else {
+                aiModelsContainer.innerHTML = '<div class="alert alert-info">No AI models found. Train a model to get started.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            aiModelsContainer.innerHTML = '<div class="alert alert-danger">Failed to load AI models</div>';
+        });
+    }
+    
+    // Load insights for insights tab
+    function loadInsights() {
+        const insightsContainer = document.getElementById('insightsContainer');
+        
+        if (!insightsContainer) return;
+        
+        fetch('{% url "quiz:insights_view" %}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            insightsContainer.innerHTML = '';
+            
+            if (data.insights && data.insights.length > 0) {
+                data.insights.forEach(insight => {
+                    const card = document.createElement('div');
+                    card.className = 'card mb-4';
+                    
+                    const cardHeader = document.createElement('div');
+                    cardHeader.className = 'card-header';
+                    cardHeader.innerHTML = `<i class="fas fa-lightbulb me-1"></i> ${insight.title}`;
+                    
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'card-body';
+                    cardBody.innerHTML = `
+                        <p>${insight.content}</p>
+                        <div class="small text-muted mt-2">Generated on ${new Date(insight.created_at).toLocaleDateString()}</div>
+                    `;
+                    
+                    card.appendChild(cardHeader);
+                    card.appendChild(cardBody);
+                    insightsContainer.appendChild(card);
+                });
+            } else {
+                insightsContainer.innerHTML = '<div class="alert alert-info">No insights available yet. Upload data and train a model to generate insights.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            insightsContainer.innerHTML = '<div class="alert alert-danger">Failed to load insights</div>';
+        });
+    }
+    
+    // Initialize charts for dashboard tab
     function initializeCharts() {
         // AI Familiarity Distribution Chart
-        const familiarityCtx = document.getElementById('visualizationChart').getContext('2d');
-        const familiarityChart = new Chart(familiarityCtx, {
+        const familiarityCtx = document.getElementById('visualizationChart');
+        if (!familiarityCtx) return;
+        
+        const familiarityChart = new Chart(familiarityCtx.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['Not familiar at all', 'Somewhat familiar', 'Very familiar'],
@@ -892,146 +1091,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-        
-        // Faculty Prediction Chart
-        const predictionCtx = document.getElementById('facultyPredictionChart').getContext('2d');
-        const predictionChart = new Chart(predictionCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Business', 'Education', 'Engineering', 'Health Sciences'],
-                datasets: [
-                    {
-                        label: 'Undergraduate',
-                        data: [32, 28, 31, 33],
-                        backgroundColor: '#007bff'
-                    },
-                    {
-                        label: 'Postgraduate',
-                        data: [29, 37, 35, 28],
-                        backgroundColor: '#28a745'
-                    },
-                    {
-                        label: 'Other',
-                        data: [30, 29, 32, 36],
-                        backgroundColor: '#6f42c1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        stacked: true
-                    },
-                    y: {
-                        stacked: false,
-                        title: {
-                            display: true,
-                            text: 'Predicted Adoption Probability'
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Factors Chart
-        const factorsCtx = document.getElementById('factorsChart').getContext('2d');
-        const factorsChart = new Chart(factorsCtx, {
-            type: 'bar',
-            data: {
-                labels: ['AI Familiarity', 'Current Tool Usage', 'Encountered Challenges', 'Faculty Affiliation', 'Level of Study'],
-                datasets: [{
-                    data: [0.26, 0.15, 0.26, 0.11, 0.22],
-                    backgroundColor: '#007bff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Feature Importance'
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Tab switching for visualization charts
-        const chartTabs = document.querySelectorAll('.chart-tab');
-        
-        chartTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Remove active class from all tabs
-                chartTabs.forEach(t => t.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                this.classList.add('active');
-                
-                // Update chart based on selected tab
-                const chartType = this.getAttribute('data-chart');
-                
-                switch(chartType) {
-                    case 'familiarity':
-                        familiarityChart.data.labels = ['Not familiar at all', 'Somewhat familiar', 'Very familiar'];
-                        familiarityChart.data.datasets[0].data = [370, 650, 210];
-                        familiarityChart.update();
-                        break;
-                    case 'tools':
-                        familiarityChart.data.labels = ['ChatGPT', 'GitHub Copilot', 'Grammarly', 'Midjourney', 'DALL-E'];
-                        familiarityChart.data.datasets[0].data = [720, 350, 280, 150, 100];
-                        familiarityChart.update();
-                        break;
-                    case 'faculty':
-                        familiarityChart.data.labels = ['Business', 'Engineering', 'Education', 'Health Sciences', 'Arts'];
-                        familiarityChart.data.datasets[0].data = [350, 420, 280, 150, 70];
-                        familiarityChart.update();
-                        break;
-                    case 'challenges':
-                        familiarityChart.data.labels = ['Understanding outputs', 'Access', 'Cost', 'Technical skills', 'Integration'];
-                        familiarityChart.data.datasets[0].data = [450, 380, 320, 250, 180];
-                        familiarityChart.update();
-                        break;
-                }
-            });
-        });
     }
     
-    // Initialize charts when dashboard tab is clicked
-    document.getElementById('nav-dashboard').addEventListener('click', function() {
-        setTimeout(initializeCharts, 100);
-    });
-    
-    // Also initialize charts when predictions tab is clicked
-    document.getElementById('nav-predictions').addEventListener('click', function() {
-        setTimeout(initializeCharts, 100);
-    });
-    
-    // Show checkbox functionality
-    const showSkippedCheckbox = document.getElementById('showSkipped');
-    if (showSkippedCheckbox) {
-        showSkippedCheckbox.addEventListener('change', function() {
-            console.log('Show skipped emails:', this.checked);
+    // Load data when tabs are clicked
+    document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(button => {
+        button.addEventListener('click', function(event) {
+            const targetId = this.getAttribute('data-bs-target').substring(1);
+            
+            switch(targetId) {
+                case 'dashboard':
+                    setTimeout(initializeCharts, 100);
+                    break;
+                case 'predictions':
+                    loadRecentPredictions();
+                    break;
+                case 'insights':
+                    loadInsights();
+                    break;
+                case 'admin':
+                    loadAIModels();
+                    break;
+            }
         });
-    }
-    
-    // Stop processing button
-    stopProcessingBtn.addEventListener('click', function() {
-        processingIndicator.style.display = 'none';
     });
 });
 </script>
