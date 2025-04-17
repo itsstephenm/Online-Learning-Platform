@@ -1,0 +1,474 @@
+{% extends 'quiz/adminbase.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>AI Adoption Prediction</h2>
+        <div>
+          <a href="{% url 'ai_prediction_dashboard' %}" class="btn btn-primary">
+            <i class="fas fa-chart-line"></i> View Dashboard
+          </a>
+        </div>
+      </div>
+      
+      <div class="row">
+        <!-- Prediction Form -->
+        <div class="col-md-8">
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">Enter Student Information</h5>
+            </div>
+            <div class="card-body">
+              <form id="prediction-form" method="post" action="{% url 'ai_predict' %}">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="faculty" class="form-label">Faculty/Department</label>
+                    <select class="form-select" id="faculty" name="faculty" required>
+                      <option value="" selected disabled>Select Faculty</option>
+                      <option value="Business">Business</option>
+                      <option value="Engineering">Engineering</option>
+                      <option value="Science">Science</option>
+                      <option value="Arts">Arts</option>
+                      <option value="Education">Education</option>
+                      <option value="Health Sciences">Health Sciences</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="study_level" class="form-label">Study Level</label>
+                    <select class="form-select" id="study_level" name="study_level" required>
+                      <option value="" selected disabled>Select Level</option>
+                      <option value="Undergraduate">Undergraduate</option>
+                      <option value="Postgraduate">Postgraduate</option>
+                      <option value="Doctoral">Doctoral</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="year_of_study" class="form-label">Year of Study</label>
+                    <select class="form-select" id="year_of_study" name="year_of_study" required>
+                      <option value="" selected disabled>Select Year</option>
+                      <option value="1">First Year</option>
+                      <option value="2">Second Year</option>
+                      <option value="3">Third Year</option>
+                      <option value="4">Fourth Year</option>
+                      <option value="5+">Fifth Year or Above</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="age_group" class="form-label">Age Group</label>
+                    <select class="form-select" id="age_group" name="age_group" required>
+                      <option value="" selected disabled>Select Age Group</option>
+                      <option value="18-21">18-21</option>
+                      <option value="22-25">22-25</option>
+                      <option value="26-30">26-30</option>
+                      <option value="31-40">31-40</option>
+                      <option value="41+">41 and above</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <hr class="my-4">
+                <h5 class="mb-3">AI Knowledge and Experience</h5>
+                
+                <div class="mb-3">
+                  <label class="form-label">Are you familiar with AI tools like ChatGPT?</label>
+                  <div class="d-flex">
+                    <div class="form-check me-3">
+                      <input class="form-check-input" type="radio" name="ai_familiarity" id="ai_familiar_yes" value="Yes" required>
+                      <label class="form-check-label" for="ai_familiar_yes">Yes</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="ai_familiarity" id="ai_familiar_no" value="No">
+                      <label class="form-check-label" for="ai_familiar_no">No</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="ai_tools_used" class="form-label">Which AI tools have you used? (select all that apply)</label>
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ai_tools_used" id="tool_chatgpt" value="ChatGPT">
+                        <label class="form-check-label" for="tool_chatgpt">ChatGPT</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ai_tools_used" id="tool_bard" value="Google Bard">
+                        <label class="form-check-label" for="tool_bard">Google Bard</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ai_tools_used" id="tool_dalle" value="DALL-E">
+                        <label class="form-check-label" for="tool_dalle">DALL-E</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ai_tools_used" id="tool_midjourney" value="Midjourney">
+                        <label class="form-check-label" for="tool_midjourney">Midjourney</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ai_tools_used" id="tool_github_copilot" value="GitHub Copilot">
+                        <label class="form-check-label" for="tool_github_copilot">GitHub Copilot</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="ai_tools_used" id="tool_other" value="Other">
+                        <label class="form-check-label" for="tool_other">Other</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="usage_frequency" class="form-label">How often do you use AI tools?</label>
+                  <select class="form-select" id="usage_frequency" name="usage_frequency" required>
+                    <option value="" selected disabled>Select Frequency</option>
+                    <option value="Daily">Daily</option>
+                    <option value="Several times a week">Several times a week</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Rarely">Rarely</option>
+                    <option value="Never">Never</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">Do you find AI tools helpful for your studies?</label>
+                  <div class="d-flex">
+                    <div class="form-check me-3">
+                      <input class="form-check-input" type="radio" name="ai_helpful" id="ai_helpful_yes" value="Yes" required>
+                      <label class="form-check-label" for="ai_helpful_yes">Yes</label>
+                    </div>
+                    <div class="form-check me-3">
+                      <input class="form-check-input" type="radio" name="ai_helpful" id="ai_helpful_no" value="No">
+                      <label class="form-check-label" for="ai_helpful_no">No</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="ai_helpful" id="ai_helpful_unsure" value="Unsure">
+                      <label class="form-check-label" for="ai_helpful_unsure">Unsure</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="primary_use" class="form-label">What is your primary use of AI tools?</label>
+                  <select class="form-select" id="primary_use" name="primary_use" required>
+                    <option value="" selected disabled>Select Primary Use</option>
+                    <option value="Research">Research</option>
+                    <option value="Writing assignments">Writing assignments</option>
+                    <option value="Programming">Programming</option>
+                    <option value="Creative work">Creative work</option>
+                    <option value="Learning new concepts">Learning new concepts</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="challenges" class="form-label">What challenges do you face when using AI tools? (select all that apply)</label>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="challenges" id="challenge_accuracy" value="Accuracy">
+                        <label class="form-check-label" for="challenge_accuracy">Accuracy of information</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="challenges" id="challenge_ethics" value="Ethics">
+                        <label class="form-check-label" for="challenge_ethics">Ethical concerns</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="challenges" id="challenge_learning" value="Learning curve">
+                        <label class="form-check-label" for="challenge_learning">Learning curve</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="challenges" id="challenge_access" value="Access">
+                        <label class="form-check-label" for="challenge_access">Access to tools</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="challenges" id="challenge_cost" value="Cost">
+                        <label class="form-check-label" for="challenge_cost">Cost of premium features</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="challenges" id="challenge_none" value="None">
+                        <label class="form-check-label" for="challenge_none">No challenges</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">Do your instructors encourage AI tool usage?</label>
+                  <div class="d-flex">
+                    <div class="form-check me-3">
+                      <input class="form-check-input" type="radio" name="instructor_support" id="instructor_yes" value="Yes" required>
+                      <label class="form-check-label" for="instructor_yes">Yes</label>
+                    </div>
+                    <div class="form-check me-3">
+                      <input class="form-check-input" type="radio" name="instructor_support" id="instructor_no" value="No">
+                      <label class="form-check-label" for="instructor_no">No</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="instructor_support" id="instructor_mixed" value="Mixed">
+                      <label class="form-check-label" for="instructor_mixed">Mixed</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="future_interest" class="form-label">How interested are you in integrating AI into your studies in the future?</label>
+                  <div class="range-slider">
+                    <input type="range" class="form-range" id="future_interest" name="future_interest" min="1" max="5" value="3" required>
+                    <div class="range-labels d-flex justify-content-between">
+                      <span>Not interested</span>
+                      <span>Somewhat interested</span>
+                      <span>Very interested</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                  <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-brain"></i> Generate Prediction
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Prediction Result -->
+        <div class="col-md-4">
+          <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">Prediction Result</h5>
+            </div>
+            <div class="card-body">
+              <div id="prediction-loading" class="text-center p-5 d-none">
+                <div class="spinner-border text-primary mb-3" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Analyzing responses...</p>
+              </div>
+              
+              <div id="prediction-result" class="text-center p-4">
+                <div class="mb-4">
+                  <i class="fas fa-lightbulb fa-4x text-muted"></i>
+                  <p class="mt-3">Complete the form to see AI adoption prediction</p>
+                </div>
+              </div>
+              
+              <div id="prediction-details" class="mt-4 d-none">
+                <h6 class="border-bottom pb-2 mb-3">Key Factors</h6>
+                <ul class="list-group list-group-flush" id="factor-list">
+                  <!-- Factors will be added here dynamically -->
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">About the Model</h5>
+            </div>
+            <div class="card-body">
+              <p><strong>Model:</strong> <span id="model-name">{{ model_name }}</span></p>
+              <p><strong>Accuracy:</strong> <span id="model-accuracy">{{ model_accuracy }}%</span></p>
+              <p><strong>Last Trained:</strong> <span id="model-date">{{ model_date }}</span></p>
+              <p class="mb-0"><strong>Total Predictions:</strong> <span id="prediction-count">{{ prediction_count }}</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+  // Show/hide tools used based on familiarity
+  $('input[name="ai_familiarity"]').on('change', function() {
+    if ($(this).val() === 'No') {
+      $('input[name="ai_tools_used"]').prop('checked', false).prop('disabled', true);
+      $('#usage_frequency').val('Never').prop('disabled', true);
+    } else {
+      $('input[name="ai_tools_used"]').prop('disabled', false);
+      $('#usage_frequency').prop('disabled', false);
+    }
+  });
+  
+  // Handle "No challenges" checkbox
+  $('#challenge_none').on('change', function() {
+    if ($(this).is(':checked')) {
+      $('input[name="challenges"]').not(this).prop('checked', false).prop('disabled', true);
+    } else {
+      $('input[name="challenges"]').prop('disabled', false);
+    }
+  });
+  
+  // Handle other challenges checkboxes
+  $('input[name="challenges"]').not('#challenge_none').on('change', function() {
+    if ($(this).is(':checked')) {
+      $('#challenge_none').prop('checked', false);
+    }
+  });
+  
+  // Update interest level display
+  $('#future_interest').on('input', function() {
+    const value = $(this).val();
+    let label = 'Somewhat interested';
+    
+    if (value <= 2) {
+      label = 'Not interested';
+    } else if (value >= 4) {
+      label = 'Very interested';
+    }
+    
+    $('.range-labels span').css('font-weight', 'normal');
+    $(`.range-labels span:contains("${label}")`).css('font-weight', 'bold');
+  });
+  
+  // Trigger initial state
+  $('#future_interest').trigger('input');
+  
+  // Handle form submission
+  $('#prediction-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    // Show loading state
+    $('#prediction-loading').removeClass('d-none');
+    $('#prediction-result').addClass('d-none');
+    $('#prediction-details').addClass('d-none');
+    
+    // Collect form data
+    const formData = new FormData(this);
+    
+    // Convert checkbox arrays to comma-separated values
+    const aiTools = [];
+    $('input[name="ai_tools_used"]:checked').each(function() {
+      aiTools.push($(this).val());
+    });
+    formData.set('ai_tools_used', aiTools.join(','));
+    
+    const challenges = [];
+    $('input[name="challenges"]:checked').each(function() {
+      challenges.push($(this).val());
+    });
+    formData.set('challenges', challenges.join(','));
+    
+    // Send AJAX request
+    $.ajax({
+      url: $(this).attr('action'),
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      success: function(response) {
+        $('#prediction-loading').addClass('d-none');
+        
+        if (response.status === 'success') {
+          // Show result
+          const resultHTML = generateResultHTML(response);
+          $('#prediction-result').html(resultHTML).removeClass('d-none');
+          
+          // Show factors if available
+          if (response.factors && response.factors.length > 0) {
+            const factorList = $('#factor-list').empty();
+            
+            response.factors.forEach(function(factor) {
+              const icon = factor.impact > 0 ? 
+                '<i class="fas fa-arrow-up text-success"></i>' : 
+                '<i class="fas fa-arrow-down text-danger"></i>';
+              
+              factorList.append(`
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  ${factor.name}
+                  <span>${icon} ${Math.abs(factor.impact).toFixed(2)}</span>
+                </li>
+              `);
+            });
+            
+            $('#prediction-details').removeClass('d-none');
+          }
+          
+          // Update model stats
+          $('#prediction-count').text(response.prediction_count);
+        } else {
+          // Show error
+          const errorHTML = `
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+              <p>Error: ${response.message}</p>
+            </div>
+          `;
+          $('#prediction-result').html(errorHTML).removeClass('d-none');
+        }
+      },
+      error: function() {
+        $('#prediction-loading').addClass('d-none');
+        
+        const errorHTML = `
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+            <p>Server error occurred. Please try again later.</p>
+          </div>
+        `;
+        $('#prediction-result').html(errorHTML).removeClass('d-none');
+      }
+    });
+  });
+  
+  // Function to generate result HTML
+  function generateResultHTML(response) {
+    const prediction = response.prediction;
+    const probability = response.probability;
+    
+    let iconClass, colorClass, titleText;
+    
+    if (prediction === 'High Adoption') {
+      iconClass = 'fa-check-circle';
+      colorClass = 'success';
+      titleText = 'High Adoption Likelihood';
+    } else if (prediction === 'Moderate Adoption') {
+      iconClass = 'fa-question-circle';
+      colorClass = 'warning';
+      titleText = 'Moderate Adoption Likelihood';
+    } else {
+      iconClass = 'fa-times-circle';
+      colorClass = 'danger';
+      titleText = 'Low Adoption Likelihood';
+    }
+    
+    return `
+      <div class="text-center">
+        <i class="fas ${iconClass} fa-4x text-${colorClass} mb-3"></i>
+        <h4 class="text-${colorClass}">${titleText}</h4>
+        <div class="progress mt-3 mb-3">
+          <div class="progress-bar bg-${colorClass}" role="progressbar" style="width: ${(probability * 100).toFixed(0)}%" 
+            aria-valuenow="${(probability * 100).toFixed(0)}" aria-valuemin="0" aria-valuemax="100">
+            ${(probability * 100).toFixed(0)}%
+          </div>
+        </div>
+        <p class="mb-0">${response.explanation}</p>
+      </div>
+    `;
+  }
+});
+</script>
+{% endblock %} 
