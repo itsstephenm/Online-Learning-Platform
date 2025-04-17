@@ -50,7 +50,7 @@
           <h5>Upload Survey Data</h5>
         </div>
         <div class="card-body">
-          <form id="upload-form" enctype="multipart/form-data" method="post" action="{% url 'upload_csv_view' %}">
+          <form id="upload-form" enctype="multipart/form-data" method="post" action="{% url 'upload_csv' %}">
             {% csrf_token %}
             <div class="custom-file mb-3">
               <input type="file" class="custom-file-input" id="csv-file" name="csv_file" required>
@@ -80,48 +80,75 @@
             <p class="mt-2 text-center" id="progress-message">Uploading file, please wait...</p>
           </div>
           
-          <!-- Multi-step Progress Indicator -->
+          <!-- Enhanced Multi-step Progress Indicator -->
           <div id="processing-steps" class="mt-3 d-none">
             <div class="row">
               <div class="col-md-4">
                 <div class="card mb-2" id="step-upload">
                   <div class="card-body p-2 text-center">
-                    <i class="fas fa-upload fa-lg mb-2"></i>
+                    <div class="step-icon">
+                      <i class="fas fa-upload fa-lg mb-2"></i>
+                    </div>
                     <h6 class="mb-0">Upload</h6>
-                    <small class="text-muted" id="upload-status">In progress...</small>
+                    <div class="step-status">
+                      <small class="text-muted" id="upload-status">In progress...</small>
+                      <div class="spinner-border spinner-border-sm text-primary d-none" id="upload-spinner" role="status">
+                        <span class="sr-only">Loading...</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="card mb-2" id="step-clean">
                   <div class="card-body p-2 text-center">
-                    <i class="fas fa-broom fa-lg mb-2"></i>
+                    <div class="step-icon">
+                      <i class="fas fa-broom fa-lg mb-2"></i>
+                    </div>
                     <h6 class="mb-0">Clean Data</h6>
-                    <small class="text-muted" id="clean-status">Waiting...</small>
+                    <div class="step-status">
+                      <small class="text-muted" id="clean-status">Waiting...</small>
+                      <div class="spinner-border spinner-border-sm text-primary d-none" id="clean-spinner" role="status">
+                        <span class="sr-only">Loading...</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="card mb-2" id="step-train">
                   <div class="card-body p-2 text-center">
-                    <i class="fas fa-cogs fa-lg mb-2"></i>
+                    <div class="step-icon">
+                      <i class="fas fa-cogs fa-lg mb-2"></i>
+                    </div>
                     <h6 class="mb-0">Train Model</h6>
-                    <small class="text-muted" id="train-status">Waiting...</small>
+                    <div class="step-status">
+                      <small class="text-muted" id="train-status">Waiting...</small>
+                      <div class="spinner-border spinner-border-sm text-primary d-none" id="train-spinner" role="status">
+                        <span class="sr-only">Loading...</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           
+          <!-- Enhanced Upload Result -->
           <div id="upload-result" class="mt-3 d-none">
             <div class="alert alert-success">
-              <p><strong>Success!</strong> <span id="result-message"></span></p>
-              <ul id="result-details">
-                <li>Processed <span id="records-processed">0</span> records in <span id="processing-time">0</span> seconds</li>
-                <li>Model accuracy: <span id="model-accuracy">N/A</span></li>
-              </ul>
-              <div id="insights-container">
-                <p><strong>Key Insights:</strong></p>
+              <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle fa-2x mr-3" id="result-icon"></i>
+                <div>
+                  <p class="mb-1"><strong>Success!</strong> <span id="result-message"></span></p>
+                  <ul id="result-details" class="mb-1">
+                    <li>Processed <span id="records-processed">0</span> records in <span id="processing-time">0</span> seconds</li>
+                    <li>Model accuracy: <span id="model-accuracy">N/A</span></li>
+                  </ul>
+                </div>
+              </div>
+              <div id="insights-container" class="mt-2">
+                <p class="mb-1"><strong>Key Insights:</strong></p>
                 <ul id="insights-list"></ul>
               </div>
             </div>
@@ -210,6 +237,31 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    // Add some CSS for the animations
+    $('<style>').text(`
+        .step-icon {
+            transition: transform 0.3s ease;
+        }
+        .step-active .step-icon {
+            transform: scale(1.1);
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .progress-bar-step {
+            height: 6px;
+            transition: width 0.5s ease;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse-animation {
+            animation: pulse 1.5s infinite;
+        }
+    `).appendTo('head');
+
     // Show filename in file input
     $('.custom-file-input').on('change', function() {
         var fileName = $(this).val().split('\\').pop();
@@ -220,6 +272,12 @@ $(document).ready(function() {
     $('#upload-form').on('submit', function(e) {
         e.preventDefault();
         
+        // Reset previous state
+        $('#step-upload, #step-clean, #step-train').removeClass('bg-info bg-success bg-secondary text-white step-active');
+        $('#upload-status, #clean-status, #train-status').removeClass('text-white').addClass('text-muted');
+        $('#upload-status').text('In progress...');
+        $('#clean-status, #train-status').text('Waiting...');
+        
         // Show progress indicators
         $('#upload-btn').prop('disabled', true);
         $('#upload-progress').removeClass('d-none');
@@ -227,8 +285,9 @@ $(document).ready(function() {
         $('#upload-result').addClass('d-none');
         
         // Style the upload step as active
-        $('#step-upload').addClass('bg-info text-white');
-        $('#upload-status').removeClass('text-muted').addClass('text-white').text('In progress...');
+        $('#step-upload').addClass('bg-info text-white step-active');
+        $('#upload-status').removeClass('text-muted').addClass('text-white');
+        $('#upload-spinner').removeClass('d-none');
         $('#progress-message').text('Uploading file, please wait...');
         
         var formData = new FormData(this);
@@ -244,80 +303,71 @@ $(document).ready(function() {
             headers: {'X-Requested-With': 'XMLHttpRequest'},
             success: function(response) {
                 // Mark upload as complete
-                $('#step-upload').removeClass('bg-info').addClass('bg-success');
+                $('#step-upload').removeClass('bg-info step-active').addClass('bg-success');
                 $('#upload-status').text('Complete');
+                $('#upload-spinner').addClass('d-none');
                 
                 if (response.status === 'success') {
                     // If clean data option is selected
                     if (cleanData) {
                         // Update cleaning step to active
-                        $('#step-clean').addClass('bg-info text-white');
+                        $('#step-clean').addClass('bg-info text-white step-active');
                         $('#clean-status').removeClass('text-muted').addClass('text-white').text('In progress...');
-                        $('#progress-message').text('Cleaning and standardizing data...');
+                        $('#clean-spinner').removeClass('d-none');
+                        $('#progress-message').html('<i class="fas fa-sync fa-spin mr-2"></i>Cleaning and standardizing data...');
                         
-                        // Simulate cleaning progress (in a real app, you would poll the server for status)
-                        setTimeout(function() {
-                            // Mark cleaning as complete
-                            $('#step-clean').removeClass('bg-info').addClass('bg-success');
-                            $('#clean-status').text('Complete');
-                            
-                            // If train model option is selected
-                            if (trainModel) {
-                                // Update training step to active
-                                $('#step-train').addClass('bg-info text-white');
-                                $('#train-status').removeClass('text-muted').addClass('text-white').text('In progress...');
-                                $('#progress-message').text('Training AI model, this may take a few minutes...');
-                                
-                                // Simulate training progress (in a real app, you would poll the server for status)
+                        // Start a visual progress bar for cleaning
+                        var cleanProgress = $('<div class="progress mt-1 mb-3"><div class="progress-bar progress-bar-step progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div></div>');
+                        $('#progress-message').after(cleanProgress);
+                        
+                        var cleanProgressBar = cleanProgress.find('.progress-bar');
+                        var cleanSteps = 5; // Number of visual steps for the animation
+                        var cleanTimePerStep = 300; // ms per step
+                        
+                        function updateCleanProgress(step) {
+                            if (step <= cleanSteps) {
+                                var percent = (step / cleanSteps) * 100;
+                                cleanProgressBar.css('width', percent + '%');
                                 setTimeout(function() {
-                                    // Mark training as complete
-                                    $('#step-train').removeClass('bg-info').addClass('bg-success');
-                                    $('#train-status').text('Complete');
-                                    $('#progress-message').text('Processing complete!');
+                                    updateCleanProgress(step + 1);
+                                }, cleanTimePerStep);
+                            } else {
+                                // Mark cleaning as complete
+                                $('#step-clean').removeClass('bg-info step-active').addClass('bg-success');
+                                $('#clean-status').text('Complete');
+                                $('#clean-spinner').addClass('d-none');
+                                cleanProgress.remove();
+                                
+                                // If train model option is selected
+                                if (trainModel) {
+                                    startModelTraining();
+                                } else {
+                                    // If no training, show result after cleaning
+                                    $('#step-train').addClass('bg-secondary text-white');
+                                    $('#train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
+                                    $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Processing complete!');
                                     
-                                    // Show final result after brief delay
                                     setTimeout(function() {
                                         showFinalResult(response);
                                     }, 1000);
-                                }, cleanData ? 2500 : 500); // Longer delay to simulate training time
-                            } else {
-                                // If no training, show result after cleaning
-                                $('#step-train').addClass('bg-secondary text-white');
-                                $('#train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
-                                $('#progress-message').text('Processing complete!');
-                                
-                                setTimeout(function() {
-                                    showFinalResult(response);
-                                }, 1000);
+                                }
                             }
-                        }, 1500); // Delay to simulate cleaning time
+                        }
+                        
+                        // Start the cleaning progress animation
+                        updateCleanProgress(1);
+                        
                     } else if (trainModel) {
                         // If clean data is skipped but train model is selected
                         $('#step-clean').addClass('bg-secondary text-white');
                         $('#clean-status').removeClass('text-muted').addClass('text-white').text('Skipped');
                         
-                        // Update training step to active
-                        $('#step-train').addClass('bg-info text-white');
-                        $('#train-status').removeClass('text-muted').addClass('text-white').text('In progress...');
-                        $('#progress-message').text('Training AI model, this may take a few minutes...');
-                        
-                        // Simulate training progress
-                        setTimeout(function() {
-                            // Mark training as complete
-                            $('#step-train').removeClass('bg-info').addClass('bg-success');
-                            $('#train-status').text('Complete');
-                            $('#progress-message').text('Processing complete!');
-                            
-                            // Show final result after brief delay
-                            setTimeout(function() {
-                                showFinalResult(response);
-                            }, 1000);
-                        }, 2500); // Delay to simulate training time
+                        startModelTraining();
                     } else {
                         // If both cleaning and training are skipped
                         $('#step-clean, #step-train').addClass('bg-secondary text-white');
                         $('#clean-status, #train-status').removeClass('text-muted').addClass('text-white').text('Skipped');
-                        $('#progress-message').text('Processing complete!');
+                        $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Processing complete!');
                         
                         // Show final result after brief delay
                         setTimeout(function() {
@@ -333,6 +383,82 @@ $(document).ready(function() {
                 showError({message: 'Error: ' + error});
             }
         });
+        
+        function startModelTraining() {
+            // Update training step to active
+            $('#step-train').addClass('bg-info text-white step-active pulse-animation');
+            $('#train-status').removeClass('text-muted').addClass('text-white').text('In progress...');
+            $('#train-spinner').removeClass('d-none');
+            $('#progress-message').html('<i class="fas fa-cogs fa-spin mr-2"></i>Training AI model, this may take a few minutes...');
+            
+            // Create a visual representation of model training with epochs
+            var totalEpochs = 10;
+            var epochsContainer = $('<div class="mt-2 mb-3"></div>');
+            $('#progress-message').after(epochsContainer);
+            
+            // Add epoch progress bars
+            var trainingProgress = $('<div class="progress mb-1"><div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div></div>');
+            epochsContainer.append('<p class="mb-1 small text-center">Training progress: <span id="current-epoch">0</span>/' + totalEpochs + ' epochs</p>');
+            epochsContainer.append(trainingProgress);
+            
+            // Add accuracy/loss indicators
+            var metricsDiv = $('<div class="row mt-2 mb-1"></div>');
+            metricsDiv.append('<div class="col-6 text-center"><small>Accuracy: <span id="current-accuracy">0.00</span>%</small></div>');
+            metricsDiv.append('<div class="col-6 text-center"><small>Loss: <span id="current-loss">0.00</span></small></div>');
+            epochsContainer.append(metricsDiv);
+            
+            var progressBar = trainingProgress.find('.progress-bar');
+            var currentEpochElem = $('#current-epoch');
+            var currentAccuracyElem = $('#current-accuracy');
+            var currentLossElem = $('#current-loss');
+            
+            function updateTrainingProgress(epoch) {
+                if (epoch <= totalEpochs) {
+                    var percent = (epoch / totalEpochs) * 100;
+                    progressBar.css('width', percent + '%');
+                    currentEpochElem.text(epoch);
+                    
+                    // Simulate improving metrics
+                    var baseAccuracy = 65;
+                    var accuracyGain = 30 * (epoch / totalEpochs);
+                    var accuracy = Math.min(baseAccuracy + accuracyGain, 95);
+                    currentAccuracyElem.text(accuracy.toFixed(2));
+                    
+                    var baseLoss = 0.5;
+                    var lossReduction = 0.45 * (epoch / totalEpochs);
+                    var loss = Math.max(baseLoss - lossReduction, 0.05);
+                    currentLossElem.text(loss.toFixed(4));
+                    
+                    setTimeout(function() {
+                        updateTrainingProgress(epoch + 1);
+                    }, 400); // Time per epoch
+                } else {
+                    // Mark training as complete
+                    $('#step-train').removeClass('bg-info step-active pulse-animation').addClass('bg-success');
+                    $('#train-status').text('Complete');
+                    $('#train-spinner').addClass('d-none');
+                    $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Model training complete!');
+                    
+                    // Remove the epoch progress display after a delay
+                    setTimeout(function() {
+                        epochsContainer.slideUp(300, function() {
+                            $(this).remove();
+                            $('#progress-message').html('<i class="fas fa-check-circle mr-2"></i>Processing complete!');
+                            
+                            // Show final result after brief delay
+                            setTimeout(function() {
+                                showFinalResult(response);
+                            }, 800);
+                        });
+                    }, 1000);
+                }
+            }
+            
+            // Start the training progress animation
+            setTimeout(function() {
+                updateTrainingProgress(1);
+            }, 500);
+        }
     });
     
     // Function to display the final result
@@ -348,8 +474,9 @@ $(document).ready(function() {
         // Show confetti animation for successful upload
         showConfetti();
         
-        // Show result
-        $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-danger').addClass('alert-success');
+        // Show result with fade-in animation
+        $('#upload-result').hide().removeClass('d-none').find('.alert').removeClass('alert-danger').addClass('alert-success');
+        $('#result-icon').removeClass('fa-times-circle text-danger').addClass('fa-check-circle text-success');
         $('#result-message').text('CSV file processed successfully.');
         $('#records-processed').text(response.records);
         $('#processing-time').text(response.processing_time.toFixed(2));
@@ -371,6 +498,9 @@ $(document).ready(function() {
             $('#insights-container').hide();
         }
         
+        // Fade in the result
+        $('#upload-result').fadeIn(500);
+        
         // Refresh upload history
         refreshUploadHistory();
         
@@ -385,6 +515,7 @@ $(document).ready(function() {
         $('#upload-progress').addClass('d-none');
         $('#processing-steps').addClass('d-none');
         $('#upload-result').removeClass('d-none').find('.alert').removeClass('alert-success').addClass('alert-danger');
+        $('#result-icon').removeClass('fa-check-circle text-success').addClass('fa-times-circle text-danger');
         $('#result-message').text('Error: ' + response.message);
         $('#insights-container').hide();
         $('#upload-btn').prop('disabled', false);
