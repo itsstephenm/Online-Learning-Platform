@@ -594,7 +594,7 @@ $(document).ready(function() {
     $('#confirmDelete').on('click', function() {
         if (deleteUploadId) {
             $.ajax({
-                url: '/quiz/admin/ai-adoption/delete-upload/' + deleteUploadId + '/',
+                url: '/quiz/admin/ai-adoption/delete-data/' + deleteUploadId + '/',
                 type: 'POST',
                 headers: {
                     'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
