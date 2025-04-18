@@ -269,36 +269,7 @@
       <i class="fas fa-question-circle"></i>
       <span>Questions</span>
     </a>
-    <a href="/ai-prediction-dashboard" class="{% if request.path == '/ai-prediction-dashboard' %}active{% endif %}">
-      <i class="fas fa-brain"></i>
-      <span>AI Prediction</span>
-    </a>
-    
-    <!-- AI Adoption System Submenu -->
-    <a href="#" class="ai-submenu-toggle" onclick="toggleAISubmenu(event)">
-      <i class="fas fa-robot"></i>
-      <span>AI Adoption System</span>
-      <i class="fas fa-chevron-down" style="float: right;"></i>
-    </a>
-    <div class="ai-submenu" style="display: none; background-color: rgba(0,0,0,0.2);">
-      <a href="/quiz/admin/ai-adoption/upload" class="{% if request.path == '/quiz/admin/ai-adoption/upload' %}active{% endif %}" style="padding-left: 40px;">
-        <i class="fas fa-upload"></i>
-        <span>Upload Data</span>
-      </a>
-      <a href="/quiz/admin/ai-adoption/view-data" class="{% if request.path == '/quiz/admin/ai-adoption/view-data' %}active{% endif %}" style="padding-left: 40px;">
-        <i class="fas fa-table"></i>
-        <span>View Data</span>
-      </a>
-      <a href="/quiz/admin/ai-adoption/model-metrics" class="{% if request.path == '/quiz/admin/ai-adoption/model-metrics' %}active{% endif %}" style="padding-left: 40px;">
-        <i class="fas fa-chart-line"></i>
-        <span>Model Metrics</span>
-      </a>
-      <a href="/quiz/admin/ai-adoption/predict" class="{% if request.path == '/quiz/admin/ai-adoption/predict' %}active{% endif %}" style="padding-left: 40px;">
-        <i class="fas fa-magic"></i>
-        <span>Make Prediction</span>
-      </a>
     </div>
-    
     <form action="{% url 'logout' %}" method="POST" style="display: block;">
       {% csrf_token %}
       <button type="submit" class="sidebar-logout-btn">
