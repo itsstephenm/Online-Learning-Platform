@@ -17,8 +17,11 @@
     .card-header {
       font-weight: 600;
     }
-    .feedback-card {
-      border-left: 5px solid {% if attempt.is_correct %}#28a745{% else %}#dc3545{% endif %};
+    .feedback-card-correct {
+      border-left: 5px solid #28a745;
+    }
+    .feedback-card-incorrect {
+      border-left: 5px solid #dc3545;
     }
     .explanation-card {
       border-left: 5px solid #17a2b8;
@@ -122,7 +125,7 @@
       </div>
 
       <!-- Feedback Card -->
-      <div class="card feedback-card mb-4">
+      <div class="card feedback-card {% if attempt.is_correct %}feedback-card-correct{% else %}feedback-card-incorrect{% endif %} mb-4">
         <div class="card-header {% if attempt.is_correct %}bg-success{% else %}bg-danger{% endif %} text-white">
           <div class="d-flex align-items-center">
             <i class="fas {% if attempt.is_correct %}fa-check-circle{% else %}fa-times-circle{% endif %} me-2"></i>
