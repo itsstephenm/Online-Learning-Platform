@@ -50,14 +50,8 @@ urlpatterns = [
     path('update-question/<int:pk>', views.update_question_view, name='update-question'),
     path('admin-generate-questions', views.admin_generate_questions_view, name='admin-generate-questions'),
     
-    # AI Prediction Dashboard
-    path('ai-prediction-dashboard', views.ai_prediction_dashboard_view, name='ai-prediction-dashboard'),
-
     # Include quiz URLs with namespace
     path('quiz/', include('quiz.urls')),
-
-    # Add AI prediction URLs
-    path('quiz/', include('quiz.ai_prediction_urls')),
 ]
 
 # Serve media files in development
