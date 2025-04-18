@@ -387,6 +387,8 @@
     <div class="sidebar-profile">
       {% if teacher.profile_pic %}
         <img src="{{ teacher.profile_pic.url }}" class="profile_image" alt="Profile Picture">
+      {% elif user.teacher.profile_pic %}
+        <img src="{{ user.teacher.profile_pic.url }}" class="profile_image" alt="Profile Picture">
       {% else %}
         <img src="{% static 'image/teacher.png' %}" class="profile_image" alt="Default Profile">
       {% endif %}

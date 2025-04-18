@@ -82,6 +82,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'student.middleware.StudentMiddleware',  # Add our custom middleware
+    'teacher.middleware.TeacherMiddleware',  # Add teacher middleware
 ]
 # Ensure CSRF settings are properly configured
 CSRF_COOKIE_SECURE = not DEBUG
@@ -107,6 +109,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'student.context_processors.student_profile',  # Student context processor
+                'teacher.context_processors.teacher_profile',  # Teacher context processor
             ],
         },
     },
