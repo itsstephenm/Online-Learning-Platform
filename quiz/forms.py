@@ -73,38 +73,3 @@ class QuestionForm(forms.ModelForm):
                 self.add_error('short_answer_pattern', 'Answer pattern is required for short answer questions')
                 
         return cleaned_data
-
-class AIAdoptionDataForm(forms.ModelForm):
-    class Meta:
-        model = models.AIAdoptionData
-        fields = ['email_domain', 'faculty', 'level_of_study', 'ai_familiarity', 
-                 'uses_ai_tools', 'tools_used', 'usage_frequency', 
-                 'challenges', 'suggestions', 'improves_learning']
-        
-        widgets = {
-            'ai_familiarity': forms.Select(attrs={'class': 'form-control'}),
-            'uses_ai_tools': forms.RadioSelect(),
-            'tools_used': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'usage_frequency': forms.Select(attrs={'class': 'form-control'}),
-            'challenges': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-            'suggestions': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-            'improves_learning': forms.RadioSelect(),
-        }
-        
-        labels = {
-            'email_domain': 'Email Domain',
-            'ai_familiarity': 'AI Familiarity Level',
-            'uses_ai_tools': 'Do you use AI tools?',
-            'tools_used': 'Which AI tools do you use? (comma separated)',
-            'usage_frequency': 'How often do you use AI tools?',
-            'challenges': 'What challenges do you face using AI tools?',
-            'suggestions': 'What suggestions do you have for improving AI tools?',
-            'improves_learning': 'Do AI tools improve your learning?',
-        }
-
-class NLQueryForm(forms.Form):
-    query = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control form-control-lg', 
-                                      'placeholder': 'Ask a question about AI adoption trends...'}),
-        label=''
-    )
