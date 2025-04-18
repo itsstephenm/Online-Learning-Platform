@@ -26,7 +26,7 @@
     
     .main-content {
       flex: 1;
-      padding-top: 6rem;
+      padding-top: 3rem;
     }
     
     .about-section {
@@ -36,7 +36,26 @@
       justify-content: center;
       position: relative;
       padding: 4rem 0;
+      background: url('{% static "image/assets/images/back2.jpg" %}') no-repeat center center;
+  background-size: cover;
+  padding: 4rem 0;
+  /* Ensures content stays above the overlay */
+  z-index: 1;
     }
+    .about-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.62),  /* Dark overlay (adjust opacity as needed) */
+    rgba(0, 0, 0, 0.127)   /* Lighter edge */
+  );
+  z-index: -1; /* Places the overlay behind the content */
+}
     
     .about-card {
       background-color: rgba(255, 255, 255, 0.05);
