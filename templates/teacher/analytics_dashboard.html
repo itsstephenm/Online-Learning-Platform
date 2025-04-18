@@ -189,13 +189,13 @@
 <div class="content-wrapper">
   <div class="container-fluid">
     <h2 class="section-title mb-1">Analytics Dashboard</h2>
-    <p class="text-muted mb-4">Comprehensive insights into student performance and exam effectiveness</p>
+    <p class="text-light mb-4">Comprehensive insights into student performance and exam effectiveness</p>
     
     <!-- Filters Section -->
     <div class="filter-section">
       <form method="get" class="row g-3">
         <div class="col-md-3">
-          <label for="course" class="form-label">Course</label>
+          <label for="course" class="form-label text-light">Course</label>
           <select class="form-select" id="course" name="course">
             <option value="">All Courses</option>
             {% for course in courses %}
@@ -204,7 +204,7 @@
           </select>
         </div>
         <div class="col-md-3">
-          <label for="date_range" class="form-label">Date Range</label>
+          <label for="date_range" class="form-label text-light">Date Range</label>
           <select class="form-select" id="date_range" name="date_range">
             <option value="7" {% if date_range == 7 %}selected{% endif %}>Last 7 days</option>
             <option value="30" {% if date_range == 30 %}selected{% endif %}>Last 30 days</option>
