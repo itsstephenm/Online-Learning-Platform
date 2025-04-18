@@ -200,20 +200,6 @@
       background: url('{% static "image/assets/images/back2.jpg" %}') no-repeat center center;
       background-size: cover;
     }
-    .content::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.62),  /* Dark overlay (adjust opacity as needed) */
-    rgba(0, 0, 0, 0.127)   /* Lighter edge */
-  );
-  z-index: -1; /* Places the overlay behind the content */
-}
     /* Responsive sidebar toggle */
     #sidebar_btn {
       color: #fff;
