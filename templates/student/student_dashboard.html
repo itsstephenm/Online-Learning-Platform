@@ -3,6 +3,37 @@
 {% block content %}
 
 <style>
+         :root {
+      --blue: #24b0ed;
+      --indigo: #6610f2;
+      --purple: #6f42c1;
+      --pink: #e83e8c;
+      --red: #dc3545;
+      --darkblue: #000033;
+      --orange: #fd7e14;
+      --yellow: #ffc107;
+      --green: #28a745;
+      --teal: #20c997;
+      --cyan: #17a2b8;
+      --white: #fff;
+      --gray: #6c757d;
+      --gray-dark: #343a40;
+      --primary: #24b0ed;
+      --secondary: #6c757d;
+      --success: #28a745;
+      --info: #17a2b8;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --light: #f8f9fa;
+      --dark: #1e1e2d;
+      --breakpoint-xs: 0;
+      --breakpoint-sm: 576px;
+      --breakpoint-md: 768px;
+      --breakpoint-lg: 992px;
+      --breakpoint-xl: 1200px;
+      --font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
   a:link {
     text-decoration: none;
   }
@@ -202,7 +233,7 @@
   .recent-chats-table th {
     font-weight: 500;
     padding: 12px 15px;
-    color: rgba(255, 255, 255, 0.9);
+    color: ;
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   }
   
@@ -318,7 +349,7 @@
   {% if ai_insights.recent_chats %}
   <div class="row mt-4">
     <div class="col-md-12">
-      <div class="ai-insights-container">
+      <div class="ai-insights-container bg-c-blue">
         <h5><i class="fas fa-history"></i>Recent AI Interactions</h5>
         <div class="table-responsive recent-chats-table">
           <table class="table table-hover">
