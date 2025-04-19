@@ -270,9 +270,9 @@ def calculate_marks_view(request):
         question_attempt = QMODEL.QuestionAttempt(
             student=student,
             question=res['question'],
-            result=result,
-            selected_answer=res['selected_answer'],
-            time_spent=res['time_spent']
+            answer_selected=res['selected_answer'],
+            is_correct=res['is_correct'],
+            time_taken=res['time_spent']
         )
         question_attempt.save()
     
