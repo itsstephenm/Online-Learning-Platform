@@ -26,6 +26,10 @@ from decouple import config
 from collections import Counter
 import numpy as np
 import uuid
+import PyPDF2
+import docx2txt
+from io import BytesIO
+from teacher.ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -585,3 +589,152 @@ def admin_generate_questions_view(request):
     # For GET requests, show the form
     courses = models.Course.objects.all()
     return render(request, 'quiz/admin_generate_questions.html', {'courses': courses})
+
+@login_required(login_url='adminlogin')
+def admin_ai_exam_view(request):
+    exam_form = forms.AIExamGenerationForm()
+    context = {'exam_form': exam_form}
+    
+    if request.method == 'POST':
+        exam_form = forms.AIExamGenerationForm(request.POST, request.FILES)
+        if exam_form.is_valid():
+            try:
+                # Process the form data
+                course = exam_form.cleaned_data['course']
+                title = exam_form.cleaned_data['title']
+                description = exam_form.cleaned_data['description']
+                difficulty = exam_form.cleaned_data['difficulty']
+                num_questions = exam_form.cleaned_data['num_questions']
+                time_limit = exam_form.cleaned_data['time_limit']
+                
+                # Handle uploaded reference material if provided
+                reference_text = None
+                if 'reference_material' in request.FILES:
+                    reference_file = request.FILES['reference_material']
+                    file_name = reference_file.name.lower()
+                    
+                    # Extract text from the uploaded file based on its type
+                    if file_name.endswith('.pdf'):
+                        pdf_reader = PyPDF2.PdfReader(BytesIO(reference_file.read()))
+                        reference_text = ""
+                        for page in pdf_reader.pages:
+                            reference_text += page.extract_text()
+                            
+                    elif file_name.endswith('.docx') or file_name.endswith('.doc'):
+                        reference_text = docx2txt.process(reference_file)
+                        
+                    elif file_name.endswith('.txt'):
+                        reference_text = reference_file.read().decode('utf-8')
+                
+                # Generate AI questions
+                questions = get_ai_exam_questions(
+                    course=course,
+                    difficulty=difficulty,
+                    num_questions=num_questions,
+                    reference_text=reference_text
+                )
+                
+                # Save questions and exam data in session for review
+                request.session['ai_exam_data'] = {
+                    'course_id': course.id,
+                    'title': title,
+                    'description': description,
+                    'difficulty': difficulty,
+                    'time_limit': time_limit,
+                    'questions': questions if isinstance(questions, list) else []
+                }
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'redirect_url': reverse('admin-review-ai-exam')
+                    })
+                else:
+                    return redirect('admin-review-ai-exam')
+                    
+            except Exception as e:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': str(e)
+                    }, status=500)
+                else:
+                    context['error'] = str(e)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Form is invalid. Please check your inputs.'
+                }, status=400)
+            else:
+                context['error'] = "Form is invalid. Please check your inputs."
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request method'
+        }, status=400)
+    else:
+        return render(request, 'quiz/admin_ai_exam.html', context)
+
+@login_required(login_url='adminlogin')
+def admin_review_ai_exam_view(request):
+    # Get exam data from session
+    exam_data = request.session.get('ai_exam_data', None)
+    
+    if not exam_data:
+        return redirect('admin-ai-exam')
+    
+    course = models.Course.objects.get(id=exam_data['course_id'])
+    
+    context = {
+        'course': course,
+        'title': exam_data['title'],
+        'description': exam_data['description'],
+        'difficulty': exam_data['difficulty'],
+        'time_limit': exam_data['time_limit'],
+        'questions': exam_data['questions']
+    }
+    
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        
+        if action == 'save' or action == 'approve':
+            # Save edited questions from form
+            updated_questions = []
+            question_count = int(request.POST.get('question_count', 0))
+            
+            for i in range(question_count):
+                question = {
+                    'question': request.POST.get(f'question_{i}', ''),
+                    'option1': request.POST.get(f'option1_{i}', ''),
+                    'option2': request.POST.get(f'option2_{i}', ''),
+                    'option3': request.POST.get(f'option3_{i}', ''),
+                    'option4': request.POST.get(f'option4_{i}', ''),
+                    'answer': request.POST.get(f'answer_{i}', ''),
+                    'marks': int(request.POST.get(f'marks_{i}', 1))
+                }
+                updated_questions.append(question)
+            
+            # Save AI-generated exam and its questions
+            exam = save_ai_generated_exam(
+                course=course,
+                title=exam_data['title'],
+                description=exam_data['description'],
+                difficulty=exam_data['difficulty'],
+                questions=updated_questions,
+                time_limit=exam_data['time_limit']
+            )
+            
+            if action == 'approve':
+                # Mark as approved
+                exam.approved = True
+                exam.save()
+            
+            # Clear session data
+            if 'ai_exam_data' in request.session:
+                del request.session['ai_exam_data']
+            
+            return redirect('admin-view-question')
+        
+    return render(request, 'quiz/admin_review_ai_exam.html', context)

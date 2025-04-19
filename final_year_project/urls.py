@@ -49,6 +49,8 @@ urlpatterns = [
     path('delete-question/<int:pk>', views.delete_question_view, name='delete-question'),
     path('update-question/<int:pk>', views.update_question_view, name='update-question'),
     path('admin-generate-questions', views.admin_generate_questions_view, name='admin-generate-questions'),
+    path('admin-ai-exam', views.admin_ai_exam_view, name='admin-ai-exam'),
+    path('admin-review-ai-exam', views.admin_review_ai_exam_view, name='admin-review-ai-exam'),
     
     # Include quiz URLs with namespace
     path('quiz/', include('quiz.urls')),
