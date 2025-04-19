@@ -121,7 +121,6 @@ whitenoise==6.9.0
 dj-database-url==2.1.0
 python-dotenv==1.0.1
 django-debug-toolbar==4.3.0
-django-cacheops==8.0.2
-tracemalloc==1.0
+django-cacheops==7.1
 scout-apm==5.1.3
 
