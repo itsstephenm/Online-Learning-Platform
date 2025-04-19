@@ -124,6 +124,87 @@
 </div>
 
 <style>
+      :root {
+      --blue: #24b0ed;
+      --indigo: #6610f2;
+      --purple: #6f42c1;
+      --pink: #e83e8c;
+      --red: #dc3545;
+      --darkblue: #000033;
+      --orange: #fd7e14;
+      --yellow: #ffc107;
+      --green: #28a745;
+      --teal: #20c997;
+      --cyan: #17a2b8;
+      --white: #fff;
+      --gray: #6c757d;
+      --gray-dark: #343a40;
+      --primary: #24b0ed;
+      --secondary: #6c757d;
+      --success: #28a745;
+      --info: #17a2b8;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --light: #f8f9fa;
+      --dark: #1e1e2d;
+      --breakpoint-xs: 0;
+      --breakpoint-sm: 576px;
+      --breakpoint-md: 768px;
+      --breakpoint-lg: 992px;
+      --breakpoint-xl: 1200px;
+      --font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+  /* Cosmic Deep Blue (Nebula) */
+.bg-c-blue {
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+}
+
+/* Galactic Teal (Aurora) */
+.bg-c-green {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+}
+
+/* Cyber Sunset (Neon Glow) */
+.bg-c-yellow {
+  background: linear-gradient(135deg, #3a1c71 0%, #d76d77 50%, #ffaf7b 100%);
+}
+
+/* Void Purple (Dark Matter) */
+.bg-c-pink {
+  background: linear-gradient(135deg, #4b1248 0%, #6b3074 50%, #a4508b 100%);
+}
+
+/* Stellar Purple (Space Dust) */
+.bg-c-purple {
+  background: linear-gradient(135deg, #1e0024 0%, #4e1d6d 50%, #a239ea 100%);
+}
+.cosmic-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Star particles */
+.cosmic-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(white 1px, transparent 1px),
+    radial-gradient(white 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  opacity: 0.2;
+  animation: stars 50s linear infinite;
+}
+
+@keyframes stars {
+  from { background-position: 0 0, 10px 10px; }
+  to { background-position: 200px 200px, 210px 210px; }
+}
   .content-wrapper {
     padding: 1.5rem;
     background-color: #151521;
