@@ -16,6 +16,7 @@ whitenoise==6.9.0
 dj-database-url==2.1.0
 requests==2.31.0
 openai==1.13.3
+pandas==2.2.3
 
 # Optional packages - comment out if issues arise
 # django-debug-toolbar==4.3.0
