@@ -16,7 +16,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.2
       - key: WEB_CONCURRENCY
-        value: 4
+        value: 2
       - key: GUNICORN_LOG_LEVEL
         value: "info"
       - key: DJANGO_SETTINGS_MODULE
@@ -25,7 +25,13 @@ services:
         value: 10000
     plan: standard
     autoDeploy: true
-    healthCheckPath: /
+    healthCheckPath: /health/
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+      targetMemoryPercent: 80
+    startupDelay: 60
+    initialDeployHook: python manage.py check --deploy
     disk:
       name: media
       mountPath: /media

@@ -4,8 +4,16 @@ from quiz import views
 from django.contrib.auth.views import LogoutView, LoginView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+
+# Simple health check function
+def health_check(request):
+    return HttpResponse("OK", content_type="text/plain")
 
 urlpatterns = [
+    # Health check endpoint for Render
+    path('health/', health_check, name='health_check'),
+    
     path('explorer/', include('explorer.urls')),
     path('admin/', admin.site.urls),
     path('teacher/', include('teacher.urls')),
