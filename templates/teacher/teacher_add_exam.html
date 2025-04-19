@@ -49,74 +49,77 @@
     
   </style>
 </head>
-<h2 style="text-align:center; color:blue;">ADD COURSE</h2>
-<form method="POST" autocomplete="off" style="margin:100px;margin-top: 0px;">
-    {%csrf_token%}
-    <div class="form-group">
-      <label for="course_name">Exam Name</label>
-      {% render_field courseForm.course_name class="form-control" placeholder="Java" %}
-
-      <label for="question_number">Total Question</label>
-      {% render_field courseForm.question_number class="form-control" placeholder="10" %}
-
-      <label for="total_marks">Total Marks</label>
-      {% render_field courseForm.total_marks class="form-control" placeholder="50" %}
-    </div>
-    
-    <!-- Timed Exam Settings -->
-    <div class="settings-section">
-      <h4 class="settings-heading">Timed Exam Settings</h4>
-      <div class="form-check">
-        <label class="form-check-label">
-          {% render_field courseForm.is_timed %} {{ courseForm.is_timed.label }}
-        </label>
-      </div>
-      
-      <div id="timed-settings" class="timed-settings">
+<div class="container-fluid py-4">
+  <div class="card mb-2 bg-c-blue">
+    <h2 style="text-align:center; color:blue;">ADD COURSE</h2>
+    <form method="POST" autocomplete="off" style="margin:100px;margin-top: 0px;">
+        {%csrf_token%}
         <div class="form-group">
-          <label for="total_time_minutes">{{ courseForm.total_time_minutes.label }}</label>
-          {% render_field courseForm.total_time_minutes class="form-control" placeholder="60" %}
-          <small class="form-text text-muted">Set the total time allowed for the entire exam in minutes.</small>
+          <label for="course_name">Exam Name</label>
+          {% render_field courseForm.course_name class="form-control" placeholder="Java" %}
+    
+          <label for="question_number">Total Question</label>
+          {% render_field courseForm.question_number class="form-control" placeholder="10" %}
+    
+          <label for="total_marks">Total Marks</label>
+          {% render_field courseForm.total_marks class="form-control" placeholder="50" %}
         </div>
-      </div>
-    </div>
-    
-    <!-- Question Display Settings -->
-    <div class="settings-section">
-      <h4 class="settings-heading">Question Display Settings</h4>
-      <div class="form-check">
-        <label class="form-check-label">
-          {% render_field courseForm.sequential_questions %} {{ courseForm.sequential_questions.label }}
-        </label>
-        <small class="form-text text-muted">If enabled, students will see one question at a time with time limits for each question.</small>
-      </div>
-      
-      <div id="sequential-settings" class="sequential-settings">
-        <div class="form-check">
-          <label class="form-check-label">
-            {% render_field courseForm.allow_backtracking %} {{ courseForm.allow_backtracking.label }}
-          </label>
-          <small class="form-text text-muted">If enabled, students can go back to previous questions. If disabled, they must answer in sequence.</small>
+        
+        <!-- Timed Exam Settings -->
+        <div class="settings-section">
+          <h4 class="settings-heading">Timed Exam Settings</h4>
+          <div class="form-check">
+            <label class="form-check-label">
+              {% render_field courseForm.is_timed %} {{ courseForm.is_timed.label }}
+            </label>
+          </div>
+          
+          <div id="timed-settings" class="timed-settings">
+            <div class="form-group">
+              <label for="total_time_minutes">{{ courseForm.total_time_minutes.label }}</label>
+              {% render_field courseForm.total_time_minutes class="form-control" placeholder="60" %}
+              <small class="form-text text-muted">Set the total time allowed for the entire exam in minutes.</small>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Security Settings -->
-    <div class="settings-section">
-      <h4 class="settings-heading">Exam Security Settings</h4>
-      <div class="form-group">
-        <label for="security_level">{{ courseForm.security_level.label }}</label>
-        {% render_field courseForm.security_level class="form-control" %}
-        <small class="form-text text-muted">
-          <strong>Low</strong>: Basic protection<br>
-          <strong>Medium</strong>: Prevent copy-paste and right-click<br>
-          <strong>High</strong>: Block dev tools and keyboard shortcuts
-        </small>
-      </div>
-    </div>
-    
-    <button type="submit" class="btn btn-primary">ADD</button>
-  </form>
+        
+        <!-- Question Display Settings -->
+        <div class="settings-section">
+          <h4 class="settings-heading">Question Display Settings</h4>
+          <div class="form-check">
+            <label class="form-check-label">
+              {% render_field courseForm.sequential_questions %} {{ courseForm.sequential_questions.label }}
+            </label>
+            <small class="form-text text-muted">If enabled, students will see one question at a time with time limits for each question.</small>
+          </div>
+          
+          <div id="sequential-settings" class="sequential-settings">
+            <div class="form-check">
+              <label class="form-check-label">
+                {% render_field courseForm.allow_backtracking %} {{ courseForm.allow_backtracking.label }}
+              </label>
+              <small class="form-text text-muted">If enabled, students can go back to previous questions. If disabled, they must answer in sequence.</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Security Settings -->
+        <div class="settings-section">
+          <h4 class="settings-heading">Exam Security Settings</h4>
+          <div class="form-group">
+            <label for="security_level">{{ courseForm.security_level.label }}</label>
+            {% render_field courseForm.security_level class="form-control" %}
+            <small class="form-text text-muted">
+              <strong>Low</strong>: Basic protection<br>
+              <strong>Medium</strong>: Prevent copy-paste and right-click<br>
+              <strong>High</strong>: Block dev tools and keyboard shortcuts
+            </small>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">ADD</button>
+      </form>
+  </div>
+</div>
 
 <script>
   // Show/hide timed exam settings
