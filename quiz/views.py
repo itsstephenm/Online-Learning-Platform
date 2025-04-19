@@ -287,13 +287,27 @@ def admin_course_view(request):
         
         recent_courses.append({
             'id': course.id,
-            'name': course.course_name,
+            'course_name': course.course_name,
             'teacher_name': teacher_name,
             'student_count': course.student_count
         })
     
+    # Get total questions for context
+    try:
+        total_question = models.Question.objects.count()
+    except:
+        total_question = 0
+        
+    # Get total students for context
+    try:
+        total_student = SMODEL.Student.objects.count()
+    except:
+        total_student = 0
+    
     context = {
         'total_course': models.Course.objects.count(),
+        'total_question': total_question,
+        'total_student': total_student,
         'recent_courses': recent_courses
     }
     return render(request, 'quiz/admin_course.html', context)
