@@ -1,0 +1,18 @@
+[build]
+  command = "./build.sh"
+  publish = "staticfiles"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+  NODE_VERSION = "16"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[plugins]]
+  package = "@netlify/plugin-sitemap"
+
+[functions]
+  directory = "netlify/functions" 

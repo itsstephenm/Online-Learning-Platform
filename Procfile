@@ -1,0 +1,1 @@
+web: gunicorn final_year_project.wsgi:application 
