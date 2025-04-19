@@ -95,8 +95,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'student.middleware.StudentMiddleware',  # Add our custom middleware
     'teacher.middleware.TeacherMiddleware',  # Add teacher middleware
-    'quiz.middleware.MemoryUsageMiddleware',  # Add memory monitoring middleware
 ]
+
+# Add memory monitoring middleware only if psutil is available
+try:
+    import psutil
+    MIDDLEWARE.append('quiz.middleware.MemoryUsageMiddleware')
+except ImportError:
+    pass
+
 # Ensure CSRF settings are properly configured
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True  # Better security in production
@@ -166,9 +173,13 @@ CACHES = {
 
 # Add Django Debug Toolbar for development environments
 if DEBUG:
-    INSTALLED_APPS += ['debug_toolbar']
-    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
-    INTERNAL_IPS = ['127.0.0.1']
+    try:
+        import debug_toolbar
+        INSTALLED_APPS += ['debug_toolbar']
+        MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+        INTERNAL_IPS = ['127.0.0.1']
+    except ImportError:
+        pass
 
 # Memory optimization settings
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
