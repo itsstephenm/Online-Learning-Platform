@@ -84,6 +84,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'student.middleware.StudentMiddleware',  # Add our custom middleware
     'teacher.middleware.TeacherMiddleware',  # Add teacher middleware
+    'quiz.middleware.MemoryUsageMiddleware',  # Add memory monitoring middleware
 ]
 # Ensure CSRF settings are properly configured
 CSRF_COOKIE_SECURE = not DEBUG
@@ -139,6 +140,31 @@ if DATABASE_URL:
         conn_health_checks=True,
     )
 
+# Database connection settings for better performance
+DATABASES['default']['CONN_MAX_AGE'] = 60  # Persistent connections
+DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+
+# Cache configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+    }
+}
+
+# Add Django Debug Toolbar for development environments
+if DEBUG:
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+    INTERNAL_IPS = ['127.0.0.1']
+
+# Memory optimization settings
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+SESSION_COOKIE_AGE = 7200  # 2 hours
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

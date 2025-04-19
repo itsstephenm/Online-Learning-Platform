@@ -169,23 +169,40 @@ def calculate_marks_view(request):
     else:
         total_time = 0
     
-    course = QMODEL.Course.objects.get(id=request.COOKIES.get('course_id'))
+    course_id = request.COOKIES.get('course_id')
+    if not course_id:
+        return redirect('student-exam')
+    
+    # Use select_related to fetch course in a single query
+    course = QMODEL.Course.objects.get(id=course_id)
     total_marks = 0
-    questions = QMODEL.Question.objects.all().filter(course=course)
+    
+    # Get all questions for this course in a single query
+    # Use select_related to fetch related data in a single query
+    questions = list(QMODEL.Question.objects.filter(course=course).select_related('course'))
+    
+    # Try to get adaptive settings in one query with exception handling
     adaptive_settings = None
     try:
-        adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.get(course=course)
+        adaptive_settings = QMODEL.AdaptiveQuizSettings.objects.select_related('course').get(course=course)
     except QMODEL.AdaptiveQuizSettings.DoesNotExist:
         pass
 
     results = []
     total_correct_answers = 0
     total_attempted = 0
+    question_attempts_to_create = []
     
-    for i in range(len(questions)):
+    # Get the student once outside the loop
+    student = models.Student.objects.select_related('user').get(user_id=request.user.id)
+    
+    for i, question in enumerate(questions):
         attempted = False
-        question = questions[i]
         time_spent = 0
+        selected_ans = None
+        short_answer = None
+        checkbox_selection = None
+        is_correct = False
         
         # Get time spent on this question if available
         question_time_cookie = request.COOKIES.get(f'q_{question.id}_final_time')
@@ -198,7 +215,8 @@ def calculate_marks_view(request):
             selected_ans = request.COOKIES.get(str(i+1))
             if selected_ans:
                 attempted = True
-                if selected_ans == question.answer:
+                is_correct = selected_ans == question.answer
+                if is_correct:
                     total_marks += question.marks
                     total_correct_answers += 1
         
@@ -216,7 +234,8 @@ def calculate_marks_view(request):
                     selected_options_normalized = [opt.replace('Option', '') for opt in selected_options]
                     
                     # Check if selections match expected answers
-                    if sorted(selected_options_normalized) == sorted(expected_answers):
+                    is_correct = sorted(selected_options_normalized) == sorted(expected_answers)
+                    if is_correct:
                         total_marks += question.marks
                         total_correct_answers += 1
                 except json.JSONDecodeError:
@@ -232,62 +251,86 @@ def calculate_marks_view(request):
                 if question.short_answer_pattern:
                     import re
                     pattern = re.compile(question.short_answer_pattern, re.IGNORECASE)
-                    if pattern.match(short_answer):
+                    is_correct = bool(pattern.match(short_answer))
+                    if is_correct:
                         total_marks += question.marks
                         total_correct_answers += 1
                 # Fallback to exact match if no pattern specified
                 elif short_answer.lower().strip() == question.answer.lower().strip():
+                    is_correct = True
                     total_marks += question.marks
                     total_correct_answers += 1
         
         # Track question attempt data
         if attempted:
             total_attempted += 1
+            # Prepare the answer value based on question type
+            answer_value = selected_ans if question.question_type == 'multiple_choice' else \
+                          checkbox_selection if question.question_type == 'checkbox' else \
+                          short_answer
+            
             # Store the attempt data for this question
             results.append({
                 'question': question,
-                'selected_answer': selected_ans if question.question_type == 'multiple_choice' else 
-                                 checkbox_selection if question.question_type == 'checkbox' else 
-                                 short_answer,
+                'selected_answer': answer_value,
                 'time_spent': time_spent,
-                'is_correct': selected_ans == question.answer if question.question_type == 'multiple_choice' else False
+                'is_correct': is_correct
             })
+            
+            # Create QuestionAttempt object for bulk creation
+            question_attempts_to_create.append(
+                QMODEL.QuestionAttempt(
+                    student=student,
+                    question=question,
+                    answer_selected=answer_value,
+                    is_correct=is_correct,
+                    time_taken=time_spent
+                )
+            )
     
     # Compute success metrics
-    success_rate = (total_correct_answers / len(questions)) * 100 if len(questions) > 0 else 0
-    attempt_rate = (total_attempted / len(questions)) * 100 if len(questions) > 0 else 0
+    question_count = len(questions)
+    success_rate = (total_correct_answers / question_count) * 100 if question_count > 0 else 0
+    attempt_rate = (total_attempted / question_count) * 100 if question_count > 0 else 0
     
     # Create and save the Result object
-    student = models.Student.objects.get(user_id=request.user.id)
-    result = QMODEL.Result()
-    result.marks = total_marks
-    result.exam = course
-    result.student = student
+    result = QMODEL.Result(
+        marks=total_marks,
+        exam=course,
+        student=student
+    )
     result.save()
     
-    # Save individual question attempts if the model exists
-    for res in results:
-        question_attempt = QMODEL.QuestionAttempt(
-            student=student,
-            question=res['question'],
-            answer_selected=res['selected_answer'],
-            is_correct=res['is_correct'],
-            time_taken=res['time_spent']
-        )
-        question_attempt.save()
+    # Bulk create all question attempts in a single database operation
+    if question_attempts_to_create:
+        QMODEL.QuestionAttempt.objects.bulk_create(question_attempts_to_create)
+    
+    # Prepare response with context
+    context = {
+        'course': course, 
+        'total_marks': total_marks, 
+        'total_time': total_time, 
+        'success_rate': success_rate, 
+        'adaptive_settings': adaptive_settings
+    }
     
     # Clear cookies
-    response = render(request, 'student/check_marks.html', {'course': course, 'total_marks': total_marks, 
-                                                          'total_time': total_time, 'success_rate': success_rate, 
-                                                          'adaptive_settings': adaptive_settings})
+    response = render(request, 'student/check_marks.html', context)
+    
+    # Delete all exam-related cookies in one go
     for i in range(len(questions)):
         response.delete_cookie(str(i+1))
+        response.delete_cookie(f'{i+1}_short')
     
     # Clear other cookies related to the exam
     response.delete_cookie('course_id')
     response.delete_cookie('exam_total_time')
     
-    # Render the results page
+    # Delete question-specific cookies
+    for question in questions:
+        response.delete_cookie(f'q_{question.id}_final_time')
+        response.delete_cookie(f'checkbox_{question.id}')
+    
     return response
 
 @login_required(login_url='studentlogin')

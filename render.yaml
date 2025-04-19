@@ -3,7 +3,7 @@ services:
     name: final_year_project
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn final_year_project.wsgi:application"
+    startCommand: "gunicorn -c gunicorn.conf.py final_year_project.wsgi:application"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -17,8 +17,20 @@ services:
         value: 3.11.2
       - key: WEB_CONCURRENCY
         value: 4
+      - key: GUNICORN_LOG_LEVEL
+        value: "info"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "final_year_project.settings"
+    plan: standard
+    autoDeploy: true
+    healthCheckPath: /
+    disk:
+      name: media
+      mountPath: /media
+      sizeGB: 1
 
 databases:
   - name: final_year_project_db
     databaseName: final_year_project
     user: final_year_project
+    plan: standard
