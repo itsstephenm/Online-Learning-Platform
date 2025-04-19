@@ -14,25 +14,148 @@
   a:link {
         text-decoration: none;
       }
-    
+  .card {
+    background-color: #1e1e2d;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .card-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-check {
+    margin-bottom: 10px;
+  }
   </style>
 </head>
-<h2 style="text-align:center; color:blue;">ADD COURSE</h2>
-<form method="POST" autocomplete="off" style="margin:100px;margin-top: 0px;">
-    {%csrf_token%}
-    <div class="form-group">
-      <label for="course_name">Course Name</label>
-      {% render_field courseForm.course_name class="form-control" placeholder="Java" %}
 
-      <label for="question_number">Total Question</label>
-      {% render_field courseForm.question_number class="form-control" placeholder="10" %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="card">
+        <div class="card-header">
+          <h2 style="text-align:center; color:#24b0ed;">ADD COURSE</h2>
+        </div>
 
-      <label for="total_marks">Total Marks</label>
-      {% render_field courseForm.total_marks class="form-control" placeholder="50" %}
+        <form method="POST" autocomplete="off">
+          {% csrf_token %}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="course_name">Course Name</label>
+                {% render_field courseForm.course_name class="form-control" placeholder="Java" %}
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="question_number">Total Questions</label>
+                {% render_field courseForm.question_number class="form-control" placeholder="10" %}
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="total_marks">Total Marks</label>
+                {% render_field courseForm.total_marks class="form-control" placeholder="50" %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Time Limit Settings -->
+          <div class="row">
+            <div class="col-md-12">
+              <h4 style="margin-top:20px; color:#24b0ed;">Time Limit Settings</h4>
+              <hr>
+            </div>
+
+            <div class="col-md-3">
+              <div class="form-check">
+                <label class="form-check-label">
+                  {% render_field courseForm.is_timed class="form-check-input" %}
+                  Enable Time Limit
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="total_time_minutes">Time Limit (minutes)</label>
+                {% render_field courseForm.total_time_minutes class="form-control" placeholder="60" %}
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="security_level">Security Level</label>
+                {% render_field courseForm.security_level class="form-control" %}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Question Display Settings -->
+          <div class="row">
+            <div class="col-md-12">
+              <h4 style="margin-top:20px; color:#24b0ed;">Question Display Settings</h4>
+              <hr>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-check">
+                <label class="form-check-label">
+                  {% render_field courseForm.sequential_questions class="form-check-input" %}
+                  Display Questions One at a Time
+                </label>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="form-check">
+                <label class="form-check-label">
+                  {% render_field courseForm.allow_backtracking class="form-check-input" %}
+                  Allow Going Back to Previous Questions
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row" style="margin-top:20px;">
+            <div class="col-md-12">
+              <button type="submit" class="btn btn-primary btn-lg">ADD COURSE</button>
+              <a href="{% url 'admin-view-course' %}" class="btn btn-default btn-lg" style="margin-left:10px;">CANCEL</a>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
-    
+  </div>
+</div>
 
-    <button type="submit" class="btn btn-primary">ADD</button>
-  </form>
-<br><br><br>
+<script>
+  // Show/hide time limit field based on checkbox
+  $(document).ready(function() {
+    // Initially check if time limit is enabled
+    toggleTimeLimit();
+    
+    // Toggle on change
+    $("#id_is_timed").change(function() {
+      toggleTimeLimit();
+    });
+    
+    function toggleTimeLimit() {
+      if($("#id_is_timed").is(":checked")) {
+        $("#id_total_time_minutes").parent().parent().show();
+      } else {
+        $("#id_total_time_minutes").parent().parent().hide();
+      }
+    }
+  });
+</script>
 {% endblock content %}
