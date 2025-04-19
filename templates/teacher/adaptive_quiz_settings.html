@@ -40,7 +40,7 @@
     </div>
 
     {% for item in course_settings %}
-    <div class="card course-card mb-4">
+    <div class="card course-card mb-4 bg-c-pink text-light">
       <div class="card-header {% if item.settings.is_adaptive %}bg-c-blue{% else %}bg-c-purple{% endif %} text-white">
         <div class="d-flex justify-content-between align-items-center">
           <h4 class="mb-0">{{ item.course.course_name }}</h4>
