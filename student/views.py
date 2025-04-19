@@ -162,8 +162,8 @@ def start_sequential_exam_view(request, pk):
 
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
-@csrf_protect
 def calculate_marks_view(request):
+    # The function will accept both GET and POST methods
     if request.COOKIES.get('exam_total_time'):
         total_time = int(request.COOKIES.get('exam_total_time'))
     else:

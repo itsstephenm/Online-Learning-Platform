@@ -26,6 +26,9 @@ TEMPLATE_DIR = os.path.join(BASE_DIR,'templates')
 STATIC_DIR=os.path.join(BASE_DIR,'static')
 MEDIA_ROOT=os.path.join(BASE_DIR,'static')
 
+# Get the port from the environment or use 8000 as a default
+PORT = int(os.environ.get('PORT', 8000))
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -35,7 +38,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', '@k0#p3kidu)yaaa3u1hplxz)f@^6xiy384*(+n@@s5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['final-year-project-1hjs.onrender.com','*']
+# Add CSRF trusted origins for Render
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'http://localhost:8000',
+    f'http://localhost:{PORT}',
+]
+
+# Allow all hosts in Render
+ALLOWED_HOSTS = ['*']
 
 # DeepSeek AI Configuration
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')

@@ -21,6 +21,8 @@ services:
         value: "info"
       - key: DJANGO_SETTINGS_MODULE
         value: "final_year_project.settings"
+      - key: PORT
+        value: 10000
     plan: standard
     autoDeploy: true
     healthCheckPath: /
