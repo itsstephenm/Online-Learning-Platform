@@ -17,8 +17,5 @@ python manage.py migrate --no-input --timeout 120
 # Collect static files with max optimization
 python manage.py collectstatic --noinput --clear
 
-# Create cache table for database cache backend
-python manage.py createcachetable
-
 # Verify deployment readiness
 python manage.py check --deploy
