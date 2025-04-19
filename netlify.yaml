@@ -1,0 +1,7 @@
+build:
+  environment:
+    PYTHON_VERSION: "3.8"  # Fallback to an older, more commonly supported version
+
+  dependencies:
+    python:
+      - version: 3.8 

@@ -3,8 +3,11 @@
   publish = "staticfiles"
 
 [build.environment]
-  PYTHON_VERSION = "3.11"
+  PYTHON_VERSION = "3.8"
   NODE_VERSION = "16"
+  # Tell mise not to compile Python and use prebuilt versions
+  MISE_PYTHON_COMPILE = "false"
+  MISE_VERBOSE = "1"
 
 [[redirects]]
   from = "/*"

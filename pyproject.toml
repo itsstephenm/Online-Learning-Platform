@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "final_year_project"
+version = "0.1.0"
+description = "Final Year Project"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.9" 

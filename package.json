@@ -1,0 +1,15 @@
+{
+  "name": "final_year_project",
+  "version": "1.0.0",
+  "description": "Final Year Project",
+  "engines": {
+    "node": "16.x",
+    "python": "3.8.x"
+  },
+  "scripts": {
+    "start": "python manage.py runserver",
+    "build": "./build.sh"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+} 

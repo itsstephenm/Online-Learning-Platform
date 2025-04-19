@@ -6,16 +6,26 @@ echo "Starting build process..."
 
 # Setup environment for better performance
 export PYTHONUNBUFFERED=1
-export PYTHON_VERSION=${PYTHON_VERSION:-3.11}
 
-# Check Python version
+# Check Python version and try to use 3.8 if available
+if command -v python3.8 &>/dev/null; then
+  echo "Using Python 3.8"
+  PYTHON_CMD=python3.8
+elif command -v python3 &>/dev/null; then
+  echo "Using Python 3"
+  PYTHON_CMD=python3
+else
+  echo "Using system Python"
+  PYTHON_CMD=python
+fi
+
 echo "Python version:"
-python --version
+$PYTHON_CMD --version
 
 # Create and activate virtual environment if it doesn't exist
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment..."
-  python -m venv .venv
+  $PYTHON_CMD -m venv .venv
 fi
 
 # Activate virtual environment
