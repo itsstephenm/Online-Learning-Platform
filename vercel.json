@@ -2,11 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "final_year_project/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.8" }
-    },
-    {
       "src": "build.sh",
       "use": "@vercel/static-build",
       "config": {
@@ -17,14 +12,16 @@
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "final_year_project/wsgi.py"
+      "dest": "/index.html"
     }
   ],
   "env": {
-    "DJANGO_SETTINGS_MODULE": "final_year_project.settings"
+    "DJANGO_SETTINGS_MODULE": "final_year_project.settings",
+    "PYTHON_VERSION": "3.9",
+    "DISABLE_COLLECTSTATIC": "1"
   }
 } 

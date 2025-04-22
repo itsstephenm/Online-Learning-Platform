@@ -6,51 +6,57 @@ echo "Starting build process..."
 
 # Setup environment for better performance
 export PYTHONUNBUFFERED=1
+export PYTHON_VERSION=${PYTHON_VERSION:-3.8}
 
-# Check Python version and try to use 3.8 if available
-if command -v python3.8 &>/dev/null; then
-  echo "Using Python 3.8"
-  PYTHON_CMD=python3.8
-elif command -v python3 &>/dev/null; then
-  echo "Using Python 3"
-  PYTHON_CMD=python3
-else
-  echo "Using system Python"
-  PYTHON_CMD=python
-fi
-
+# Check Python version
 echo "Python version:"
-$PYTHON_CMD --version
+python --version
 
 # Create and activate virtual environment if it doesn't exist
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment..."
-  $PYTHON_CMD -m venv .venv
+  python -m venv .venv
 fi
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-source .venv/bin/activate
+source .venv/bin/activate || true
 
 # Install dependencies
 echo "Installing dependencies..."
 python -m pip install --upgrade pip
 
+# Check if we're on Vercel
+if [ -n "$VERCEL" ] || [ -n "$VERCEL_ENV" ]; then
+  echo "Detected Vercel environment, using Vercel-specific requirements..."
+  if [ -f "requirements-vercel.txt" ]; then
+    python -m pip install -r requirements-vercel.txt
+  else
+    echo "Warning: requirements-vercel.txt not found, using standard requirements..."
+    python -m pip install -r requirements.txt
+  fi
 # Check if we're on Netlify
-if [ -n "$NETLIFY" ]; then
+elif [ -n "$NETLIFY" ]; then
   echo "Detected Netlify environment, using Netlify-specific requirements..."
-  python -m pip install -r requirements-netlify.txt
+  if [ -f "requirements-netlify.txt" ]; then
+    python -m pip install -r requirements-netlify.txt
+  else
+    echo "Using standard requirements..."
+    python -m pip install -r requirements.txt
+  fi
 else
   echo "Using standard requirements..."
   python -m pip install -r requirements.txt
 fi
 
-# Create .env file from Netlify environment variables if it doesn't exist
+# Create .env file from environment variables if it doesn't exist
 if [ ! -f ".env" ]; then
   echo "Creating .env file from environment variables..."
-  echo "SECRET_KEY='$SECRET_KEY'" > .env
+  echo "SECRET_KEY='${SECRET_KEY:-YOUR_SECRET_KEY}'" > .env
   echo "DEBUG=False" >> .env
-  echo "DATABASE_URL='$DATABASE_URL'" >> .env
+  if [ -n "$DATABASE_URL" ]; then
+    echo "DATABASE_URL='$DATABASE_URL'" >> .env
+  fi
 fi
 
 # Apply database migrations
