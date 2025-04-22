@@ -4,12 +4,23 @@ from django.utils import timezone # type: ignore
 import logging
 import random
 from openai import OpenAI
-from decouple import config
-from quiz.models import Course, Question, AIGeneratedExam
+import os
 
 logger = logging.getLogger(__name__)
 
 # Get OpenRouter API configuration from settings
+try:
+    from decouple import config
+except ImportError:
+    # Fallback function if decouple is not available
+    def config(key, default=None, cast=None):
+        value = os.environ.get(key, default)
+        if cast and value is not None and cast != bool:
+            value = cast(value)
+        elif cast == bool and isinstance(value, str):
+            value = value.lower() in ('true', 'yes', '1')
+        return value
+
 OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')
 OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 

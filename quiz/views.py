@@ -31,6 +31,18 @@ import docx2txt
 from io import BytesIO
 from teacher.ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam
 
+try:
+    from decouple import config
+except ImportError:
+    # Fallback function if decouple is not available
+    def config(key, default=None, cast=None):
+        value = os.environ.get(key, default)
+        if cast and value is not None and cast != bool:
+            value = cast(value)
+        elif cast == bool and isinstance(value, str):
+            value = value.lower() in ('true', 'yes', '1')
+        return value
+
 def home_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('afterlogin')

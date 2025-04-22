@@ -79,3 +79,6 @@ else
 fi
 
 echo "Build completed successfully!"
+
+# This line is added to trigger a new build on Render
+echo "Running build script with python-decouple support..."

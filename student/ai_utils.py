@@ -7,7 +7,20 @@ from .models import AIChatHistory, AIUsageAnalytics
 import logging
 import random
 from openai import OpenAI, OpenAIError
-from decouple import config
+import os
+import base64
+import re
+try:
+    from decouple import config
+except ImportError:
+    # Fallback function if decouple is not available
+    def config(key, default=None, cast=None):
+        value = os.environ.get(key, default)
+        if cast and value is not None and cast != bool:
+            value = cast(value)
+        elif cast == bool and isinstance(value, str):
+            value = value.lower() in ('true', 'yes', '1')
+        return value
 
 logger = logging.getLogger(__name__)
 

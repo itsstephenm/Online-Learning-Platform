@@ -14,7 +14,7 @@ from .ai_utils import get_ai_response, get_student_ai_insights, extract_topics
 import json
 import logging
 import requests
-from decouple import config
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -620,3 +620,15 @@ def check_ai_connection_view(request):
     except Exception as e:
         logger.error(f"Unexpected error checking AI connection: {str(e)}")
         return JsonResponse({'connected': False, 'error': str(e)})
+
+try:
+    from decouple import config
+except ImportError:
+    # Fallback function if decouple is not available
+    def config(key, default=None, cast=None):
+        value = os.environ.get(key, default)
+        if cast and value is not None and cast != bool:
+            value = cast(value)
+        elif cast == bool and isinstance(value, str):
+            value = value.lower() in ('true', 'yes', '1')
+        return value
