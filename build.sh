@@ -68,8 +68,14 @@ python manage.py migrate --no-input || {
 
 # Collect static files
 echo "Collecting static files..."
-python manage.py collectstatic --noinput --clear || {
+if [ -n "$VERCEL" ] || [ -n "$VERCEL_ENV" ]; then
+  echo "Collecting static files for Vercel..."
+  export DJANGO_SETTINGS_MODULE=final_year_project.vercel_settings
+  python manage.py collectstatic --noinput --clear
+else
+  python manage.py collectstatic --noinput --clear || {
     echo "Warning: Failed to collect static files. Continuing anyway."
-}
+  }
+fi
 
 echo "Build completed successfully!"
