@@ -3,7 +3,7 @@ services:
     name: final_year_project
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn final_year_project.wsgi:application --timeout 60 --workers 2 --log-level info"
+    startCommand: "gunicorn final_year_project.wsgi:application --bind=0.0.0.0:10000 --timeout 60 --workers 2 --log-level info"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -23,7 +23,7 @@ services:
         value: "final_year_project.settings"
     plan: starter
     autoDeploy: true
-    healthCheckPath: /
+    healthCheckPath: /admin/login/
     scaling:
       minInstances: 1
       maxInstances: 1

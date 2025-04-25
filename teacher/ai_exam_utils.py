@@ -26,6 +26,7 @@ OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 
 # Initialize OpenAI client if needed
 try:
+    # Simple initialization without extra parameters that might cause issues
     openai_client = OpenAI(api_key=OPENROUTER_API_KEY)
     logger.info("Successfully initialized OpenAI client")
 except Exception as e:

@@ -36,7 +36,11 @@ class MemoryUsageMiddleware:
             
             snapshot1 = None
             if self.trace_memory and tracemalloc.is_tracing():
-                snapshot1 = tracemalloc.take_snapshot()
+                try:
+                    snapshot1 = tracemalloc.take_snapshot()
+                except Exception as e:
+                    logger.error(f"Error taking tracemalloc snapshot: {str(e)}")
+                    snapshot1 = None
             
             # Process the request
             response = self.get_response(request)

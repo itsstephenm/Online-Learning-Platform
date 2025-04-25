@@ -7,6 +7,9 @@ echo "Starting build process..."
 # Setup environment for better performance
 export PYTHONUNBUFFERED=1
 export PYTHON_VERSION=${PYTHON_VERSION:-3.11.8}
+export PYTHONDONTWRITEBYTECODE=1  # Don't write .pyc files
+export MPLCONFIGDIR=/tmp          # For matplotlib
+export NUMBA_CACHE_DIR=/tmp       # For numba (if used)
 
 # Check Python version
 echo "Python version:"
@@ -36,6 +39,10 @@ if [ ! -f ".env" ]; then
   echo "SECRET_KEY='${SECRET_KEY:-YOUR_SECRET_KEY}'" > .env
   echo "DEBUG=False" >> .env
   echo "PORT=${PORT:-10000}" >> .env
+  
+  # Add specific settings to avoid proxy issues with OpenAI
+  echo "OPENAI_API_BASE=https://openrouter.ai/api/v1" >> .env
+  
   if [ -n "$DATABASE_URL" ]; then
     echo "DATABASE_URL='$DATABASE_URL'" >> .env
   fi

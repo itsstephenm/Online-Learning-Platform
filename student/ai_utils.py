@@ -29,22 +29,23 @@ OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')
 OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 
 # Initialize OpenAI client with DeepInfra configuration
-client = OpenAI(
-    api_key=OPENROUTER_API_KEY,
-    base_url="https://openrouter.ai/api/v1/chat/completions",
-    default_headers={
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}"
-    }
-)
-
 try:
-    # Test to ensure client initialization works
+    # Simple initialization without extra parameters that might cause issues
+    client = OpenAI(api_key=OPENROUTER_API_KEY)
+    
+    # If needed, we can add base_url and headers later
+    client.base_url = "https://openrouter.ai/api/v1/chat/completions"
+    client.default_headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "http://localhost:3000"
+    }
+    
     logger.info("Successfully initialized OpenAI client for OpenRouter")
 except Exception as e:
     logger.error(f"Error initializing OpenAI client: {str(e)}")
-    # Initialize with just API key as fallback
-    client = OpenAI(api_key=OPENROUTER_API_KEY)
-    logger.info("Using fallback OpenAI client initialization")
+    # Fallback to None, we'll use requests directly
+    client = None
+    logger.info("Using fallback direct API requests")
 
 # Mock responses for different subjects
 MOCK_RESPONSES = {

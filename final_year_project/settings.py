@@ -14,7 +14,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import requests
-from openai import OpenAI
 import dj_database_url
 
 # Load environment variables from .env file
@@ -53,7 +52,7 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 OPENROUTER_MODEL_ID = os.getenv('OPENROUTER_MODEL_ID')
 OPENROUTER_MODEL_NAME = os.getenv('OPENROUTER_MODEL_NAME')
 
-# Example function to send a request
+# Example function to send a request using requests library directly (without OpenAI client)
 def get_chat_completion(question):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
