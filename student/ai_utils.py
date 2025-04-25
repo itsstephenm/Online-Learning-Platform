@@ -37,6 +37,15 @@ client = OpenAI(
     }
 )
 
+try:
+    # Test to ensure client initialization works
+    logger.info("Successfully initialized OpenAI client for OpenRouter")
+except Exception as e:
+    logger.error(f"Error initializing OpenAI client: {str(e)}")
+    # Initialize with just API key as fallback
+    client = OpenAI(api_key=OPENROUTER_API_KEY)
+    logger.info("Using fallback OpenAI client initialization")
+
 # Mock responses for different subjects
 MOCK_RESPONSES = {
     'math': [

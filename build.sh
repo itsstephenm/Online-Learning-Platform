@@ -35,6 +35,7 @@ if [ ! -f ".env" ]; then
   echo "Creating .env file from environment variables..."
   echo "SECRET_KEY='${SECRET_KEY:-YOUR_SECRET_KEY}'" > .env
   echo "DEBUG=False" >> .env
+  echo "PORT=${PORT:-10000}" >> .env
   if [ -n "$DATABASE_URL" ]; then
     echo "DATABASE_URL='$DATABASE_URL'" >> .env
   fi

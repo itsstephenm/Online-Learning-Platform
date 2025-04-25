@@ -1,1 +1,1 @@
-web: gunicorn -c gunicorn.conf.py final_year_project.wsgi:application 
+web: gunicorn final_year_project.wsgi:application --timeout 90 --workers 2 --log-level info 

@@ -24,6 +24,14 @@ except ImportError:
 OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')
 OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 
+# Initialize OpenAI client if needed
+try:
+    openai_client = OpenAI(api_key=OPENROUTER_API_KEY)
+    logger.info("Successfully initialized OpenAI client")
+except Exception as e:
+    logger.error(f"Error initializing OpenAI client: {str(e)}")
+    openai_client = None
+
 def get_ai_exam_questions(course, difficulty, num_questions=10, reference_text=None):
     """
     Generate exam questions using AI based on the course and difficulty.
