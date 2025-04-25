@@ -1,1 +1,1 @@
-web: gunicorn final_year_project.wsgi:application 
+web: gunicorn -c gunicorn.conf.py final_year_project.wsgi:application 
