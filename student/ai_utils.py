@@ -6,10 +6,12 @@ from django.utils import timezone
 from .models import AIChatHistory, AIUsageAnalytics
 import logging
 import random
+import openai
 from openai import OpenAI, OpenAIError
 import os
 import base64
 import re
+
 try:
     from decouple import config
 except ImportError:
@@ -31,21 +33,23 @@ OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 # Initialize OpenAI client with DeepInfra configuration
 try:
     # Simple initialization without extra parameters that might cause issues
-    client = OpenAI(api_key=OPENROUTER_API_KEY)
+    openai.api_key = OPENROUTER_API_KEY
+    openai.api_base = "https://openrouter.ai/api/v1"
     
-    # If needed, we can add base_url and headers later
-    client.base_url = "https://openrouter.ai/api/v1/chat/completions"
-    client.default_headers = {
+    # Optional: If OpenRouter requires Referer header
+    openai.requestssession = requests.Session()
+    openai.requestssession.headers.update({
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "HTTP-Referer": "http://localhost:3000"
-    }
-    
+    })
+
     logger.info("Successfully initialized OpenAI client for OpenRouter")
 except Exception as e:
     logger.error(f"Error initializing OpenAI client: {str(e)}")
     # Fallback to None, we'll use requests directly
-    client = None
+    openai_client = None
     logger.info("Using fallback direct API requests")
+
 
 # Mock responses for different subjects
 MOCK_RESPONSES = {
