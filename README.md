@@ -15,6 +15,7 @@
 ---
 ## Functions
 ### Admin
+-these are for mac
 - Create Admin account using command
 ```
 py manage.py createsuperuser

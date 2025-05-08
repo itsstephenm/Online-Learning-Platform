@@ -1,9 +1,10 @@
-import requests # type: ignore
-from django.conf import settings # type: ignore
-from django.utils import timezone # type: ignore
+import requests
+from django.conf import settings
+from django.utils import timezone
 import logging
 import random
-from openai import OpenAI
+import openai  # Import the correct openai module
+from openai import OpenAI # To catch OpenAI-specific errors
 import os
 
 logger = logging.getLogger(__name__)
@@ -24,14 +25,26 @@ except ImportError:
 OPENROUTER_API_KEY = config('OPENROUTER_API_KEY')
 OPENROUTER_MODEL_NAME = config('OPENROUTER_MODEL_NAME')
 
-# Initialize OpenAI client if needed
+# Initialize OpenAI client with OpenRouter configuration
 try:
     # Simple initialization without extra parameters that might cause issues
-    openai_client = OpenAI(api_key=OPENROUTER_API_KEY)
-    logger.info("Successfully initialized OpenAI client")
+    openai.api_key = OPENROUTER_API_KEY
+    openai.api_base = "https://openrouter.ai/api/v1"
+    
+    # Optional: If OpenRouter requires Referer header
+    openai.requestssession = requests.Session()
+    openai.requestssession.headers.update({
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "http://localhost:3000"
+    })
+
+    logger.info("Successfully initialized OpenAI client for OpenRouter")
 except Exception as e:
     logger.error(f"Error initializing OpenAI client: {str(e)}")
+    # Fallback to None, we'll use requests directly
     openai_client = None
+    logger.info("Using fallback direct API requests")
+
 
 def get_ai_exam_questions(course, difficulty, num_questions=10, reference_text=None):
     """
