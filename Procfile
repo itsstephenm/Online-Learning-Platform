@@ -1,1 +1,0 @@
-web: gunicorn final_year_project.wsgi:application --bind=0.0.0.0:10000 --timeout 60 --workers 2 --log-level info 
