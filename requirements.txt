@@ -19,6 +19,7 @@ requests==2.31.0
 openai==1.13.3
 pandas==2.2.3
 numpy==1.26.4
+gevent==23.9.1
 
 # Optional packages - comment out if issues arise
 # django-debug-toolbar==4.3.0
