@@ -1,85 +1,17 @@
-#!/usr/bin/env bash
-# exit on error
-set -eo pipefail
+#!/bin/bash
+set -o errexit
 
-echo "Starting build process..."
-
-# Setup environment for better performance
-export PYTHONUNBUFFERED=1
-export PYTHON_VERSION=${PYTHON_VERSION:-3.11.8}
-export PYTHONDONTWRITEBYTECODE=1  # Don't write .pyc files
-export MPLCONFIGDIR=/tmp          # For matplotlib
-export NUMBA_CACHE_DIR=/tmp       # For numba (if used)
-
-# Check Python version
-echo "Python version:"
-python --version
-
-# Create and activate virtual environment if it doesn't exist
-if [ ! -d ".venv" ]; then
-  echo "Creating virtual environment..."
-  python -m venv .venv
-fi
-
-# Activate virtual environment
-echo "Activating virtual environment..."
-source .venv/bin/activate || true
-
-# Install dependencies
 echo "Installing dependencies..."
-python -m pip install --upgrade pip
+pip install -r requirements.txt
 
-# Install requirements
-echo "Using standard requirements..."
-python -m pip install -r requirements.txt
+echo "Setting up environment variables..."
+export DJANGO_SETTINGS_MODULE="final_year_project.settings"
 
-# Create .env file from environment variables if it doesn't exist
-if [ ! -f ".env" ]; then
-  echo "Creating .env file from environment variables..."
-  echo "SECRET_KEY='${SECRET_KEY:-YOUR_SECRET_KEY}'" > .env
-  echo "DEBUG=False" >> .env
-  echo "PORT=${PORT:-10000}" >> .env
-  echo "USE_SQLITE=True" >> .env
-  
-  # Add specific settings to avoid proxy issues with OpenAI
-  echo "OPENAI_API_BASE=https://openrouter.ai/api/v1" >> .env
-  
-  if [ -n "$DATABASE_URL" ]; then
-    echo "DATABASE_URL='$DATABASE_URL'" >> .env
-  fi
-fi
-
-# Setup persistent SQLite database
-if [ "$USE_SQLITE" = "True" ]; then
-  echo "Configuring SQLite database..."
-  # Ensure data directory exists
-  mkdir -p /data
-  
-  # If there's no database in the persistent storage, copy the existing one
-  if [ ! -f "/data/db.sqlite3" ] && [ -f "db.sqlite3" ]; then
-    echo "Copying existing database to persistent storage..."
-    cp db.sqlite3 /data/db.sqlite3
-  fi
-  
-  # If we're using a persistent database, create a symbolic link
-  if [ -f "/data/db.sqlite3" ]; then
-    echo "Linking to persistent database..."
-    ln -sf /data/db.sqlite3 db.sqlite3
-  fi
-fi
-
-# Apply database migrations
-echo "Applying database migrations..."
-python manage.py migrate --no-input || {
-    echo "Failed to apply migrations. Will try again without timeout."
-    python manage.py migrate --no-input
-}
-
-# Collect static files
 echo "Collecting static files..."
-python manage.py collectstatic --noinput --clear || {
-  echo "Warning: Failed to collect static files. Continuing anyway."
-}
+python manage.py collectstatic --noinput
+
+echo "Running database migrations..."
+python manage.py migrate --noinput
 
 echo "Build completed successfully!"
 

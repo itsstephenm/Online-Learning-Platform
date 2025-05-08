@@ -3,7 +3,7 @@ services:
     name: final_year_project
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn app:app --bind=0.0.0.0:$PORT --timeout 60 --workers 2 --log-level info"
+    startCommand: "gunicorn app:app --bind=0.0.0.0:$PORT --timeout 120 --workers 1 --log-level debug"
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -12,13 +12,17 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.8
       - key: WEB_CONCURRENCY
-        value: 2
+        value: 1
       - key: PORT
         value: 10000
       - key: DJANGO_SETTINGS_MODULE
         value: "final_year_project.settings"
       - key: USE_SQLITE
         value: "True"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHONDONTWRITEBYTECODE
+        value: "1"
     plan: basic
     autoDeploy: true
     healthCheckPath: /admin/login/
