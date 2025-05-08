@@ -1,0 +1,37 @@
+# Enable mod_wsgi for Python
+AddHandler wsgi-script .py
+Options -Indexes +ExecCGI
+
+# Rewrite requests to WSGI application
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ /app.py/$1 [QSA,L]
+
+# Protect Django settings files
+<Files "settings.py">
+Order Allow,Deny
+Deny from all
+</Files>
+
+# Protect Python files
+<FilesMatch "\.(py|pyc|pyo)$">
+Order Allow,Deny
+Allow from none
+Deny from all
+</FilesMatch>
+
+# Allow accessing the .py WSGI entry point
+<Files "app.py">
+Order Allow,Deny
+Allow from all
+</Files>
+
+# Serve static files directly
+<IfModule mod_alias.c>
+    Alias /static/ /home/username/public_html/static/
+</IfModule>
+
+# Compress files to improve performance
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript
+</IfModule> 

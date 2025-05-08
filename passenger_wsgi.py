@@ -1,18 +1,17 @@
-# Django WSGI entry point for cPanel
 import os
 import sys
 
 # Add your project directory to the sys.path
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+path = os.path.dirname(os.path.abspath(__file__))
 if path not in sys.path:
     sys.path.append(path)
 
-# Set the Django settings module
+# Point to the correct settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "final_year_project.settings")
 
 # Get the Django WSGI application
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 
-# cPanel uses this as the WSGI entry point
-app = application 
+# Passenger web server needs this variable
+from app import application as passenger_wsgi 
