@@ -39,12 +39,32 @@ if [ ! -f ".env" ]; then
   echo "SECRET_KEY='${SECRET_KEY:-YOUR_SECRET_KEY}'" > .env
   echo "DEBUG=False" >> .env
   echo "PORT=${PORT:-10000}" >> .env
+  echo "USE_SQLITE=True" >> .env
   
   # Add specific settings to avoid proxy issues with OpenAI
   echo "OPENAI_API_BASE=https://openrouter.ai/api/v1" >> .env
   
   if [ -n "$DATABASE_URL" ]; then
     echo "DATABASE_URL='$DATABASE_URL'" >> .env
+  fi
+fi
+
+# Setup persistent SQLite database
+if [ "$USE_SQLITE" = "True" ]; then
+  echo "Configuring SQLite database..."
+  # Ensure data directory exists
+  mkdir -p /data
+  
+  # If there's no database in the persistent storage, copy the existing one
+  if [ ! -f "/data/db.sqlite3" ] && [ -f "db.sqlite3" ]; then
+    echo "Copying existing database to persistent storage..."
+    cp db.sqlite3 /data/db.sqlite3
+  fi
+  
+  # If we're using a persistent database, create a symbolic link
+  if [ -f "/data/db.sqlite3" ]; then
+    echo "Linking to persistent database..."
+    ln -sf /data/db.sqlite3 db.sqlite3
   fi
 fi
 
