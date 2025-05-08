@@ -3,7 +3,7 @@ services:
     name: final_year_project
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn final_year_project.wsgi:application --bind=0.0.0.0:$PORT --timeout 60 --workers 2 --log-level info"
+    startCommand: "gunicorn app:app --bind=0.0.0.0:$PORT --timeout 60 --workers 2 --log-level info"
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -29,10 +29,4 @@ services:
     disk:
       name: sqlite_data
       mountPath: /data
-      sizeGB: 1
-
-databases:
-  - name: final_year_project_db
-    databaseName: final_year_project
-    user: final_year_project
-    plan: starter 
+      sizeGB: 1 
