@@ -1,49 +1,101 @@
 # Online Examination System - Use Case Diagram
 
 ```mermaid
-graph TD
-    %% Actors
-    Student((Student))
-    Teacher((Teacher))
-    Admin((Admin))
-    AISystem((AI System))
+graph LR
+    %% Actor
+    User((User))
+    
+    %% Use cases in horizontal ovals
+    UC1>"create account"]
+    UC2>"Login"]
+    UC3>"View Available Courses"]
+    UC4>"Take Standard Exam"]
+    UC5>"Take Adaptive Exam"]
+    UC6>"View Exam Results"]
+    UC7>"Request AI Explanations"]
+    UC8>"Use AI Tutor"]
+    UC9>"Practice with Generated Questions"]
+    UC10>"Manage Courses"]
+    UC11>"Create Exam Manually"]
+    UC12>"Generate Exam with AI"]
+    
+    %% System boundary rectangle
+    subgraph System
+        UC1
+        UC2
+        UC3
+        UC4
+        UC5
+        UC6
+        UC7
+        UC8
+        UC9
+        UC10
+        UC11
+        UC12
+    end
+    
+    %% Connections
+    User --- UC1
+    User --- UC2
+    User --- UC3
+    User --- UC4
+    User --- UC5
+    User --- UC6
+    User --- UC7
+    User --- UC8
+    User --- UC9
+    User --- UC10
+    User --- UC11
+    User --- UC12
+    
+    %% Styling - black and white only
+    classDef default fill:white,stroke:black,stroke-width:1px
+    classDef actor fill:white,stroke:black,stroke-width:1px
+    classDef boundary fill:none,stroke:black,stroke-width:1px
+    
+    class User actor
+    class System boundary
+```
 
-    %% Use Cases - Authentication
-    UC1[Login to System]
-    UC2[Manage Profile]
+## Student View Use Case Diagram
+
+```mermaid
+graph LR
+    %% Actor
+    Student((Student))
     
-    %% Use Cases - Student Functions
-    UC3[View Available Courses]
-    UC4[Take Standard Exam]
-    UC5[Take Adaptive Exam]
-    UC6[View Exam Results]
-    UC7[Request AI Explanations]
-    UC8[Use AI Tutor]
-    UC9[Practice with Generated Questions]
+    %% Use cases in horizontal ovals
+    UC1>"create account"]
+    UC2>"Login"]
+    UC3>"View Available Courses"]
+    UC4>"Take Standard Exam"]
+    UC5>"Take Adaptive Exam"]
+    UC6>"View Exam Results"]
+    UC7>"Request AI Explanations"]
+    UC8>"Use AI Tutor"]
+    UC9>"Practice with Generated Questions"]
+    UC10>"View profile"]
+    UC11>"Update profile"]
+    UC12>"Log out"]
     
-    %% Use Cases - Teacher Functions
-    UC10[Manage Courses]
-    UC11[Create Exam Manually]
-    UC12[Generate Exam with AI]
-    UC13[Review and Edit Exams]
-    UC14[Configure Adaptive Settings]
-    UC15[View Student Results]
-    UC16[Notify Students]
+    %% System boundary rectangle
+    subgraph System
+        UC1
+        UC2
+        UC3
+        UC4
+        UC5
+        UC6
+        UC7
+        UC8
+        UC9
+        UC10
+        UC11
+        UC12
+    end
     
-    %% Use Cases - Admin Functions
-    UC17[Manage User Accounts]
-    UC18[Configure System Settings]
-    UC19[Manage Departments]
-    UC20[View Usage Analytics]
-    
-    %% Use Cases - AI System Functions
-    UC21[Generate Questions]
-    UC22[Adapt Question Difficulty]
-    UC23[Provide Explanations]
-    UC24[Answer Student Queries]
-    UC25[Track Learning Patterns]
-    
-    %% Relationships - Student
+    %% Connections
     Student --- UC1
     Student --- UC2
     Student --- UC3
@@ -53,161 +105,125 @@ graph TD
     Student --- UC7
     Student --- UC8
     Student --- UC9
+    Student --- UC10
+    Student --- UC11
+    Student --- UC12
     
-    %% Relationships - Teacher
+    %% Styling - black and white only
+    classDef default fill:white,stroke:black,stroke-width:1px
+    classDef actor fill:white,stroke:black,stroke-width:1px
+    classDef boundary fill:none,stroke:black,stroke-width:1px
+    
+    class Student actor
+    class System boundary
+```
+
+## Teacher View Use Case Diagram
+
+```mermaid
+graph LR
+    %% Actor
+    Teacher((Teacher))
+    
+    %% Use cases in horizontal ovals
+    UC1>"create account"]
+    UC2>"Login"]
+    UC3>"Manage Courses"]
+    UC4>"Create Exam Manually"]
+    UC5>"Generate Exam with AI"]
+    UC6>"Review and Edit Exams"]
+    UC7>"Configure Adaptive Settings"]
+    UC8>"View Student Results"]
+    UC9>"Notify Students"]
+    UC10>"View profile"]
+    UC11>"Update profile"]
+    UC12>"Log out"]
+    
+    %% System boundary rectangle
+    subgraph System
+        UC1
+        UC2
+        UC3
+        UC4
+        UC5
+        UC6
+        UC7
+        UC8
+        UC9
+        UC10
+        UC11
+        UC12
+    end
+    
+    %% Connections
     Teacher --- UC1
     Teacher --- UC2
+    Teacher --- UC3
+    Teacher --- UC4
+    Teacher --- UC5
+    Teacher --- UC6
+    Teacher --- UC7
+    Teacher --- UC8
+    Teacher --- UC9
     Teacher --- UC10
     Teacher --- UC11
     Teacher --- UC12
-    Teacher --- UC13
-    Teacher --- UC14
-    Teacher --- UC15
-    Teacher --- UC16
     
-    %% Relationships - Admin
-    Admin --- UC1
-    Admin --- UC2
-    Admin --- UC17
-    Admin --- UC18
-    Admin --- UC19
-    Admin --- UC20
+    %% Styling - black and white only
+    classDef default fill:white,stroke:black,stroke-width:1px
+    classDef actor fill:white,stroke:black,stroke-width:1px
+    classDef boundary fill:none,stroke:black,stroke-width:1px
     
-    %% Relationships - AI System
-    AISystem --- UC21
-    AISystem --- UC22
-    AISystem --- UC23
-    AISystem --- UC24
-    AISystem --- UC25
-    
-    %% Extensions and Inclusions
-    UC5 -.-> UC4
-    UC7 -.-> UC6
-    UC9 -.-> UC8
-    UC12 -.-> UC13
-    UC14 -.-> UC13
-    UC21 -.-> UC12
-    UC22 -.-> UC5
-    UC23 -.-> UC7
-    UC24 -.-> UC8
-    UC25 -.-> UC20
-    
-    %% Styling
-    classDef actor fill:#f9f,stroke:#333,stroke-width:2px
-    classDef usecase fill:#ccf,stroke:#333,stroke-width:1px
-    
-    class Student,Teacher,Admin,AISystem actor
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18,UC19,UC20,UC21,UC22,UC23,UC24,UC25 usecase
+    class Teacher actor
+    class System boundary
 ```
 
-## Alternative UML-Style Use Case Diagram
+## Admin View Use Case Diagram
 
 ```mermaid
-flowchart TD
-    %% Define actors
-    student([Student])
-    teacher([Teacher])
-    admin([Admin])
-    ai([AI System])
+graph LR
+    %% Actor
+    Admin((Admin))
     
-    %% Define use case boundaries
-    subgraph Authentication
-        login["Login to System"]
-        profile["Manage Profile"]
+    %% Use cases in horizontal ovals
+    UC1>"Login"]
+    UC2>"Manage User Accounts"]
+    UC3>"Configure System Settings"]
+    UC4>"Manage Departments"]
+    UC5>"View Usage Analytics"]
+    UC6>"View profile"]
+    UC7>"Update profile"]
+    UC8>"Log out"]
+    
+    %% System boundary rectangle
+    subgraph System
+        UC1
+        UC2
+        UC3
+        UC4
+        UC5
+        UC6
+        UC7
+        UC8
     end
     
-    subgraph "Exam Taking"
-        viewCourses["View Available Courses"]
-        takeStandardExam["Take Standard Exam"]
-        takeAdaptiveExam["Take Adaptive Exam"]
-        viewResults["View Exam Results"]
-        getAIExplanation["Request AI Explanations"]
-    end
+    %% Connections
+    Admin --- UC1
+    Admin --- UC2
+    Admin --- UC3
+    Admin --- UC4
+    Admin --- UC5
+    Admin --- UC6
+    Admin --- UC7
+    Admin --- UC8
     
-    subgraph "AI Learning Support"
-        useAITutor["Use AI Tutor"]
-        practiceQuestions["Practice with Generated Questions"]
-    end
+    %% Styling - black and white only
+    classDef default fill:white,stroke:black,stroke-width:1px
+    classDef actor fill:white,stroke:black,stroke-width:1px
+    classDef boundary fill:none,stroke:black,stroke-width:1px
     
-    subgraph "Course & Exam Management"
-        manageCourses["Manage Courses"]
-        createExam["Create Exam Manually"]
-        generateAIExam["Generate Exam with AI"]
-        reviewEditExam["Review and Edit Exams"]
-        adaptiveSettings["Configure Adaptive Settings"]
-        viewStudentResults["View Student Results"]
-        notifyStudents["Notify Students"]
-    end
-    
-    subgraph "System Administration"
-        manageUsers["Manage User Accounts"]
-        configureSystem["Configure System Settings"]
-        manageDepartments["Manage Departments"]
-        viewAnalytics["View Usage Analytics"]
-    end
-    
-    subgraph "AI System Services"
-        generateQuestions["Generate Questions"]
-        adaptDifficulty["Adapt Question Difficulty"]
-        provideExplanations["Provide Explanations"]
-        answerQueries["Answer Student Queries"]
-        trackPatterns["Track Learning Patterns"]
-    end
-    
-    %% Connect actors to use cases
-    student --- login
-    student --- profile
-    student --- viewCourses
-    student --- takeStandardExam
-    student --- takeAdaptiveExam
-    student --- viewResults
-    student --- getAIExplanation
-    student --- useAITutor
-    student --- practiceQuestions
-    
-    teacher --- login
-    teacher --- profile
-    teacher --- manageCourses
-    teacher --- createExam
-    teacher --- generateAIExam
-    teacher --- reviewEditExam
-    teacher --- adaptiveSettings
-    teacher --- viewStudentResults
-    teacher --- notifyStudents
-    
-    admin --- login
-    admin --- profile
-    admin --- manageUsers
-    admin --- configureSystem
-    admin --- manageDepartments
-    admin --- viewAnalytics
-    
-    ai --- generateQuestions
-    ai --- adaptDifficulty
-    ai --- provideExplanations
-    ai --- answerQueries
-    ai --- trackPatterns
-    
-    %% Connect related use cases with dotted lines (extensions/inclusions)
-    takeAdaptiveExam -.-> takeStandardExam
-    getAIExplanation -.-> viewResults
-    practiceQuestions -.-> useAITutor
-    generateAIExam -.-> reviewEditExam
-    adaptiveSettings -.-> reviewEditExam
-    generateQuestions -.-> generateAIExam
-    adaptDifficulty -.-> takeAdaptiveExam
-    provideExplanations -.-> getAIExplanation
-    answerQueries -.-> useAITutor
-    trackPatterns -.-> viewAnalytics
-    
-    %% Styling
-    classDef actor fill:#f9f,stroke:#333,stroke-width:2px
-    classDef usecase fill:#ccf,stroke:#333,stroke-width:1px
-    classDef boundary fill:none,stroke:#333,stroke-width:1px
-    
-    class student,teacher,admin,ai actor
-    class login,profile,viewCourses,takeStandardExam,takeAdaptiveExam,viewResults,getAIExplanation,useAITutor,practiceQuestions,manageCourses,createExam,generateAIExam,reviewEditExam,adaptiveSettings,viewStudentResults,notifyStudents,manageUsers,configureSystem,manageDepartments,viewAnalytics,generateQuestions,adaptDifficulty,provideExplanations,answerQueries,trackPatterns usecase
-    class Authentication,ExamTaking,AILearningSupport,CourseExamManagement,SystemAdministration,AISystemServices boundary
+    class Admin actor
+    class System boundary
 ```
 
 ## Use Case Description
