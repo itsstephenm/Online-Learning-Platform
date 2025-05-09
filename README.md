@@ -36,6 +36,9 @@ py manage.py createsuperuser
 - Can View And Delete Questions Too.
 - Can Also See Student Marks.
 - Can Check Student Perfomance On The Courses
+- Can Generate Exams Automatically using AI with customizable difficulty levels
+- Can Create Adaptive Exam Settings for personalized student assessment
+- Can Use Uploaded Reference Materials for AI to Generate Relevant Questions
 > **_NOTE:_**  Basically Admin Will Hire Teachers To Manage Courses and Questions.
 
 ### Student
@@ -44,7 +47,9 @@ py manage.py createsuperuser
 - Can Answer Exam Any Time, There Is No Limit On Number Of Attempt.
 - Can View Marks Of Each Attempt Of Each Exam.
 - Question Pattern Is MCQ With 4 Options And 1 Correct Answer.
-- Can Chat With AI To Gain More Information.
+- Can Chat With AI Assistant to help with exam preparation and studying
+- Can Ask AI Questions about specific course topics and content
+- Can View Their AI Usage Analytics to track interactions and topics covered
 ---
 
 ## HOW TO RUN THIS PROJECT
