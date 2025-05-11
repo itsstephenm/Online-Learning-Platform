@@ -128,11 +128,22 @@ def get_ai_response(question, student, course=None):
         logger.info("No Deepseek API key configured, using mock responses")
         response = get_mock_response(question, course)
     else:
+        # Get recent conversation history for context
+        recent_history = AIChatHistory.objects.filter(student=student).order_by('-timestamp')[:5]
+        conversation_context = []
+        
+        # Build conversation context from recent messages (from oldest to newest)
+        for chat in reversed(list(recent_history)):
+            conversation_context.append({"role": "user", "content": chat.question})
+            conversation_context.append({"role": "assistant", "content": chat.answer})
+        
         system_message = """You are a helpful AI tutor assisting students with their quiz preparation. 
-        Provide clear, concise, and accurate answers. 
+        Your goal is to directly answer the student's questions and provide relevant information.
+        Always respond specifically to what the student is asking, even if they just say 'hello' or ask a simple question.
         Format your responses in markdown for better readability.
         Ensure your responses are complete and not cut off.
-        If you're explaining code, use proper code blocks with language specification."""
+        If you're explaining code, use proper code blocks with language specification.
+        Maintain a friendly, helpful tone and adjust your response length and complexity based on the student's question."""
         
         if course:
             system_message += f" The student is asking about the course: {course.course_name}"
@@ -147,12 +158,21 @@ def get_ai_response(question, student, course=None):
                 'Content-Type': 'application/json',
                 'HTTP-Referer': 'http://localhost:3000'
             }
+            
+            # Prepare messages array with system message, conversation history, and current question
+            messages = [{"role": "system", "content": system_message}]
+            
+            # Add conversation history if available (limited to prevent token overflow)
+            if conversation_context:
+                # Only include the last 2 exchanges to avoid token limits
+                messages.extend(conversation_context[-4:])
+            
+            # Add the current question
+            messages.append({"role": "user", "content": question})
+            
             payload = {
                 "model": OPENROUTER_MODEL_NAME,
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": question}
-                ],
+                "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 2000,
                 "top_p": 0.95,

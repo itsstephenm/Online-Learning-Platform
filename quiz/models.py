@@ -7,6 +7,7 @@ from django.utils import timezone
 
 class Course(models.Model):
    course_name = models.CharField(max_length=50)
+   title = models.CharField(max_length=200, default="", help_text="Course title")
    question_number = models.PositiveIntegerField()
    total_marks = models.PositiveIntegerField()
    # New fields for timed quiz functionality

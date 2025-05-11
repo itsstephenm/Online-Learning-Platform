@@ -13,7 +13,7 @@ import json
 import docx2txt
 import PyPDF2
 from io import BytesIO
-from .ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam
+from .ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam, check_ai_service_status
 from django.contrib import messages
 
 
@@ -609,3 +609,10 @@ def adaptive_quiz_settings_view(request):
     }
     
     return render(request, 'teacher/adaptive_quiz_settings.html', context)
+
+@login_required(login_url='teacherlogin')
+@user_passes_test(is_teacher)
+def get_ai_status_view(request):
+    """View to get AI service status"""
+    status = check_ai_service_status()
+    return JsonResponse(status)

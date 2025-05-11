@@ -13,10 +13,11 @@ class TeacherSalaryForm(forms.Form):
 class CourseForm(forms.ModelForm):
     class Meta:
         model=models.Course
-        fields=['course_name','question_number','total_marks',
+        fields=['course_name', 'title', 'question_number','total_marks',
                 'is_timed','total_time_minutes','sequential_questions',
                 'allow_backtracking','security_level']
         widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'id': 'title'}),
             'is_timed': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'is_timed'}),
             'sequential_questions': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'sequential_questions'}),
             'allow_backtracking': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'allow_backtracking'}),
@@ -24,6 +25,7 @@ class CourseForm(forms.ModelForm):
             'security_level': forms.Select(attrs={'class': 'form-control', 'id': 'security_level'})
         }
         labels = {
+            'title': 'Course Title',
             'is_timed': 'Enable Time Limit',
             'total_time_minutes': 'Total Time (minutes)',
             'sequential_questions': 'Display Questions One at a Time',

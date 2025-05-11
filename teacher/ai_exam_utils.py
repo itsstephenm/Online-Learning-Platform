@@ -6,6 +6,8 @@ import random
 import openai  # Import the correct openai module
 from openai import OpenAI # To catch OpenAI-specific errors
 import os
+import json
+from quiz.models import Question, AIGeneratedExam
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +107,9 @@ def get_ai_exam_questions(course, difficulty, num_questions=10, reference_text=N
             ],
             "temperature": 0.7,
             "max_tokens": 4000,
-            "response_format": {"type": "json_object"}
+            "top_p": 0.95,
+            "presence_penalty": 0.1,
+            "frequency_penalty": 0.1
         }
         
         response = requests.post(url, headers=headers, json=payload)
@@ -115,7 +119,6 @@ def get_ai_exam_questions(course, difficulty, num_questions=10, reference_text=N
             try:
                 content = response_data['choices'][0]['message']['content']
                 # Parse JSON response to get questions
-                import json
                 questions_data = json.loads(content)
                 return questions_data
             except (KeyError, json.JSONDecodeError) as e:
@@ -312,9 +315,82 @@ def generate_general_question(index, course_name, marks):
             "option4": "None of the above",
             "answer": "Option1",
             "marks": marks
+        },
+        {
+            "question": f"Which concept is fundamental to understanding {course_name}?",
+            "option1": f"Key theoretical framework in {course_name}",
+            "option2": "Basic arithmetic",
+            "option3": "Historical events",
+            "option4": "Geographic locations",
+            "answer": "Option1",
+            "marks": marks
+        },
+        {
+            "question": f"What distinguishes {course_name} from other fields?",
+            "option1": f"Unique characteristics of {course_name}",
+            "option2": "Common features",
+            "option3": "General knowledge",
+            "option4": "Basic skills",
+            "answer": "Option1",
+            "marks": marks
+        },
+        {
+            "question": f"Which methodology is most commonly used in {course_name}?",
+            "option1": f"Standard approach in {course_name}",
+            "option2": "Random selection",
+            "option3": "Trial and error",
+            "option4": "Intuitive guesswork",
+            "answer": "Option1",
+            "marks": marks
+        },
+        {
+            "question": f"What is the historical significance of {course_name}?",
+            "option1": f"Major developments in {course_name}",
+            "option2": "Recent trends",
+            "option3": "Future predictions",
+            "option4": "Current events",
+            "answer": "Option1",
+            "marks": marks
+        },
+        {
+            "question": f"Which skill is essential for mastering {course_name}?",
+            "option1": f"Critical competency in {course_name}",
+            "option2": "Basic literacy",
+            "option3": "Physical strength",
+            "option4": "Artistic ability",
+            "answer": "Option1",
+            "marks": marks
+        },
+        {
+            "question": f"What is the relationship between {course_name} and its applications?",
+            "option1": f"Practical uses of {course_name}",
+            "option2": "Theoretical concepts",
+            "option3": "Historical context",
+            "option4": "Future developments",
+            "answer": "Option1",
+            "marks": marks
+        },
+        {
+            "question": f"Which principle guides the development of {course_name}?",
+            "option1": f"Fundamental rule in {course_name}",
+            "option2": "Optional guideline",
+            "option3": "Temporary measure",
+            "option4": "Outdated concept",
+            "answer": "Option1",
+            "marks": marks
         }
     ]
-    return questions[index % len(questions)]
+    
+    # Handle the case where we need more questions than templates
+    if index >= len(questions):
+        # Create a new question by modifying an existing one
+        base_question = questions[index % len(questions)]
+        new_question = base_question.copy()
+        new_question["question"] = f"What is important to know about {course_name} (variation {index})?"
+        new_question["option1"] = f"Essential knowledge about {course_name}"
+        return new_question
+    
+    return questions[index]
 
 def save_ai_generated_exam(course, title, difficulty, questions, description=None, time_limit=60):
     """
@@ -481,7 +557,9 @@ def get_ai_exam_questions_from_references(course, difficulty, reference_document
             ],
             "temperature": 0.7,
             "max_tokens": 4000,
-            "response_format": {"type": "json_object"}
+            "top_p": 0.95,
+            "presence_penalty": 0.1,
+            "frequency_penalty": 0.1
         }
         
         response = requests.post(url, headers=headers, json=payload)
@@ -491,7 +569,6 @@ def get_ai_exam_questions_from_references(course, difficulty, reference_document
             try:
                 content = response_data['choices'][0]['message']['content']
                 # Parse JSON response to get questions
-                import json
                 questions_data = json.loads(content)
                 return questions_data
             except (KeyError, json.JSONDecodeError) as e:
@@ -503,4 +580,63 @@ def get_ai_exam_questions_from_references(course, difficulty, reference_document
             
     except Exception as e:
         logger.error(f"Error in get_ai_exam_questions_from_references: {str(e)}")
-        return get_mock_exam_questions(course, difficulty, num_questions) 
+        return get_mock_exam_questions(course, difficulty, num_questions)
+
+def check_ai_service_status():
+    """
+    Check the status of the AI service and token usage.
+    
+    Returns:
+        dict: Status information including connection status and token usage
+    """
+    status = {
+        'connected': False,
+        'error': None,
+        'token_usage': None
+    }
+    
+    if not OPENROUTER_API_KEY:
+        status['error'] = "API key not configured"
+        return status
+    
+    try:
+        # Try a simple API call to check connection
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:3000'
+        }
+        payload = {
+            "model": OPENROUTER_MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": "Test connection"},
+                {"role": "user", "content": "Hello"}
+            ],
+            "max_tokens": 10
+        }
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=5)
+        response.raise_for_status()
+        
+        # If we get here, the connection is successful
+        status['connected'] = True
+        
+        # Try to get token usage information
+        try:
+            response_data = response.json()
+            if 'usage' in response_data:
+                status['token_usage'] = response_data['usage']
+            elif 'choices' in response_data and 'usage' in response_data:
+                status['token_usage'] = response_data['usage']
+        except:
+            pass
+            
+    except requests.exceptions.Timeout:
+        status['error'] = "Connection timed out"
+    except requests.exceptions.ConnectionError:
+        status['error'] = "Could not connect to the service"
+    except Exception as e:
+        status['error'] = str(e)
+    
+    return status 

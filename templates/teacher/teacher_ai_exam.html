@@ -7,6 +7,12 @@
     <div class="card-header bg-c-blue text-white">
       <h4 class="mb-0">
         <i class="fas fa-robot mr-2"></i> AI-Powered Exam Generation
+        <!-- AI Service Status Indicator -->
+        <span class="ai-status-indicator float-end">
+          <span class="badge bg-secondary" id="aiStatusBadge">
+            <i class="fas fa-circle-notch fa-spin"></i> Checking AI Service...
+          </span>
+        </span>
       </h4>
     </div>
     <div class="card-body bg-c-purple">
@@ -216,6 +222,17 @@
   .modal-backdrop {
     background-color: rgba(0, 0, 0, 0.5);
   }
+  .ai-status-indicator {
+    display: inline-block;
+    margin-left: 15px;
+  }
+  .badge {
+    padding: 8px 12px;
+    font-size: 0.9em;
+  }
+  .badge i {
+    margin-right: 5px;
+  }
 </style>
 
 <script>
@@ -224,6 +241,43 @@
     const generateBtn = document.getElementById('generateBtn');
     const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
     const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+    
+    // Function to update AI service status
+    function updateAIStatus() {
+      fetch('/teacher/ai-status/')
+        .then(response => response.json())
+        .then(data => {
+          const badge = document.getElementById('aiStatusBadge');
+          if (data.connected) {
+            badge.className = 'badge bg-success';
+            badge.innerHTML = '<i class="fas fa-check-circle"></i> AI Service Connected';
+            if (data.token_usage) {
+              badge.innerHTML += ` (Tokens: ${data.token_usage.total_tokens || 'N/A'})`;
+            }
+            
+            // Enable the form submit button
+            generateBtn.disabled = false;
+          } else {
+            badge.className = 'badge bg-danger';
+            badge.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.error || 'AI Service Unavailable'}`;
+            
+            // Disable the form submit button
+            generateBtn.disabled = true;
+          }
+        })
+        .catch(error => {
+          const badge = document.getElementById('aiStatusBadge');
+          badge.className = 'badge bg-danger';
+          badge.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to check status';
+          
+          // Disable the form submit button to be safe
+          generateBtn.disabled = true;
+        });
+    }
+    
+    // Check status immediately and then every 30 seconds
+    updateAIStatus();
+    setInterval(updateAIStatus, 30000);
     
     form.addEventListener('submit', function(e) {
       e.preventDefault();

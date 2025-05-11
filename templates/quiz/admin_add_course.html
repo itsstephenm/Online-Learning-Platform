@@ -54,14 +54,23 @@
               </div>
             </div>
             
-            <div class="col-md-3">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="title">Course Title</label>
+                {% render_field courseForm.title class="form-control" placeholder="Introduction to Java Programming" %}
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
               <div class="form-group">
                 <label for="question_number">Total Questions</label>
                 {% render_field courseForm.question_number class="form-control" placeholder="10" %}
               </div>
             </div>
             
-            <div class="col-md-3">
+            <div class="col-md-6">
               <div class="form-group">
                 <label for="total_marks">Total Marks</label>
                 {% render_field courseForm.total_marks class="form-control" placeholder="50" %}

@@ -27,4 +27,6 @@ path('analytics-dashboard', views.analytics_dashboard_view, name='analytics-dash
 
 # Adaptive Quiz Settings
 path('adaptive-quiz-settings', views.adaptive_quiz_settings_view, name='adaptive_quiz_settings'),
+
+path('ai-status/', views.get_ai_status_view, name='teacher-ai-status'),
 ]
