@@ -399,7 +399,7 @@
         <i class="fas fa-bars" id="sidebar_btn"></i>
       </label>
       <img src="{% static "../static/image/assets/images/oem.png" %}" class="logo_image" alt="Logo">
-      <h3>CUT <span>ONLINE QUIZ</span></h3>
+      <h3> Edu <span>SIGHT</span></h3>
     </div>
     <div class="right_area">
       <form action="{% url 'logout' %}" method="POST">
@@ -423,7 +423,7 @@
         <img src="{% static 'image/teacher.png' %}" class="profile_image" alt="Default Profile">
       {% endif %}
       <h4>{{request.user.first_name}}</h4>
-      <h6>Teacher</h6>
+      <h6>Lecturer</h6>
     </div>
     
     <a href="/teacher/teacher-dashboard" class="{% if request.path == '/teacher/teacher-dashboard' %}active{% endif %}">
@@ -457,7 +457,7 @@
     <!-- Footer -->
     <footer>
       <div class="footer-content">
-        <div class="footer-title">CUT Online Quiz System</div>
+        <div class="footer-title"> Edu <span>SIGHT</span></div>
         <div class="footer-copyright">© {% now "Y" %} Chinhoyi University of Technology. All rights reserved.</div>
         <p>A modern assessment platform designed for efficient and secure online examinations.</p>
         <div class="social-links">

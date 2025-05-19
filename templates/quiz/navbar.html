@@ -138,7 +138,7 @@
     <div class="container">
       <a class="navbar-brand" href="/">
         <img src="{% static "image/assets/images/cutlogo.png" %}" class="logo_image" alt="Logo">
-        CUT <span>ONLINE QUIZ</span>
+       Edu <span>SIGHT</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -146,7 +146,7 @@
       <div class="collapse navbar-collapse justify-content-between" id="navbarNavAltMarkup">
         <div class="navbar-nav">
           <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Home</a>
-          <a class="nav-link {% if '/teacher/' in request.path %}active{% endif %}" href="/teacher/teacherclick">Teacher</a>
+          <a class="nav-link {% if '/teacher/' in request.path %}active{% endif %}" href="/teacher/teacherclick">Lecturer</a>
           <a class="nav-link {% if '/student/' in request.path %}active{% endif %}" href="/student/studentclick">Student</a>
           <a class="nav-link {% if '/admin' in request.path %}active{% endif %}" href="/adminclick">Admin</a>
         </div>
