@@ -7,104 +7,127 @@
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
   <style>
+    .exam-card {
+      background-color: #23233a;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      padding: 32px 32px 16px 32px;
+      color: #fff;
+      margin-bottom: 32px;
+    }
+    .exam-card h4, .exam-card h3, .exam-card h5 {
+      color: #24b0ed;
+      font-weight: 700;
+    }
+    .exam-card ul, .exam-card li {
+      color: #fff;
+      font-size: 1.1em;
+    }
     .badge-warning {
       background-color: #f0ad4e;
+      color: #23233a;
+      font-weight: 600;
     }
     .badge-info {
       background-color: #5bc0de;
+      color: #23233a;
+      font-weight: 600;
     }
-    .timed-exam-notice {
+    .alert {
+      font-size: 1.1em;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .alert-warning {
       background-color: #fff3cd;
+      color: #856404;
       border: 1px solid #ffeeba;
-      border-left: 5px solid #ffc107;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 4px;
     }
-    .sequential-exam-notice {
+    .alert-info {
       background-color: #d1ecf1;
+      color: #0c5460;
       border: 1px solid #bee5eb;
-      border-left: 5px solid #17a2b8;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 4px;
+    }
+    .card-footer {
+      background: none;
+      color: #24b0ed;
+      font-weight: 600;
+      border-top: 1px solid #444;
+      text-align: center;
+      font-size: 1.1em;
+    }
+    .btn-info {
+      background-color: #24b0ed;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 50px;
+      padding: 0.75rem 2rem;
+      font-size: 1.1em;
+      margin-top: 16px;
+      transition: all 0.2s;
+    }
+    .btn-info:hover {
+      background-color: #1a8cbb;
+      color: #fff;
     }
   </style>
 </head>
 <br><br>
 <div class="container my-4">
-    <div class="jumbotron">
-
-	      <h3 class="text-info text-center">Before you start the Exam, here are the rules</h3>
-
-        <div class="row">
-
-            <div class="card border-info mx-4 my-4">
-                <div class="card-body text-info">
-
-                    <h4 class="card-title">Exam Details :</h4>
-                    <p class="card-text">
-                        </p><ul style="list-style:decimal;">
-                            <li>Exam Name : {{course.course_name}}</li>
-                            <li>Total Question : {{total_questions}}</li>
-                            <li>Total Marks : {{total_marks}}</li>
-                            {% if course.is_timed %}
-                            <li>Time Limit : <span class="badge badge-warning">{{course.total_time_minutes}} minutes</span></li>
-                            {% endif %}
-                            {% if course.sequential_questions %}
-                            <li>Question Display : <span class="badge badge-info">Sequential</span></li>
-                            {% endif %}
-                        </ul>
-                    <p></p>
-
-                    {% if course.is_timed %}
-                    <div class="timed-exam-notice">
-                      <h4><i class="glyphicon glyphicon-time"></i> Timed Exam Notice</h4>
-                      <p>This is a timed exam with a limit of <strong>{{course.total_time_minutes}} minutes</strong>.</p>
-                      <p>The exam will be automatically submitted when the time expires.</p>
-                      <p>Time per question: <strong>{{ time_per_question }}</strong> seconds</p>
-                    </div>
-                    {% endif %}
-
-                    {% if course.sequential_questions %}
-                    <div class="sequential-exam-notice">
-                      <h4><i class="glyphicon glyphicon-sort-by-order"></i> Sequential Questions</h4>
-                      <p>Questions will be displayed one at a time.</p>
-                      <p>Each question has a time limit. If you don't answer within the time limit, the exam will automatically move to the next question.</p>
-                      {% if course.allow_backtracking %}
-                      <p>You <strong>can</strong> go back to previous questions.</p>
-                      {% else %}
-                      <p>You <strong>cannot</strong> go back to previous questions.</p>
-                      {% endif %}
-                    </div>
-                    {% endif %}
-
-                    <h4 class="card-title">Rules :</h4>
-                    <p class="card-text">
-                        </p><ul style="list-style:decimal;">
-                            <li>All questions are multiple choice question.</li>
-                            <li><span class="text-danger">Only one choice is correct.</span></li>
-                            <li>Every question carry different marks</li>
-                            {% if course.is_timed %}
-                            <li><strong>You have {{course.total_time_minutes}} minutes to complete the entire exam.</strong></li>
-                            {% endif %}
-                            {% if course.sequential_questions %}
-                            <li><strong>Questions are shown one at a time with individual timers.</strong></li>
-                            {% endif %}
-                            <li>Try to answer as quickly as you can.</li>
-                            <li>If you press refresh or go back to the previous page, there will be a new question for you and the question you were on will be counted as attempted.</li>
-                            <li>Questions are displayed randomly for every user.</li>
-                            <li>You will be told your marks immediately when you submit the answer.</li>
-                        </ul>
-                    <p></p>
-                    <a href="{% url 'start-exam' course.id  %}" class="btn btn-info">Let's Start</a>
-                </div>  
-                <div class="card-footer">Best Of Luck</div>  
-            </div>  
-        </div>  
-
+    <div class="exam-card">
+        <h3 class="text-center" style="color:#24b0ed;">Before you start the Exam, here are the rules</h3>
+        <h4>Exam Details :</h4>
+        <ul style="list-style:decimal;">
+            <li>Exam Name : <span style="color:#fff; font-weight:600;">{{course.course_name}}</span></li>
+            <li>Total Question : <span style="color:#fff; font-weight:600;">{{total_questions}}</span></li>
+            <li>Total Marks : <span style="color:#fff; font-weight:600;">{{total_marks}}</span></li>
+            {% if course.is_timed %}
+            <li>Time Limit : <span class="badge badge-warning">{{course.total_time_minutes}} minutes</span></li>
+            {% endif %}
+            {% if course.sequential_questions %}
+            <li>Question Display : <span class="badge badge-info">Sequential</span></li>
+            {% endif %}
+        </ul>
+        {% if course.is_timed %}
+        <div class="alert alert-warning">
+          <h5><i class="fas fa-clock"></i> Timed Exam Notice</h5>
+          <p>This is a timed exam with a limit of <strong style="color:#24b0ed;">{{course.total_time_minutes}} minutes</strong>.</p>
+          <p>The exam will be automatically submitted when the time expires.</p>
+          <p>Time per question: <strong style="color:#24b0ed;">{{ time_per_question }}</strong> seconds</p>
+        </div>
+        {% endif %}
+        {% if course.sequential_questions %}
+        <div class="alert alert-info">
+          <h5><i class="fas fa-stream"></i> Sequential Questions</h5>
+          <p>Questions will be displayed one at a time.</p>
+          <p>Each question has a time limit. If you don't answer within the time limit, the exam will automatically move to the next question.</p>
+          {% if course.allow_backtracking %}
+          <p>You <strong>can</strong> go back to previous questions.</p>
+          {% else %}
+          <p>You <strong>cannot</strong> go back to previous questions.</p>
+          {% endif %}
+        </div>
+        {% endif %}
+        <h4>Rules :</h4>
+        <ul style="list-style:decimal;">
+            <li>All questions are multiple choice question.</li>
+            <li><span class="text-danger">Only one choice is correct.</span></li>
+            <li>Every question carry different marks</li>
+            {% if course.is_timed %}
+            <li><strong>You have {{course.total_time_minutes}} minutes to complete the entire exam.</strong></li>
+            {% endif %}
+            {% if course.sequential_questions %}
+            <li><strong>Questions are shown one at a time with individual timers.</strong></li>
+            {% endif %}
+            <li>Try to answer as quickly as you can.</li>
+            <li>If you press refresh or go back to the previous page, there will be a new question for you and the question you were on will be counted as attempted.</li>
+            <li>Questions are displayed randomly for every user.</li>
+            <li>You will be told your marks immediately when you submit the answer.</li>
+        </ul>
+        <a href="{% url 'start-exam' course.id  %}" class="btn btn-info">Let's Start</a>
+        <div class="card-footer">Best Of Luck</div>
     </div>
 </div>
-
 <br><br><br><br><br><br>
 {% endblock content %}
