@@ -1,7 +1,7 @@
 from django.shortcuts import render,redirect,reverse, get_object_or_404
 from . import forms,models
 from django.db.models import Sum, Count
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.views.decorators.csrf import csrf_protect
@@ -9,12 +9,14 @@ from django.conf import settings
 from datetime import date, timedelta, timezone
 from quiz import models as QMODEL
 from teacher import models as TMODEL
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login
 from .ai_utils import get_ai_response, get_student_ai_insights, extract_topics
 import json
 import logging
 import requests
 import os
+from django.contrib import messages
+from django.contrib.auth.forms import AuthenticationForm
 
 logger = logging.getLogger(__name__)
 
@@ -632,3 +634,29 @@ except ImportError:
         elif cast == bool and isinstance(value, str):
             value = value.lower() in ('true', 'yes', '1')
         return value
+
+def student_login_view(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user_qs = User.objects.filter(username=username)
+        if not user_qs.exists():
+            messages.error(request, 'No account found with that username.')
+        else:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return redirect('student-dashboard')
+                else:
+                    messages.error(request, 'Your account is inactive. Please contact support.')
+            else:
+                messages.error(request, 'Incorrect password. Please try again.')
+    return render(request, 'student/studentlogin.html', {'form': form})
+
+def afterlogin_view(request):
+    if request.user.groups.filter(name='STUDENT').exists():
+        return redirect('student-dashboard')
+    else:
+        return redirect('admin-dashboard')

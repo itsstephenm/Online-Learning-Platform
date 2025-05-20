@@ -30,6 +30,8 @@ import PyPDF2
 import docx2txt
 from io import BytesIO
 from teacher.ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login
 
 try:
     from decouple import config
@@ -749,3 +751,23 @@ def admin_review_ai_exam_view(request):
             return redirect('admin-view-question')
         
     return render(request, 'quiz/admin_review_ai_exam.html', context)
+
+def admin_login_view(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user_qs = User.objects.filter(username=username)
+        if not user_qs.exists():
+            messages.error(request, 'No account found with that username.')
+        else:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return redirect('admin-dashboard')
+                else:
+                    messages.error(request, 'Your account is inactive. Please contact support.')
+            else:
+                messages.error(request, 'Incorrect password. Please try again.')
+    return render(request, 'quiz/adminlogin.html', {'form': form})
