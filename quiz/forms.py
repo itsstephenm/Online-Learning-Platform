@@ -40,8 +40,7 @@ class QuestionForm(forms.ModelForm):
     
     class Meta:
         model = models.Question
-        fields = ['marks', 'question', 'question_type', 'option1', 'option2', 'option3', 'option4', 
-                  'answer', 'multiple_answers', 'short_answer_pattern']
+        fields = ['marks', 'question', 'question_type', 'option1', 'option2', 'option3', 'option4', 'answer', 'multiple_answers', 'short_answer_pattern']
         widgets = {
             'question': forms.Textarea(attrs={'rows': 3, 'cols': 50}),
             'short_answer_pattern': forms.Textarea(attrs={'rows': 2, 'cols': 50, 'placeholder': 'Enter keywords or patterns to match correct answers, separated by commas'}),
@@ -57,23 +56,29 @@ class QuestionForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         question_type = cleaned_data.get('question_type')
-        
+        # For MCQ, require all options and answer
         if question_type == 'multiple_choice':
-            # Validate required fields for multiple choice
+            for opt in ['option1', 'option2', 'option3', 'option4']:
+                if not cleaned_data.get(opt):
+                    self.add_error(opt, 'This option is required for multiple choice questions')
             if not cleaned_data.get('answer'):
                 self.add_error('answer', 'Answer is required for multiple choice questions')
-                
+        # For checkbox, require all options and at least one answer
         elif question_type == 'checkbox':
-            # Validate required fields for checkbox questions
+            for opt in ['option1', 'option2', 'option3', 'option4']:
+                if not cleaned_data.get(opt):
+                    self.add_error(opt, 'This option is required for checkbox questions')
             multiple_answers = cleaned_data.get('multiple_answers')
             if not multiple_answers:
                 self.add_error('multiple_answers', 'At least one correct answer is required for checkbox questions')
-                
+        # For short answer, require pattern and clear options
         elif question_type == 'short_answer':
-            # Validate required fields for short answer questions
             if not cleaned_data.get('short_answer_pattern'):
                 self.add_error('short_answer_pattern', 'Answer pattern is required for short answer questions')
-                
+            for opt in ['option1', 'option2', 'option3', 'option4']:
+                cleaned_data[opt] = None
+            cleaned_data['answer'] = None
+            cleaned_data['multiple_answers'] = None
         return cleaned_data
 
 class AIExamGenerationForm(forms.Form):

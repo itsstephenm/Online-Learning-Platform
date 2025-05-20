@@ -580,7 +580,7 @@ def get_ai_exam_questions_from_references(course, difficulty, reference_document
             
     except Exception as e:
         logger.error(f"Error in get_ai_exam_questions_from_references: {str(e)}")
-        return get_mock_exam_questions(course, difficulty, num_questions)
+        return get_mock_exam_questions(course, difficulty, num_questions) 
 
 def check_ai_service_status():
     """

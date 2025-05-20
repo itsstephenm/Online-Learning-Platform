@@ -1,7 +1,7 @@
 from django.shortcuts import render,redirect,reverse, get_object_or_404
 from . import forms,models
 from django.db.models import Sum, Avg, Count
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.conf import settings
@@ -15,6 +15,8 @@ import PyPDF2
 from io import BytesIO
 from .ai_exam_utils import get_ai_exam_questions, save_ai_generated_exam, check_ai_service_status
 from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
 
 
 #for showing signup/login button for teacher
@@ -101,10 +103,35 @@ def teacher_add_question_view(request):
     if request.method=='POST':
         questionForm=QFORM.QuestionForm(request.POST)
         if questionForm.is_valid():
+            cd = questionForm.cleaned_data
             question=questionForm.save(commit=False)
             course=QMODEL.Course.objects.get(id=request.POST.get('courseID'))
             question.course=course
-            question.save()       
+            question.marks = cd.get('marks')
+            question.question = cd.get('question')
+            question.question_type = cd.get('question_type')
+            question.option1 = cd.get('option1')
+            question.option2 = cd.get('option2')
+            question.option3 = cd.get('option3')
+            question.option4 = cd.get('option4')
+            question.answer = cd.get('answer')
+            question.multiple_answers = cd.get('multiple_answers')
+            question.short_answer_pattern = cd.get('short_answer_pattern')
+            # Clear irrelevant fields based on type
+            if question.question_type == 'short_answer':
+                question.option1 = None
+                question.option2 = None
+                question.option3 = None
+                question.option4 = None
+                question.answer = None
+                question.multiple_answers = None
+            elif question.question_type == 'checkbox':
+                question.answer = None
+                question.short_answer_pattern = None
+            elif question.question_type == 'multiple_choice':
+                question.multiple_answers = None
+                question.short_answer_pattern = None
+            question.save()
         else:
             print("form is invalid")
         return HttpResponseRedirect('/teacher/teacher-view-question')
@@ -616,3 +643,35 @@ def get_ai_status_view(request):
     """View to get AI service status"""
     status = check_ai_service_status()
     return JsonResponse(status)
+
+def teacher_login_view(request):
+    from django.contrib.auth.forms import AuthenticationForm
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user_qs = User.objects.filter(username=username)
+        if not user_qs.exists():
+            messages.error(request, 'No account found with that username.')
+        else:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return redirect('afterlogin')
+                else:
+                    messages.error(request, 'Your account is inactive. Please contact support.')
+            else:
+                messages.error(request, 'Incorrect password. Please try again.')
+    return render(request, 'teacher/teacherlogin.html', {'form': form})
+
+def afterlogin_view(request):
+    from quiz.models import Teacher as TMODEL
+    if request.user.groups.filter(name='TEACHER').exists():
+        accountapproval = TMODEL.objects.filter(user_id=request.user.id, status=True).exists()
+        if accountapproval:
+            return redirect('teacher-dashboard')
+        else:
+            return render(request, 'teacher/teacher_wait_for_approval.html')
+    else:
+        return redirect('admin-dashboard')

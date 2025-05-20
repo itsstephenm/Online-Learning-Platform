@@ -7,22 +7,18 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <style>
-       <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-  a:link {
-        text-decoration: none;
-      }
+    a:link {
+      text-decoration: none;
+    }
     .question-section {
-        display: none;
+      display: none;
     }
     .section-active {
-        display: block;
+      display: block;
     }
     .checkbox-options label {
-        display: block;
-        margin-bottom: 10px;
+      display: block;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -45,10 +41,10 @@
         <label for="question_number">Marks</label>
         {% render_field questionForm.marks|attr:'required:true' class="form-control" %}
         <br>
-        
-        <!-- Multiple Choice Question Fields -->
-        <div id="multiple-choice-section" class="question-section">
-            <h4>Multiple Choice Options</h4>
+
+        <!-- Always render option fields once -->
+        <div id="option-fields" class="question-section">
+            <h4>Options</h4>
             <label for="option1">Option 1</label>
             {% render_field questionForm.option1 class="form-control" %}
             <br>
@@ -61,45 +57,23 @@
             <label for="option4">Option 4</label>
             {% render_field questionForm.option4 class="form-control" %}
             <br>
+        </div>
+
+        <!-- Multiple Choice Answer -->
+        <div id="multiple-choice-section" class="question-section">
             <label for="answer">Correct Answer</label>
             {% render_field questionForm.answer class="form-control" %}
         </div>
         
         <!-- Checkbox Question Fields -->
         <div id="checkbox-section" class="question-section">
-            <h4>Checkbox Options (Multiple Answers)</h4>
-            <label for="option1">Option 1</label>
-            {% render_field questionForm.option1 class="form-control" %}
-            <br>
-            <label for="option2">Option 2</label>
-            {% render_field questionForm.option2 class="form-control" %}
-            <br>
-            <label for="option3">Option 3</label>
-            {% render_field questionForm.option3 class="form-control" %}
-            <br>
-            <label for="option4">Option 4</label>
-            {% render_field questionForm.option4 class="form-control" %}
-            <br>
             <label>Correct Answers (Select all that apply)</label>
             <div class="checkbox-options">
-                {% with multiple_answers=question.multiple_answers %}
+                {% for key, value in questionForm.multiple_answers.field.widget.choices %}
                 <label>
-                    <input type="checkbox" name="multiple_answers" value="Option1" {% if multiple_answers and 'Option1' in multiple_answers %}checked{% endif %}>
-                    Option 1
+                    <input type="checkbox" name="multiple_answers" value="{{ key }}" {% if key in questionForm.multiple_answers.value %}checked{% endif %}> {{ value }}
                 </label>
-                <label>
-                    <input type="checkbox" name="multiple_answers" value="Option2" {% if multiple_answers and 'Option2' in multiple_answers %}checked{% endif %}>
-                    Option 2
-                </label>
-                <label>
-                    <input type="checkbox" name="multiple_answers" value="Option3" {% if multiple_answers and 'Option3' in multiple_answers %}checked{% endif %}>
-                    Option 3
-                </label>
-                <label>
-                    <input type="checkbox" name="multiple_answers" value="Option4" {% if multiple_answers and 'Option4' in multiple_answers %}checked{% endif %}>
-                    Option 4
-                </label>
-                {% endwith %}
+                {% endfor %}
             </div>
         </div>
         
@@ -119,30 +93,36 @@
     // Show/hide fields based on question type
     document.addEventListener('DOMContentLoaded', function() {
         const questionTypeSelector = document.getElementById('question-type-selector');
-        
+        const optionFields = document.getElementById('option-fields');
+        const mcSection = document.getElementById('multiple-choice-section');
+        const cbSection = document.getElementById('checkbox-section');
+        const saSection = document.getElementById('short-answer-section');
+
+        function updateVisibleSection(questionType) {
+            // Hide all sections first
+            optionFields.style.display = 'none';
+            mcSection.style.display = 'none';
+            cbSection.style.display = 'none';
+            saSection.style.display = 'none';
+
+            if (questionType === 'multiple_choice') {
+                optionFields.style.display = 'block';
+                mcSection.style.display = 'block';
+            } else if (questionType === 'checkbox') {
+                optionFields.style.display = 'block';
+                cbSection.style.display = 'block';
+            } else if (questionType === 'short_answer') {
+                saSection.style.display = 'block';
+            }
+        }
+
         // Show initial section based on selected value
         updateVisibleSection(questionTypeSelector.value);
-        
+
         // Update when selection changes
         questionTypeSelector.addEventListener('change', function() {
             updateVisibleSection(this.value);
         });
-        
-        function updateVisibleSection(questionType) {
-            // Hide all sections first
-            document.querySelectorAll('.question-section').forEach(section => {
-                section.classList.remove('section-active');
-            });
-            
-            // Show the appropriate section
-            if (questionType === 'multiple_choice') {
-                document.getElementById('multiple-choice-section').classList.add('section-active');
-            } else if (questionType === 'checkbox') {
-                document.getElementById('checkbox-section').classList.add('section-active');
-            } else if (questionType === 'short_answer') {
-                document.getElementById('short-answer-section').classList.add('section-active');
-            }
-        }
     });
 </script>
 

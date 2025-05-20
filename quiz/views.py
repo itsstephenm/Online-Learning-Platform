@@ -378,45 +378,44 @@ def admin_question_view(request):
 
 @login_required(login_url='adminlogin')
 def admin_add_question_view(request):
+    from django.contrib import messages
     questionForm = forms.QuestionForm()
-    
-    # Pre-select question type if provided in URL
     question_type = request.GET.get('type', 'multiple_choice')
     if question_type in ['multiple_choice', 'checkbox', 'short_answer']:
         questionForm.initial['question_type'] = question_type
-    
+
     if request.method == 'POST':
         questionForm = forms.QuestionForm(request.POST)
         if questionForm.is_valid():
             question = questionForm.save(commit=False)
             course = models.Course.objects.get(id=request.POST.get('courseID'))
             question.course = course
-            
-            # Handle different question types
-            question_type = request.POST.get('question_type')
-            
-            if question_type == 'multiple_choice':
-                # Ensure required fields for multiple choice
-                question.answer = request.POST.get('answer')
-                
-            elif question_type == 'checkbox':
-                # For checkbox questions, save multiple answers as JSON
-                multiple_answers = request.POST.getlist('multiple_answers')
-                question.multiple_answers = multiple_answers
-                question.answer = None  # Clear single answer field
-                
-            elif question_type == 'short_answer':
-                # For short answer questions, save the pattern
-                question.short_answer_pattern = request.POST.get('short_answer_pattern')
-                question.answer = None  # Clear single answer field
-                # Make options empty for short answer questions
+            cd = questionForm.cleaned_data
+            question.option1 = cd.get('option1')
+            question.option2 = cd.get('option2')
+            question.option3 = cd.get('option3')
+            question.option4 = cd.get('option4')
+            question.answer = cd.get('answer')
+            question.multiple_answers = cd.get('multiple_answers')
+            question.short_answer_pattern = cd.get('short_answer_pattern')
+            if question.question_type == 'short_answer':
                 question.option1 = None
                 question.option2 = None
                 question.option3 = None
                 question.option4 = None
-            
+                question.answer = None
+                question.multiple_answers = None
+            elif question.question_type == 'checkbox':
+                question.answer = None
+                question.short_answer_pattern = None
+            elif question.question_type == 'multiple_choice':
+                question.multiple_answers = None
+                question.short_answer_pattern = None
             question.save()
-            return HttpResponseRedirect('/admin-view-question')
+            messages.success(request, 'Question added successfully!')
+            return HttpResponseRedirect('/admin-add-question')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     return render(request, 'quiz/admin_add_question.html', {'questionForm': questionForm})
 
 @login_required(login_url='adminlogin')
@@ -504,31 +503,31 @@ def update_question_view(request, pk):
     if request.method == 'POST':
         questionForm = forms.QuestionForm(request.POST, instance=question)
         if questionForm.is_valid():
-            question = questionForm.save(commit=False)
-            
-            # Handle different question types
-            question_type = request.POST.get('question_type')
-            
-            if question_type == 'multiple_choice':
-                # Ensure required fields for multiple choice
-                question.answer = request.POST.get('answer')
-                
-            elif question_type == 'checkbox':
-                # For checkbox questions, save multiple answers as JSON
-                multiple_answers = request.POST.getlist('multiple_answers')
-                question.multiple_answers = multiple_answers
-                question.answer = None  # Clear single answer field
-                
-            elif question_type == 'short_answer':
-                # For short answer questions, save the pattern
-                question.short_answer_pattern = request.POST.get('short_answer_pattern')
-                question.answer = None  # Clear single answer field
-                # Make options empty for short answer questions
+            cd = questionForm.cleaned_data
+            question.marks = cd.get('marks')
+            question.question = cd.get('question')
+            question.question_type = cd.get('question_type')
+            question.option1 = cd.get('option1')
+            question.option2 = cd.get('option2')
+            question.option3 = cd.get('option3')
+            question.option4 = cd.get('option4')
+            question.answer = cd.get('answer')
+            question.multiple_answers = cd.get('multiple_answers')
+            question.short_answer_pattern = cd.get('short_answer_pattern')
+            # Clear irrelevant fields based on type
+            if question.question_type == 'short_answer':
                 question.option1 = None
                 question.option2 = None
                 question.option3 = None
                 question.option4 = None
-            
+                question.answer = None
+                question.multiple_answers = None
+            elif question.question_type == 'checkbox':
+                question.answer = None
+                question.short_answer_pattern = None
+            elif question.question_type == 'multiple_choice':
+                question.multiple_answers = None
+                question.short_answer_pattern = None
             question.save()
             return HttpResponseRedirect('/admin-view-question')
             
