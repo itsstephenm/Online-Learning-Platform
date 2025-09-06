@@ -53,6 +53,7 @@ OPENROUTER_MODEL_ID = os.getenv('OPENROUTER_MODEL_ID')
 OPENROUTER_MODEL_NAME = os.getenv('OPENROUTER_MODEL_NAME')
 
 # Example function to send a request using requests library directly (without OpenAI client)
+
 def get_chat_completion(question):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -180,7 +181,6 @@ CACHES = {
 # Add Django Debug Toolbar for development environments
 if DEBUG:
     try:
-        import debug_toolbar
         INSTALLED_APPS += ['debug_toolbar']
         MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
         INTERNAL_IPS = ['127.0.0.1']
