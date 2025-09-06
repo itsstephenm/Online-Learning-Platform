@@ -32,7 +32,7 @@ PORT = int(os.environ.get('PORT', 8000))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', '@k0#p3kidu)yaaa3u1hplxz)f@^6xiy384*(+n@@s5x#1bx@m5')
+SECRET_KEY = os.getenv('SECRET_KEY', '$v^+bt9aoi$&itn(*rmxguf7cx9s%g1t=+p@lmn1@$zr*e%auh')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     'student',
     'widget_tweaks',
     'explorer',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
